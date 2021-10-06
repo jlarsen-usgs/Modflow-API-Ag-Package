@@ -52,7 +52,7 @@ def create_test_model(name):
 
 if __name__ == "__main__":
     gwfname = "GWF"
-    dll = os.path.join("..", "..", "modflow-bmi", "libmf6.dll")
+    dll = os.path.join("..", "modflow-bmi", "libmf6.dll")
 
     sim, gwf = create_test_model(gwfname)
 
