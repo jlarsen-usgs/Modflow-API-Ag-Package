@@ -33,9 +33,10 @@ def create_test_model(name):
         gwf,
         nrow=10,
         ncol=10,
-        delr=10,
-        delc=10,
-        top=100
+        delr=100,
+        delc=100,
+        top=100,
+        botm=0
     )
 
     ic = fp.mf6.ModflowGwfic(gwf, strt=100)
@@ -43,7 +44,7 @@ def create_test_model(name):
     sto = fp.mf6.ModflowGwfsto(gwf, iconvert=1)
 
     stress_period_data = {
-        i: [[(0, 4, 4), -100.], [(0, 9, 9), -100.]] for i in range(10)
+        i: [[(0, 4, 4), -100], [(0, 9, 9), -100]] for i in range(10)
     }
     wel = fp.mf6.ModflowGwfwel(gwf, stress_period_data=stress_period_data)
 
@@ -62,6 +63,11 @@ def create_test_model(name):
     return sim, gwf
 
 
+def adjust_well_flux(mfobj, addr, value):
+    flux = mfobj.get_value_ptr(addr)
+    flux[0, 0] += value
+
+
 if __name__ == "__main__":
     gwfname = "GWF"
     dll = os.path.join("..", "modflow-bmi", "libmf6.dll")
@@ -76,6 +82,8 @@ if __name__ == "__main__":
     max_iter = mf6.get_value(mf6.get_var_address("MXITER", "SLN_1"))
 
     well_addr = mf6.get_var_address("BOUND", gwfname.upper(), "WEL_0")
+    well_flux = mf6.get_value(well_addr)
+    value = 0
 
     # prepare the iteration loops
     while current_time < end_time:
@@ -83,7 +91,7 @@ if __name__ == "__main__":
         mf6.prepare_time_step(dt)
         kiter = 0
 
-        well_value = mf6.get_value(well_addr)
+        adjust_well_flux(mf6, well_addr, value)
 
         n_solutions = mf6.get_subcomponent_count()
         for sol_id in range(1, n_solutions + 1):
@@ -102,6 +110,8 @@ if __name__ == "__main__":
 
         if not has_converged:
             print("model did not converge")
+
+        value += 10
 
     try:
         mf6.finalize()
