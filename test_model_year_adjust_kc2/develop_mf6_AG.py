@@ -96,6 +96,7 @@ class Modflow6Ag(object):
         self.totim = np.add.accumulate(self.gwf.modeltime.perlen)
         self.area = None
         self.top = None
+        self.top_tile = None
         self.botm = None
 
     def create_addresses(self, mf6):
@@ -125,6 +126,12 @@ class Modflow6Ag(object):
             mf6.get_var_address("BOT", self.name, dis_name)
         )
 
+        self.top = mf6.get_value(
+            mf6.get_var_address("TOP", self.name, dis_name)
+        )
+
+        self.top_tile = np.tile(self.top, self.nlay)
+
         # todo: set the well name!!!!
         self.iusesy_addr = mf6.get_var_address("IUSESY", self.name, sto_name)
         self.well_addr = mf6.get_var_address("BOUND", self.name, "WEL_0")
@@ -144,6 +151,10 @@ class Modflow6Ag(object):
         demand = (et[node, 1] * kc)
 
         # adjust the et value so we don't double account
+        # todo: actually I don't think that this is quite correct...
+        #  we should keep et as is and then adjust the demand value.
+        #  more or less provide accounting of the ET, and then let
+        #  other modflow processes deal with it!
         if demand > et[node, 1]:
             et[node, 1] = 0
         else:
@@ -152,7 +163,7 @@ class Modflow6Ag(object):
         mf6.set_value(self.evt_addr, et)
         return demand
 
-    def calculate_gw_demand(self, mf6, demand, crop_node):
+    def calculate_gw_demand(self, mf6, demand, crop_node, rooting_depth):
         # todo: need rooting depth for crop nodes
         # will be something like if head > layer top - rooting depth
         # else gw_volume = 0
@@ -160,13 +171,17 @@ class Modflow6Ag(object):
         head = mf6.get_value(self.head_addr)
         iusesy = mf6.get_value(self.iusesy_addr)
 
-        # gw_volume most likely needs to be changed to a rooting depth calc.
-        gw_volume = (head - self.botm) * self.area
+
+
+        # gw_volume needs to be changed to a rooting depth calc.
+        gw_column = (head - (self.top - rooting_depth))
+        gw_volume = gw_column * self.area
+        # gw_volume = (head - self.botm) * self.area
         gw_volume[gw_volume < 0] = 0
         gw_volume = np.where(
             iusesy > 0,
             gw_volume * self.sy,
-            gw_volume * self.ss
+            0 # gw_volume * self.ss
         )
 
         # todo: calculate the drop in elevation not the absoulte elevation.
@@ -185,9 +200,22 @@ class Modflow6Ag(object):
             gw_volume / self.ss
         )
 
-        ohead = np.where(gw_volume < 0,
-                        self.botm,
-                        gw_head / self.area)
+        adj_gw_column = np.where(
+            iusesy > 0,
+            gw_volume / self.sy,
+            gw_volume / self.ss
+        ) / self.area
+
+        print(gw_column, adj_gw_column)
+
+        head_adj = np.where(adj_gw_column > 0,
+                            gw_column - adj_gw_column,
+                            0)
+
+        ohead = head - head_adj
+        # ohead = np.where(gw_volume < 0,
+        #                  self.botm,
+        #                  gw_head / self.area)
         print(f"{head[0] :.3f} > {ohead[0] :.3f}")
 
         mf6.set_value(self.head_addr, ohead)
@@ -266,7 +294,7 @@ class Modflow6Ag(object):
                 # todo: update this for some sort of crop id input
                 #  and rooting depth array, this should most likely be calculated
                 #  each and every time step!
-            gw_demand = self.calculate_gw_demand(mf6, demand, 0)
+            gw_demand = self.calculate_gw_demand(mf6, demand, 0, 6)
             uzf_demand = self.calculate_unsaturated_demand(
                 mf6, demand, gw_demand, 0
             )
@@ -309,5 +337,5 @@ if __name__ == "__main__":
     sim, gwf = create_test_model("GWF")
 
     mf6ag = Modflow6Ag(sim)
-    mf6ag.run_model(dll)
+    mf6ag.run_model(dll, )
 
