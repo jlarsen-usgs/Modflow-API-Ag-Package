@@ -292,6 +292,7 @@ def create_ag_package_trigger():
     ag.write_file()
     return ag
 
+
 class Modflow6Ag(object):
     """
 
@@ -327,8 +328,8 @@ class Modflow6Ag(object):
         if self.sim_wells:
             self.well_max_q = np.zeros((self.nummaxwell,))
             self.well_q = np.zeros((self.nsteps, self.nummaxwell))
-            self._sup = np.zeros((self.nummaxwell))
-            self._supold = np.zeros((self.nummaxwell))
+            self._sup = np.zeros((self.nummaxwell,))
+            self._supold = np.zeros((self.nummaxwell,))
             self.irrwell_num = None
             self.irrwell = None
             self.well_irrperiod = None
@@ -340,8 +341,8 @@ class Modflow6Ag(object):
             self.div_info.sort(order='idv', axis=0)
             self.sfr_max_q = np.zeros((self.numirrdiversion,))
             self.sfr_q = np.zeros((self.nsteps, self.numirrdiversion))
-            self._idsup = np.zeros((self.numirrdiversion))
-            self._idsupold = np.zeros((self.numirrdiversion))
+            self._idsup = np.zeros((self.numirrdiversion,))
+            self._idsupold = np.zeros((self.numirrdiversion,))
             if self.trigger:
                 self.sfr_timeinperiod = None
                 self.sfr_irrperiod = None
@@ -551,7 +552,7 @@ class Modflow6Ag(object):
         ----------
         mf6 : ModflowApi object
         delt : float
-        timestep : float
+        kiter : int
         """
         pet = mf6.get_value(self.pet_addr)
         vks = mf6.get_value(self.vks_addr)
@@ -559,7 +560,7 @@ class Modflow6Ag(object):
         gwet = mf6.get_value(self.uz_gwet_addr)
         uzet = mf6.get_value(self.uzet_addr)
         divflow = mf6.get_value(self.sfr_divflow_addr)
-        dsflow = mf6.get_value(self.sfr_dsflow_addr) # check the outseg value?
+        dsflow = mf6.get_value(self.sfr_dsflow_addr)
 
         crop_vks = np.zeros((len(self.irrdiversion_num,)))
         crop_pet = np.zeros((len(self.irrdiversion_num,)))
@@ -614,8 +615,8 @@ class Modflow6Ag(object):
         dvflw = np.where(dvflw > fmaxflow, fmaxflow, dvflw)
         divflow[self.irrdiversion_num] = dvflw
         mf6.set_value(self.sfr_divflow_addr, divflow)
-        # this out_factor call may be incorrect dimension assumption
-        # I think we can just return factor!!!!
+
+        # for supplemental pumping this needs to be dimensioned as sfr ndiv
         out_factor[self.irrdiversion_num] = factor
 
         return out_factor, divflow
@@ -628,7 +629,7 @@ class Modflow6Ag(object):
         ----------
         mf6 : ModflowApi object
         delt : float
-        timestep : float
+        kiter : int
         """
         pet = mf6.get_value(self.pet_addr)
         vks = mf6.get_value(self.vks_addr)
@@ -696,12 +697,17 @@ class Modflow6Ag(object):
         sup_demand = np.zeros((len(self.supwell_num),))
         for ix, well in enumerate(self.supwell):
             segid = well['segid']
-            # todo: this might need to be a np.sum() function!
-            sup_demand[ix] = well['fracsup'] * (
-                well['fracsupmax'] * (conj_demand[segid] - divflow[segid])
+            sup_demand[ix] = np.sum(
+                well['fracsup'] * (well['fracsupmax'] * (conj_demand[segid] - divflow[segid]))
             )
 
         sup_demand = np.where(sup_demand > 0, sup_demand, 0)
+
+        if self.trigger:
+            sup_demand = np.where(self.sfr_timeinperiod < self.sfr_irrperiod,
+                                  sup_demand,
+                                  0)
+
         sup_pump = np.where(sup_demand > np.abs(self.well_max_q[self.irrwell_num]),
                             np.abs(self.well_max_q[self.irrwell_num]),
                             sup_demand)
@@ -719,8 +725,8 @@ class Modflow6Ag(object):
         aetold :
         sup :
         supold :
-        timestep : float
-
+        kiter : float
+        accel : float
         """
         et_diff = crop_pet - crop_aet
         factor = et_diff
@@ -747,9 +753,7 @@ class Modflow6Ag(object):
         Parameters
         ----------
         mf6 : ModflowApi object
-        crop_nodes : np.ndarray
         delt : float
-        timestep : float
         """
         pet = mf6.get_value(self.pet_addr)
         area = mf6.get_value(self.area_addr)
@@ -759,7 +763,7 @@ class Modflow6Ag(object):
 
         crop_pet = np.zeros((len(self.irrdiversion_num),))
         crop_aet = np.zeros((len(self.irrdiversion_num),))
-        # todo: need to calculate demand....
+        demand = np.zeros((len(self.sfr_max_q),))
         for ix, record in enumerate(self.irrdiversion):
             crop_nodes = record["node"]
             crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
@@ -767,7 +771,7 @@ class Modflow6Ag(object):
             crop_gwet = gwet[crop_nodes]
             crop_aet[ix] = np.sum((crop_gwet + crop_uzet))
 
-        demand = crop_pet - crop_aet
+        demand[self.irrdiversion_num] = crop_pet - crop_aet
 
         factor = np.where(crop_pet > 1e-30,
                           crop_aet / crop_pet,
@@ -782,12 +786,12 @@ class Modflow6Ag(object):
                          0)
 
         dvflw = np.where(self.sfr_timeinperiod - delt < self.sfr_irrperiod,
-                         self.sfr_max_q,
+                         self.sfr_max_q[self.irrdiversion_num],
                          0)
 
-        dvflw = np.where(self.sfr_max_q > demand,
-                         demand,
-                         self.sfr_max_q)
+        dvflw = np.where(demand[self.irrdiversion_num] > self.sfr_max_q[self.irrdiversion_num],
+                         self.sfr_max_q[self.irrdiversion_num,
+                         dvflw])
 
         div_info = self.div_info[self.irrdiversion_num]
         fmaxflow = dsflow[div_info["rno"]]
@@ -798,7 +802,7 @@ class Modflow6Ag(object):
         divflow[self.irrdiversion_num] = dvflw
         mf6.set_value(self.sfr_divflow_addr, divflow)
 
-        return factor, divflow
+        return demand, divflow
 
     def gw_demand_trigger(self,  mf6, delt):
         """
@@ -843,8 +847,8 @@ class Modflow6Ag(object):
                            demand,
                            0)
 
-        pumpage = np.where(pumpage > self.well_max_q,
-                           self.well_max_q,
+        pumpage = np.where(pumpage > self.well_max_q[self.irrwell_num],
+                           self.well_max_q[self.irrwell_num],
                            pumpage)
 
         wells = mf6.get_value(self.well_addr)
@@ -858,6 +862,7 @@ class Modflow6Ag(object):
 
         Parameters
         ----------
+        mf6 : ModflowApi
         pumpage : np.ndarray, None
             numpy array of pumping values from wells
         divflow : np.ndarray, None
@@ -910,6 +915,10 @@ class Modflow6Ag(object):
 
     def run_model(self, dll,):
         # todo: or alternatively, we can the well_list from a modflow WEL package
+        # todo: after creating, break up the parts of the inner loop into
+        #   stand alone functions that can be added to another run model function
+        #   this will allow a user to add additional functionality and/or
+        #   other packages to the DLL loop.
         mf6 = ModflowApi(dll)
         mf6.initialize()
         prev_time = 0
@@ -972,7 +981,6 @@ class Modflow6Ag(object):
 
                 mf6.prepare_solve(sol_id)
                 while kiter < max_iter:
-
                     if self.etdemand:
                         if self.sim_wells:
                             well_demand = self.gw_demand_uzf(mf6, delt, kiter)
@@ -986,19 +994,22 @@ class Modflow6Ag(object):
                             well_demand = self.gw_demand_trigger(mf6, delt)
                         if self.sim_diversions:
                             conj_demand, divflow = self.sw_demand_trigger(mf6, delt)
-                            # todo: need to set supplemental pumping!
-
+                            if self.sim_supplemental:
+                                sup_demand = self.suplemental_pumping(mf6, conj_demand, divflow)
                     else:
                         # todo: this should be straight-forward demand calculation
                         #   based on the ET-Deficit....
                         pass
 
+                    # todo: think about where to add in the irrigation return flows (UZF or to X)!!!!
                     has_converged = mf6.solve(sol_id)
                     kiter += 1
                     if has_converged:
                         break
 
                 mf6.finalize_solve(sol_id)
+
+                # todo: update time in seg and
 
             sup_p.append(sup_demand)
             div.append(divflow)
