@@ -6,15 +6,14 @@ import os
 
 
 def create_test_model(name):
-    import flopy as fp
 
     sim_ws = os.path.join(".",)
-    sim = fp.mf6.MFSimulation(name, sim_ws=sim_ws)
+    sim = flopy.mf6.MFSimulation(name, sim_ws=sim_ws)
 
     # create TDIS with monthly stress periods and daily time steps
     perlen = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
     period_data = [(i, i, 1.0) for i in perlen]
-    tdis = fp.mf6.ModflowTdis(
+    tdis = flopy.mf6.ModflowTdis(
         sim,
         nper=12,
         perioddata=tuple(period_data),
@@ -22,10 +21,10 @@ def create_test_model(name):
     )
 
     # create IMS
-    ims = fp.mf6.ModflowIms(sim, complexity="COMPLEX")
+    ims = flopy.mf6.ModflowIms(sim, complexity="COMPLEX")
 
     # create model!
-    gwf = fp.mf6.ModflowGwf(
+    gwf = flopy.mf6.ModflowGwf(
         sim,
         modelname=name,
         save_flows=True,
@@ -34,7 +33,7 @@ def create_test_model(name):
     )
 
     # define delc and delr to equal approximately 1 acre
-    dis = fp.mf6.ModflowGwfdis(
+    dis = flopy.mf6.ModflowGwfdis(
         gwf,
         nrow=10,
         ncol=10,
@@ -44,26 +43,26 @@ def create_test_model(name):
         length_units='meters'
     )
 
-    ic = fp.mf6.ModflowGwfic(gwf, strt=95)
-    npf = fp.mf6.ModflowGwfnpf(gwf, save_specific_discharge=True)
-    sto = fp.mf6.ModflowGwfsto(gwf, iconvert=1)
+    ic = flopy.mf6.ModflowGwfic(gwf, strt=95)
+    npf = flopy.mf6.ModflowGwfnpf(gwf, save_specific_discharge=True)
+    sto = flopy.mf6.ModflowGwfsto(gwf, iconvert=1)
 
     stress_period_data = {
         i: [[(0, 4, 4), -100.], [(0, 9, 9), -100.], [(0, 6, 6), -50.]] for i in range(12)
     }
-    wel = fp.mf6.ModflowGwfwel(gwf, stress_period_data=stress_period_data)
+    wel = flopy.mf6.ModflowGwfwel(gwf, stress_period_data=stress_period_data)
 
     # create RCH and EVT packages from DAVIS monthly average CIMIS data
     cimis_data = os.path.join("..", "data", "davis_monthly_ppt_eto.txt")
     df = pd.read_csv(cimis_data)
 
-    recharge = {i: v / perlen[i] for i, v in enumerate(df.ppt_avg_m.values)}
-    rch = fp.mf6.ModflowGwfrcha(gwf, recharge=recharge)
+    # recharge = {i: v / perlen[i] for i, v in enumerate(df.ppt_avg_m.values)}
+    # rch = flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
 
-    surface = {i: 100 for i in range(12)}
-    eto = {i: v / perlen[i] for i, v in enumerate(df.eto_avg_m.values)}
-    depth = {i: 3 for i in range(12)}
-    evt = fp.mf6.ModflowGwfevta(gwf, surface=surface, rate=eto, depth=depth)
+    # surface = {i: 100 for i in range(12)}
+    # eto = {i: v / perlen[i] for i, v in enumerate(df.eto_avg_m.values)}
+    # depth = {i: 3 for i in range(12)}
+    # evt = flopy.mf6.ModflowGwfevta(gwf, surface=surface, rate=eto, depth=depth)
 
     # build a UZF package
     nuzfcells = 100
@@ -97,7 +96,7 @@ def create_test_model(name):
                 cnt += 1
         period_data[i] = spd
 
-    uzf = fp.mf6.ModflowGwfuzf(
+    uzf = flopy.mf6.ModflowGwfuzf(
         gwf,
         simulate_et=True,
         nuzfcells=nuzfcells,
@@ -154,7 +153,7 @@ def create_test_model(name):
         i: [(0, "INFLOW", 8),  (6, "DIVERSION", 0, 10)] for i in range(12)
     }
 
-    sfr = fp.mf6.ModflowGwfsfr(gwf,
+    sfr = flopy.mf6.ModflowGwfsfr(gwf,
                                nreaches=nreaches,
                                packagedata=package_data,
                                connectiondata=connection_data,
@@ -165,7 +164,7 @@ def create_test_model(name):
     head_file = f"{name}.hds"
     saverecord = {i: [("HEAD", "ALL"), ("BUDGET", "ALL")] for i in range(10)}
     printrecord = {i: [("HEAD", "ALL"), ("BUDGET", "ALL")] for i in range(10)}
-    oc = fp.mf6.ModflowGwfoc(gwf,
+    oc = flopy.mf6.ModflowGwfoc(gwf,
                              budget_filerecord=budget_file,
                              head_filerecord=head_file,
                              saverecord=saverecord,
@@ -205,15 +204,14 @@ def create_ag_package_etdemand():
     irrwell = {}
     for i in range(12):
         spd = flopy.modflow.ModflowAg.get_empty(1, 2, "irrwell")
-        # todo: update the triggerfact and period parameters
-        spd[0] = (0, 2, 0, 1, 4, 4, 0, 0.5, 5, 4, 0, 0.5)
+        spd[0] = (0, 2, 10, 0.0, 4, 4, 0, 0.5, 5, 4, 0, 0.5)
         irrwell[i] = spd
 
     irrdiversion = {}
     for i in range(12):
         spd = flopy.modflow.ModflowAg.get_empty(1, 2, "irrdiversion")
         # todo: update triggerfact and period parameters
-        spd[0] = (1, 2, 0, 0, 6, 6, 0, 0.5, 7, 6, 0, 0.5)
+        spd[0] = (1, 2, 10, 0.0, 6, 6, 0, 0.5, 7, 6, 0, 0.5)
         irrdiversion[i] = spd
 
     supwell = {}
@@ -265,13 +263,13 @@ def create_ag_package_trigger():
     irrwell = {}
     for i in range(12):
         spd = flopy.modflow.ModflowAg.get_empty(1, 2, "irrwell")
-        spd[0] = (0, 2, 0, 1, 4, 4, 0, 0.5, 5, 4, 0, 0.5)
+        spd[0] = (0, 2, 10, 0.1, 4, 4, 0, 0.5, 5, 4, 0, 0.5)
         irrwell[i] = spd
 
     irrdiversion = {}
     for i in range(12):
         spd = flopy.modflow.ModflowAg.get_empty(1, 2, "irrdiversion")
-        spd[0] = (1, 2, 0, 0, 6, 6, 0, 0.5, 7, 6, 0, 0.5)
+        spd[0] = (1, 2, 10, 0.1, 6, 6, 0, 0.5, 7, 6, 0, 0.5)
         irrdiversion[i] = spd
 
     supwell = {}
@@ -363,15 +361,15 @@ class Modflow6Ag(object):
     def create_addresses(self, mf6):
         sto_name = self.gwf.sto.name[0].upper()
         dis_name = self.gwf.dis.name[0].upper()
-        try:
-            rch_name = self.gwf.rcha.name[0].upper()
-        except AttributeError:
-            rch_name = self.gwf.rch.name[0].upper()
+        # try:
+        #     rch_name = self.gwf.rcha.name[0].upper()
+        # except AttributeError:
+        #     rch_name = self.gwf.rch.name[0].upper()
 
-        try:
-            evt_name = self.gwf.evta.name[0].upper()
-        except AttributeError:
-            evt_name = self.gwf.evt.name[0].upper()
+        # try:
+        #     evt_name = self.gwf.evta.name[0].upper()
+        # except AttributeError:
+        #     evt_name = self.gwf.evt.name[0].upper()
 
         try:
             uzf_name = self.gwf.uzf.name[0].upper()
@@ -409,8 +407,8 @@ class Modflow6Ag(object):
         self.well_node_addr = mf6.get_var_address(
             "NODELIST", self.name, "WEL_0"
         )
-        self.rch_addr = mf6.get_var_address("BOUND", self.name, rch_name)
-        self.evt_addr = mf6.get_var_address("BOUND", self.name, evt_name)
+        # self.rch_addr = mf6.get_var_address("BOUND", self.name, rch_name)
+        # self.evt_addr = mf6.get_var_address("BOUND", self.name, evt_name)
         self.head_addr = mf6.get_var_address("X", self.name)
         if uzf_name is not None:
             self.area_addr = mf6.get_var_address("UZFAREA", self.name, uzf_name)
@@ -673,14 +671,14 @@ class Modflow6Ag(object):
         #   and irrigation return flows due to ineficiency...
         pumping = np.where(factor > np.abs(self.well_max_q[self.irrwell_num]),
                            np.abs(self.well_max_q[self.irrwell_num]),
-                           factor)
+                           -1 * factor)
 
         wells = mf6.get_value(self.well_addr)
         wells[self.irrwell_num] = pumping
         mf6.set_value(self.well_addr, wells)
         return factor
 
-    def suplemental_pumping(self, mf6, conj_demand, divflow):
+    def suplemental_pumping(self, mf6, conj_demand, divflow, delt=1):
         """
         Method to calculate suplemental pumping in a conjuctive use
         scenario
@@ -704,13 +702,13 @@ class Modflow6Ag(object):
         sup_demand = np.where(sup_demand > 0, sup_demand, 0)
 
         if self.trigger:
-            sup_demand = np.where(self.sfr_timeinperiod < self.sfr_irrperiod,
+            sup_demand = np.where(self.sfr_timeinperiod - delt < self.sfr_irrperiod,
                                   sup_demand,
                                   0)
 
-        sup_pump = np.where(sup_demand > np.abs(self.well_max_q[self.irrwell_num]),
-                            np.abs(self.well_max_q[self.irrwell_num]),
-                            sup_demand)
+        sup_pump = np.where(sup_demand > np.abs(self.well_max_q[self.supwell_num]),
+                            np.abs(self.well_max_q[self.supwell_num]),
+                            -1 * sup_demand)
 
         return sup_pump
 
@@ -772,26 +770,26 @@ class Modflow6Ag(object):
             crop_aet[ix] = np.sum((crop_gwet + crop_uzet))
 
         demand[self.irrdiversion_num] = crop_pet - crop_aet
+        demand = np.where(np.isnan(demand), 0, demand)
 
         factor = np.where(crop_pet > 1e-30,
                           crop_aet / crop_pet,
                           1)
 
         mask = np.where((self.sfr_timeinperiod > self.sfr_irrperiod) &
-                        (factor <= self.sfr_triggerfact))
+                        (factor <= self.sfr_triggerfact),
+                        True,
+                        False)
 
         self.sfr_timeinperiod[mask] = 0
-        dvflw = np.where(mask,
-                         self.sfr_max_q,
-                         0)
 
         dvflw = np.where(self.sfr_timeinperiod - delt < self.sfr_irrperiod,
-                         self.sfr_max_q[self.irrdiversion_num],
+                         demand[self.irrdiversion_num],
                          0)
 
-        dvflw = np.where(demand[self.irrdiversion_num] > self.sfr_max_q[self.irrdiversion_num],
-                         self.sfr_max_q[self.irrdiversion_num,
-                         dvflw])
+        dvflw = np.where(dvflw > self.sfr_max_q[self.irrdiversion_num],
+                         self.sfr_max_q[self.irrdiversion_num],
+                         dvflw)
 
         div_info = self.div_info[self.irrdiversion_num]
         fmaxflow = dsflow[div_info["rno"]]
@@ -836,20 +834,19 @@ class Modflow6Ag(object):
                           1)
 
         mask = np.where((self.well_timeinperiod > self.well_irrperiod) &
-                        (factor <= self.well_triggerfact))
+                        (factor <= self.well_triggerfact),
+                        True,
+                        False)
 
         self.well_timeinperiod[mask] = 0
-        pumpage = np.where(mask,
-                          demand,
-                          0)
 
         pumpage = np.where(self.well_timeinperiod - delt < self.well_irrperiod,
                            demand,
                            0)
 
-        pumpage = np.where(pumpage > self.well_max_q[self.irrwell_num],
+        pumpage = np.where(pumpage > np.abs(self.well_max_q[self.irrwell_num]),
                            self.well_max_q[self.irrwell_num],
-                           pumpage)
+                           -1 * pumpage)
 
         wells = mf6.get_value(self.well_addr)
         wells[self.irrwell_num] = pumpage
@@ -1009,8 +1006,12 @@ class Modflow6Ag(object):
 
                 mf6.finalize_solve(sol_id)
 
-                # todo: update time in seg and
+                self.sfr_timeinperiod = np.where(self.sfr_timeinperiod - delt < self.sfr_irrperiod,
+                                                 self.sfr_timeinperiod + delt,
+                                                 self.sfr_timeinperiod)
 
+                # todo: update time in seg and
+            print(conj_demand)
             sup_p.append(sup_demand)
             div.append(divflow)
             pumping.append(conj_demand)
@@ -1030,7 +1031,7 @@ class Modflow6Ag(object):
             raise RuntimeError()
 
         print(f"sfr demand 2-ac almonds {np.sum(div) * 0.000810714 :.2f}")
-        print(f"conjunctive_demand 2-ac almonds {np.sum(pumping) * 0.000810714 :.2f}")
+        print(f"conjunctive_demand 2-ac almonds {np.nansum(pumping) * 0.000810714 :.2f}")
         print(f"supplemental pumping demand 2-ac almonds {np.sum(sup_p) * 0.000810714 :.2f}")
         print(f"gw_demand 2-ac almonds {np.sum(pumping2) * 0.000810714 :.2f}")
         return success
@@ -1042,6 +1043,6 @@ if __name__ == "__main__":
     ag = create_ag_package_etdemand()
     ag2 = create_ag_package_trigger()
 
-    mf6ag = Modflow6Ag(sim, ag)
+    mf6ag = Modflow6Ag(sim, ag2)
     mf6ag.run_model(dll, )
 
