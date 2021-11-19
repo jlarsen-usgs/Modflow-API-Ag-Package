@@ -416,6 +416,10 @@ class Modflow6Ag(object):
             self.pet_addr = mf6.get_var_address("PET", self.name, uzf_name)
             self.uzet_addr = mf6.get_var_address("UZET", self.name, uzf_name)
             self.uz_gwet_addr = mf6.get_var_address("GWET", self.name, uzf_name)
+            self.uz_rhs_addr = mf6.get_var_address("RHS", self.name, uzf_name)
+            self.uz_finf_addr = mf6.get_var_address("FINF", self.name, uzf_name)
+            self.uz_sinf_addr = mf6.get_var_address("SINF", self.name, uzf_name)
+            self.uz_hcof_addr = mf6.get_var_address("HCOF", self.name, uzf_name)
         if sfr_name is not None:
             self.sfr_divflow_addr = mf6.get_var_address("DIVFLOW", self.name, sfr_name)
             self.sfr_dsflow_addr = mf6.get_var_address("DSFLOW", self.name, sfr_name)
@@ -853,7 +857,7 @@ class Modflow6Ag(object):
         mf6.set_value(self.well_addr, wells)
         return pumpage
 
-    def apply_efficiency_factors(self, mf6, pumpage, divflow, sup_pump):
+    def apply_efficiency_factors(self, mf6, finfold, pumpage=None, divflow=None, sup_pump=None):
         """
         Method to apply efficiency factors to diversion calculations
 
@@ -866,11 +870,13 @@ class Modflow6Ag(object):
             numpy array of diversion values from diversion segments
         sup_pump : np.ndarray, None
             numpy array of supplemental pumping values from wells
+        finfold : np.ndarray
         """
         area = mf6.get_value(self.area_addr)
+        finf = mf6.get_value(self.uz_finf_addr)
 
         return_rates = np.zeros((self.gwf.modelgrid.ncpl,))
-        if pumpage is not None:
+        if pumpage is not None and pumpage:
             for ix, record in enumerate(self.irrwell):
                 crop_nodes = record["node"]
                 eff_fact = record['eff_fact']
@@ -879,9 +885,10 @@ class Modflow6Ag(object):
                 vol = np.ones((len(crop_nodes),)) * pumpage[ix] / len(crop_nodes)
                 subvol = ((1 - eff_fact) * vol * field_fact)
                 return_rate = (vol - subvol)/crop_area
-                return_rates[crop_nodes] += return_rate
+                subrate = subvol / crop_area
+                return_rates[crop_nodes] += (-1 * return_rate)
 
-        if divflow is not None:
+        if divflow is not None and divflow:
             for ix, record in enumerate(self.irrdiversion):
                 crop_nodes = record["node"]
                 eff_fact = record['eff_fact']
@@ -889,24 +896,38 @@ class Modflow6Ag(object):
                 crop_area = area[crop_nodes]
                 vol = np.ones((len(crop_nodes),)) * divflow[ix] / len(crop_nodes)
                 subvol = ((1 - eff_fact) * vol * field_fact)
+                subrate = subvol / crop_area
                 return_rate = (vol - subvol) / crop_area
                 return_rates[crop_nodes] += return_rate
 
-            if sup_pump is not None:
+            if sup_pump is not None and sup_pump:
                 for ix, record in enumerate(self.supwell):
                     segid = record['segid']
                     for seg in segid:
                         idx = np.where(self.irrdiversion_num == seg)[0]
-                        irr_record = self.irrdiversion[idx]
-                        crop_nodes = irr_record["node"]
-                        eff_fact = irr_record['eff_fact']
-                        field_fact = irr_record['field_fact']
-                        crop_area = area[crop_nodes]
+                        for idxx in idx:
+                            irr_record = self.irrdiversion[idxx]
+                            crop_nodes = irr_record["node"]
+                            eff_fact = irr_record['eff_fact']
+                            field_fact = irr_record['field_fact']
+                            crop_area = area[crop_nodes]
 
-                        vol = np.ones((len(crop_nodes),)) * sup_pump[ix] / len(crop_nodes)
-                        subvol = ((1 - eff_fact) * vol * field_fact)
-                        return_rate = (vol - subvol) / crop_area
-                        return_rates[crop_nodes] += return_rate
+                            vol = np.ones((len(crop_nodes),)) * sup_pump[ix] / len(crop_nodes)
+                            subvol = ((1 - eff_fact) * vol * field_fact)
+                            return_rate = (vol - subvol) / crop_area
+                            subrate = subvol / crop_area
+                            return_rates[crop_nodes] += (-1 * return_rate)
+
+        finfold += return_rates
+
+        nfinf = finf * finfold / (finfold - finf)
+        nfinf = np.where(np.isinf(nfinf),
+                        finf,
+                        nfinf)
+
+        print(np.min(finf), np.max(finf))
+        print(np.min(nfinf), np.max(nfinf))
+        #mf6.set_value(self.uz_finf_addr, nfinf)
 
         return return_rates
 
@@ -977,6 +998,7 @@ class Modflow6Ag(object):
             for sol_id in range(1, n_solutions + 1):
 
                 mf6.prepare_solve(sol_id)
+                finfold = mf6.get_value(self.uz_finf_addr).copy()
                 while kiter < max_iter:
                     if self.etdemand:
                         if self.sim_wells:
@@ -999,6 +1021,15 @@ class Modflow6Ag(object):
                         pass
 
                     # todo: think about where to add in the irrigation return flows (UZF or to X)!!!!
+                    #   for GW pumpage no need for irr return, we can just reset pumpage to
+                    #   a smaller value. Looking at the UZF stuff it looks like we add calculated
+                    #   sw stuff to finfhold (old finf) and then let the UZF solver do it's thing
+
+                    # todo: my suspicion confirmed, when we have inefficiency then it gets stored
+                    #   in the UZF finf and is used in the AET computation, effectively reducing
+                    #   the amount of pumpage. This does not make logical sense to me. Ask Rich!
+                    # self.apply_efficiency_factors(mf6, finfold, pumping, divflow, sup_demand)
+
                     has_converged = mf6.solve(sol_id)
                     kiter += 1
                     if has_converged:
