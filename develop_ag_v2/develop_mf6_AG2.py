@@ -275,7 +275,7 @@ def create_ag_package_trigger():
     supwell = {}
     for i in range(12):
         spd = flopy.modflow.ModflowAg.get_empty(1, 1, "supwell")
-        spd[0] = (2, 1, 1, 0.9, 1)
+        spd[0] = (2, 1, 1, 1, 1)
         supwell[i] = spd
 
     ag = flopy.modflow.ModflowAg(
@@ -546,7 +546,7 @@ class Modflow6Ag(object):
         self.supwell_num = self.ag.supwell[kper]['wellid']
         self.supwell = self.__fmt_supwell_spd(self.ag.supwell, kper)
 
-    def conjuctive_demand_uzf(self, mf6, delt=1, kiter=1):
+    def conjuctive_demand_etdemand(self, mf6, delt=1, kiter=1):
         """
         Method to determine conjunctive use demand
 
@@ -623,7 +623,7 @@ class Modflow6Ag(object):
 
         return out_factor, divflow
 
-    def gw_demand_uzf(self, mf6, delt=1, kiter=1):
+    def gw_demand_etdemand(self, mf6, delt=1, kiter=1):
         """
         Method to determine groundwater use demand
 
@@ -671,8 +671,6 @@ class Modflow6Ag(object):
 
         factor = np.where(factor > crop_vks, crop_vks, factor)
 
-        # todo: need to move this and calculate ineficiency!!!!
-        #   and irrigation return flows due to ineficiency...
         pumping = np.where(factor > np.abs(self.well_max_q[self.irrwell_num]),
                            np.abs(self.well_max_q[self.irrwell_num]),
                            -1 * factor)
@@ -695,7 +693,7 @@ class Modflow6Ag(object):
         divflow : np.ndarray
             diversion flow volume
         """
-        # todo: check that this is actually correct. not sure that it is...
+        # todo: check that this completely actually correct. not sure that it is...
         sup_demand = np.zeros((len(self.supwell_num),))
         for ix, well in enumerate(self.supwell):
             segid = well['segid']
@@ -748,7 +746,7 @@ class Modflow6Ag(object):
 
         return factor
 
-    def sw_demand_trigger(self, mf6, delt=1):
+    def conjunctive_demand(self, mf6, delt=1):
         """
         Method to calculate triggered surface water demand.
 
@@ -765,7 +763,6 @@ class Modflow6Ag(object):
 
         crop_pet = np.zeros((len(self.irrdiversion_num),))
         crop_aet = np.zeros((len(self.irrdiversion_num),))
-        demand = np.zeros((len(self.sfr_max_q),))
         for ix, record in enumerate(self.irrdiversion):
             crop_nodes = record["node"]
             crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
@@ -773,27 +770,25 @@ class Modflow6Ag(object):
             crop_gwet = gwet[crop_nodes]
             crop_aet[ix] = np.sum((crop_gwet + crop_uzet))
 
-        demand[self.irrdiversion_num] = crop_pet - crop_aet
-        demand = np.where(np.isnan(demand), 0, demand)
+        demand = self.sfr_max_q
 
-        factor = np.where(crop_pet > 1e-30,
-                          crop_aet / crop_pet,
-                          1)
+        if self.trigger:
+            factor = np.where(crop_pet > 1e-30,
+                              crop_aet / crop_pet,
+                              1)
 
-        mask = np.where((self.sfr_timeinperiod > self.sfr_irrperiod) &
-                        (factor <= self.sfr_triggerfact),
-                        True,
-                        False)
+            mask = np.where((self.sfr_timeinperiod > self.sfr_irrperiod) &
+                            (factor <= self.sfr_triggerfact),
+                            True,
+                            False)
 
-        self.sfr_timeinperiod[mask] = 0
+            self.sfr_timeinperiod[mask] = 0
 
-        dvflw = np.where(self.sfr_timeinperiod - delt < self.sfr_irrperiod,
-                         demand[self.irrdiversion_num],
-                         0)
-
-        dvflw = np.where(dvflw > self.sfr_max_q[self.irrdiversion_num],
-                         self.sfr_max_q[self.irrdiversion_num],
-                         dvflw)
+            dvflw = np.where(self.sfr_timeinperiod - delt < self.sfr_irrperiod,
+                             demand[self.irrdiversion_num],
+                             0)
+        else:
+            dvflw = demand[self.irrdiversion_num]
 
         div_info = self.div_info[self.irrdiversion_num]
         fmaxflow = dsflow[div_info["rno"]]
@@ -806,7 +801,7 @@ class Modflow6Ag(object):
 
         return demand, divflow
 
-    def gw_demand_trigger(self,  mf6, delt):
+    def gw_demand(self, mf6, delt):
         """
         Method to calculate pumping demand from groundwater using
         the trigger option
@@ -831,26 +826,25 @@ class Modflow6Ag(object):
             crop_gwet = gwet[crop_nodes]
             crop_aet[ix] = np.sum((crop_gwet + crop_uzet))
 
-        demand = crop_pet - crop_aet
+        demand = self.well_max_q[self.irrwell_num]
 
-        factor = np.where(crop_pet > 1e-30,
-                          crop_aet/crop_pet,
-                          1)
+        if self.trigger:
+            factor = np.where(crop_pet > 1e-30,
+                              crop_aet/crop_pet,
+                              1)
 
-        mask = np.where((self.well_timeinperiod > self.well_irrperiod) &
-                        (factor <= self.well_triggerfact),
-                        True,
-                        False)
+            mask = np.where((self.well_timeinperiod > self.well_irrperiod) &
+                            (factor <= self.well_triggerfact),
+                            True,
+                            False)
 
-        self.well_timeinperiod[mask] = 0
+            self.well_timeinperiod[mask] = 0
 
-        pumpage = np.where(self.well_timeinperiod - delt < self.well_irrperiod,
-                           demand,
-                           0)
-
-        pumpage = np.where(pumpage > np.abs(self.well_max_q[self.irrwell_num]),
-                           self.well_max_q[self.irrwell_num],
-                           -1 * pumpage)
+            pumpage = np.where(self.well_timeinperiod - delt < self.well_irrperiod,
+                               demand,
+                               0)
+        else:
+            pumpage = demand
 
         wells = mf6.get_value(self.well_addr)
         wells[self.irrwell_num] = pumpage
@@ -873,7 +867,7 @@ class Modflow6Ag(object):
         finfold : np.ndarray
         """
         area = mf6.get_value(self.area_addr)
-        finf = mf6.get_value(self.uz_finf_addr)
+        # finf = mf6.get_value(self.uz_finf_addr)
 
         return_rates = np.zeros((self.gwf.modelgrid.ncpl,))
         if pumpage is not None and pumpage:
@@ -885,7 +879,6 @@ class Modflow6Ag(object):
                 vol = np.ones((len(crop_nodes),)) * pumpage[ix] / len(crop_nodes)
                 subvol = ((1 - eff_fact) * vol * field_fact)
                 return_rate = (vol - subvol)/crop_area
-                subrate = subvol / crop_area
                 return_rates[crop_nodes] += (-1 * return_rate)
 
         if divflow is not None and divflow:
@@ -896,7 +889,6 @@ class Modflow6Ag(object):
                 crop_area = area[crop_nodes]
                 vol = np.ones((len(crop_nodes),)) * divflow[ix] / len(crop_nodes)
                 subvol = ((1 - eff_fact) * vol * field_fact)
-                subrate = subvol / crop_area
                 return_rate = (vol - subvol) / crop_area
                 return_rates[crop_nodes] += return_rate
 
@@ -915,19 +907,10 @@ class Modflow6Ag(object):
                             vol = np.ones((len(crop_nodes),)) * sup_pump[ix] / len(crop_nodes)
                             subvol = ((1 - eff_fact) * vol * field_fact)
                             return_rate = (vol - subvol) / crop_area
-                            subrate = subvol / crop_area
                             return_rates[crop_nodes] += (-1 * return_rate)
 
-        finfold += return_rates
-
-        nfinf = finf * finfold / (finfold - finf)
-        nfinf = np.where(np.isinf(nfinf),
-                        finf,
-                        nfinf)
-
-        print(np.min(finf), np.max(finf))
-        print(np.min(nfinf), np.max(nfinf))
-        #mf6.set_value(self.uz_finf_addr, nfinf)
+        finf = finfold + return_rates
+        mf6.set_value(self.uz_finf_addr, finf)
 
         return return_rates
 
@@ -1002,33 +985,22 @@ class Modflow6Ag(object):
                 while kiter < max_iter:
                     if self.etdemand:
                         if self.sim_wells:
-                            well_demand = self.gw_demand_uzf(mf6, delt, kiter)
+                            well_demand = self.gw_demand_etdemand(mf6, delt, kiter)
                         if self.sim_diversions:
-                            conj_demand, divflow = self.conjuctive_demand_uzf(mf6, delt, kiter)
+                            conj_demand, divflow = self.conjuctive_demand_etdemand(mf6, delt, kiter)
                             if self.sim_supplemental:
                                 sup_demand = self.suplemental_pumping(mf6, conj_demand, divflow)
 
-                    elif self.trigger:
-                        if self.sim_wells:
-                            well_demand = self.gw_demand_trigger(mf6, delt)
-                        if self.sim_diversions:
-                            conj_demand, divflow = self.sw_demand_trigger(mf6, delt)
-                            if self.sim_supplemental:
-                                sup_demand = self.suplemental_pumping(mf6, conj_demand, divflow)
                     else:
-                        # todo: this should be straight-forward demand calculation
-                        #   based on the ET-Deficit....
-                        pass
+                        well_demand, divflow, sup_demand = None, None, None
+                        if self.sim_wells:
+                            well_demand = self.gw_demand(mf6, delt)
+                        if self.sim_diversions:
+                            conj_demand, divflow = self.conjunctive_demand(mf6, delt)
+                            if self.sim_supplemental:
+                                sup_demand = self.suplemental_pumping(mf6, conj_demand, divflow)
 
-                    # todo: think about where to add in the irrigation return flows (UZF or to X)!!!!
-                    #   for GW pumpage no need for irr return, we can just reset pumpage to
-                    #   a smaller value. Looking at the UZF stuff it looks like we add calculated
-                    #   sw stuff to finfhold (old finf) and then let the UZF solver do it's thing
-
-                    # todo: my suspicion confirmed, when we have inefficiency then it gets stored
-                    #   in the UZF finf and is used in the AET computation, effectively reducing
-                    #   the amount of pumpage. This does not make logical sense to me. Ask Rich!
-                    # self.apply_efficiency_factors(mf6, finfold, pumping, divflow, sup_demand)
+                        self.apply_efficiency_factors(mf6, finfold, well_demand, divflow, sup_demand)
 
                     has_converged = mf6.solve(sol_id)
                     kiter += 1
@@ -1041,8 +1013,11 @@ class Modflow6Ag(object):
                                                  self.sfr_timeinperiod + delt,
                                                  self.sfr_timeinperiod)
 
-                # todo: update time in seg and
-            print(conj_demand)
+                self.well_timeinperiod = np.where(self.well_timeinperiod - delt < self.well_irrperiod,
+                                                  self.well_timeinperiod + delt,
+                                                  self.well_timeinperiod)
+
+            print(well_demand)
             sup_p.append(sup_demand)
             div.append(divflow)
             pumping.append(conj_demand)
@@ -1061,10 +1036,10 @@ class Modflow6Ag(object):
         except:
             raise RuntimeError()
 
-        print(f"sfr demand 2-ac almonds {np.sum(div) * 0.000810714 :.2f}")
         print(f"conjunctive_demand 2-ac almonds {np.nansum(pumping) * 0.000810714 :.2f}")
-        print(f"supplemental pumping demand 2-ac almonds {np.sum(sup_p) * 0.000810714 :.2f}")
-        print(f"gw_demand 2-ac almonds {np.sum(pumping2) * 0.000810714 :.2f}")
+        print(f"sfr use 2-ac almonds {np.sum(div) * 0.000810714 :.2f}")
+        print(f"supplemental pumping use 2-ac almonds {np.sum(sup_p) * 0.000810714 :.2f}")
+        print(f"gw pumping 2-ac almonds {np.sum(pumping2) * 0.000810714 :.2f}")
         return success
 
 
@@ -1074,6 +1049,10 @@ if __name__ == "__main__":
     ag = create_ag_package_etdemand()
     ag2 = create_ag_package_trigger()
 
-    mf6ag = Modflow6Ag(sim, ag2)
+    mf6ag = Modflow6Ag(sim, ag)
     mf6ag.run_model(dll, )
 
+    # todo: create methods to store and write
+    #  demands, pumpage, sfr, and diversions
+
+    # todo: setup tests for MF6 AG package (compare to mf-nwt AG1).
