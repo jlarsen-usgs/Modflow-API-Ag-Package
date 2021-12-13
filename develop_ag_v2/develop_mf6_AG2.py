@@ -322,10 +322,12 @@ class Modflow6Ag(object):
 
         self.sim_supplemental = self.ag.supplemental_well
         self.numsupwell = self.ag.numsupwells
+        self.irrigation_return = []
 
         if self.sim_wells:
             self.well_max_q = np.zeros((self.nummaxwell,))
-            self.well_q = np.zeros((self.nsteps, self.nummaxwell))
+            self.well_out = np.zeros((self.nsteps, self.nummaxwell))
+            self.well_demand_out = np.zeros((self.nsteps, self.nummaxwell))
             self._sup = np.zeros((self.nummaxwell,))
             self._supold = np.zeros((self.nummaxwell,))
             self.irrwell_num = None
@@ -338,7 +340,8 @@ class Modflow6Ag(object):
             self.div_info = self.gwf.sfr.diversions.array
             self.div_info.sort(order='idv', axis=0)
             self.sfr_max_q = np.zeros((self.numirrdiversion,))
-            self.sfr_q = np.zeros((self.nsteps, self.numirrdiversion))
+            self.sfr_out = np.zeros((self.nsteps, self.numirrdiversion))
+            self.sfr_demand_out = np.zeros((self.nsteps, self.numirrdiversion))
             self._idsup = np.zeros((self.numirrdiversion,))
             self._idsupold = np.zeros((self.numirrdiversion,))
             if self.trigger:
@@ -623,7 +626,7 @@ class Modflow6Ag(object):
 
         return out_factor, divflow
 
-    def gw_demand_etdemand(self, mf6, delt=1, kiter=1):
+    def gw_demand_etdemand(self, mf6, kstp, delt=1, kiter=1):
         """
         Method to determine groundwater use demand
 
@@ -677,10 +680,12 @@ class Modflow6Ag(object):
 
         wells = mf6.get_value(self.well_addr)
         wells[self.irrwell_num] = pumping
+        self.well_out[kstp, self.irrwell_num] = pumping
+        self.well_demand_out[kstp, self.irrwell_num] = factor
         mf6.set_value(self.well_addr, wells)
-        return factor
+        return pumping
 
-    def suplemental_pumping(self, mf6, conj_demand, divflow, delt=1):
+    def supplemental_pumping(self, mf6, conj_demand, divflow, kstp, delt=1.):
         """
         Method to calculate suplemental pumping in a conjuctive use
         scenario
@@ -692,8 +697,10 @@ class Modflow6Ag(object):
             crop demand for conjunctive use
         divflow : np.ndarray
             diversion flow volume
+        kstp : int
+            time step
         """
-        # todo: check that this completely actually correct. not sure that it is...
+        # todo: check that this completely correct. not sure that the dimesnsionalization is...
         sup_demand = np.zeros((len(self.supwell_num),))
         for ix, well in enumerate(self.supwell):
             segid = well['segid']
@@ -712,6 +719,12 @@ class Modflow6Ag(object):
                             np.abs(self.well_max_q[self.supwell_num]),
                             -1 * sup_demand)
 
+        # todo: need a smart way to apply sup!
+        wells = mf6.get_value(self.well_addr)
+        wells[self.supwell_num] = sup_pump
+        self.well_demand_out[kstp, self.supwell_num] = sup_pump
+        self.well_out[kstp, self.supwell_num] = sup_pump
+        mf6.set_value(self.well_addr, wells)
         return sup_pump
 
     def __calculate_factor(self, crop_pet, crop_aet, aetold, sup, supold, kiter, accel=1):
@@ -801,7 +814,7 @@ class Modflow6Ag(object):
 
         return demand, divflow
 
-    def gw_demand(self, mf6, delt):
+    def gw_demand(self, mf6, kstp, delt):
         """
         Method to calculate pumping demand from groundwater using
         the trigger option
@@ -809,6 +822,7 @@ class Modflow6Ag(object):
         Parameters
         ----------
         mf6 : modflowApi object
+        kstp : int
         delt : float
             timestep length
         """
@@ -848,6 +862,8 @@ class Modflow6Ag(object):
 
         wells = mf6.get_value(self.well_addr)
         wells[self.irrwell_num] = pumpage
+        self.well_out[kstp, self.irrwell_num] = pumpage
+        self.well_demand_out[kstp, self.irrwell_num] = demand
         mf6.set_value(self.well_addr, wells)
         return pumpage
 
@@ -915,11 +931,6 @@ class Modflow6Ag(object):
         return return_rates
 
     def run_model(self, dll,):
-        # todo: or alternatively, we can the well_list from a modflow WEL package
-        # todo: after creating, break up the parts of the inner loop into
-        #   stand alone functions that can be added to another run model function
-        #   this will allow a user to add additional functionality and/or
-        #   other packages to the DLL loop.
         mf6 = ModflowApi(dll)
         mf6.initialize()
         prev_time = 0
@@ -938,7 +949,7 @@ class Modflow6Ag(object):
                 foo.write(f"{i}\n")
 
         self.create_addresses(mf6)
-        # todo: add this to the create_addresses routine
+        # todo: maybe add this to the create_addresses routine
         max_iter = mf6.get_value(mf6.get_var_address("MXITER", "SLN_1"))
 
         # prepare the iteration loops
@@ -985,20 +996,20 @@ class Modflow6Ag(object):
                 while kiter < max_iter:
                     if self.etdemand:
                         if self.sim_wells:
-                            well_demand = self.gw_demand_etdemand(mf6, delt, kiter)
+                            well_demand = self.gw_demand_etdemand(mf6, kstp, delt, kiter)
                         if self.sim_diversions:
                             conj_demand, divflow = self.conjuctive_demand_etdemand(mf6, delt, kiter)
                             if self.sim_supplemental:
-                                sup_demand = self.suplemental_pumping(mf6, conj_demand, divflow)
+                                sup_demand = self.supplemental_pumping(mf6, conj_demand, divflow, kstp, delt)
 
                     else:
                         well_demand, divflow, sup_demand = None, None, None
                         if self.sim_wells:
-                            well_demand = self.gw_demand(mf6, delt)
+                            well_demand = self.gw_demand(mf6, kstp, delt)
                         if self.sim_diversions:
                             conj_demand, divflow = self.conjunctive_demand(mf6, delt)
                             if self.sim_supplemental:
-                                sup_demand = self.suplemental_pumping(mf6, conj_demand, divflow)
+                                sup_demand = self.supplemental_pumping(mf6, conj_demand, divflow, kstp, delt)
 
                         self.apply_efficiency_factors(mf6, finfold, well_demand, divflow, sup_demand)
 
@@ -1049,10 +1060,13 @@ if __name__ == "__main__":
     ag = create_ag_package_etdemand()
     ag2 = create_ag_package_trigger()
 
-    mf6ag = Modflow6Ag(sim, ag)
+    mf6ag = Modflow6Ag(sim, ag2)
     mf6ag.run_model(dll, )
 
     # todo: create methods to store and write
     #  demands, pumpage, sfr, and diversions
 
     # todo: setup tests for MF6 AG package (compare to mf-nwt AG1).
+    # todo: create methods that allow this class to be used by other
+    #   driver classes (ie. let it be called by another class, but
+    #   still be able to perform the setup etc....
