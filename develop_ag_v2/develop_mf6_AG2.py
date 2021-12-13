@@ -332,8 +332,6 @@ class Modflow6Ag(object):
             self._supold = np.zeros((self.nummaxwell,))
             self.irrwell_num = None
             self.irrwell = None
-            self.well_irrperiod = None
-            self.well_timeinperiod = None
             self.well_triggerfact = None
 
         if self.sim_diversions:
@@ -344,11 +342,7 @@ class Modflow6Ag(object):
             self.sfr_demand_out = np.zeros((self.nsteps, self.numirrdiversion))
             self._idsup = np.zeros((self.numirrdiversion,))
             self._idsupold = np.zeros((self.numirrdiversion,))
-            if self.trigger:
-                self.sfr_timeinperiod = None
-                self.sfr_irrperiod = None
 
-            self.sfr_irrperiod = None
             self.sfr_irrtrigger = None
             self.sfr_irrtriggerflg = None
             self.irrdiversion_num = None
@@ -358,8 +352,13 @@ class Modflow6Ag(object):
             self.supwell_num = None
             self.supwell = None
 
-        # todo: if sfr get the diversions block and get DSFLOW from
-        #   the segment connected to the diversion!!!!
+        # set these here as placeholders to avoid if statements in run loop.
+        self.well_irrperiod = np.zeros((1,))
+        self.well_timeinperiod = np.ones((1,)) * 1e+30
+
+        self.sfr_irrperiod = np.zeros((1,), )
+        self.sfr_timeinperiod = np.ones((1,)) * 1e+30
+
 
     def create_addresses(self, mf6):
         sto_name = self.gwf.sto.name[0].upper()
@@ -532,8 +531,8 @@ class Modflow6Ag(object):
             stress period number (zero based)
         """
         self.irrdiversion_num = self.ag.irrdiversion[kper]['segid'] - 1
-        self.sfr_irrperiod = self.ag.irrwell[kper]['period']
-        self.sfr_triggerfact = self.ag.irrwell[kper]['triggerfact']
+        self.sfr_irrperiod = self.ag.irrdiversion[kper]['period']
+        self.sfr_triggerfact = self.ag.irrdiversion[kper]['triggerfact']
         self.sfr_timeinperiod = np.ones(self.well_irrperiod.size) * 1e+30
         self.irrdiversion = self.__fmt_irr_spd(self.ag.irrdiversion, kper)
 
@@ -931,7 +930,7 @@ class Modflow6Ag(object):
         return return_rates
 
     def run_model(self, dll,):
-        mf6 = ModflowApi(dll)
+        mf6 = ModflowApi(dll, working_directory=self.sim.simulation_data.mfpath.get_sim_path())
         mf6.initialize()
         prev_time = 0
         current_time = mf6.get_current_time()
@@ -1029,10 +1028,10 @@ class Modflow6Ag(object):
                                                   self.well_timeinperiod)
 
             print(well_demand)
-            sup_p.append(sup_demand)
-            div.append(divflow)
-            pumping.append(conj_demand)
-            pumping2.append(well_demand)
+            # sup_p.append(sup_demand)
+            # div.append(divflow)
+            # pumping.append(conj_demand)
+            # pumping2.append(well_demand)
             mf6.finalize_time_step()
             prev_time = current_time
             current_time = mf6.get_current_time()
@@ -1047,10 +1046,10 @@ class Modflow6Ag(object):
         except:
             raise RuntimeError()
 
-        print(f"conjunctive_demand 2-ac almonds {np.nansum(pumping) * 0.000810714 :.2f}")
-        print(f"sfr use 2-ac almonds {np.sum(div) * 0.000810714 :.2f}")
-        print(f"supplemental pumping use 2-ac almonds {np.sum(sup_p) * 0.000810714 :.2f}")
-        print(f"gw pumping 2-ac almonds {np.sum(pumping2) * 0.000810714 :.2f}")
+        # print(f"conjunctive_demand 2-ac almonds {np.nansum(pumping) * 0.000810714 :.2f}")
+        # print(f"sfr use 2-ac almonds {np.sum(div) * 0.000810714 :.2f}")
+        # print(f"supplemental pumping use 2-ac almonds {np.sum(sup_p) * 0.000810714 :.2f}")
+        # print(f"gw pumping 2-ac almonds {np.sum(pumping2) * 0.000810714 :.2f}")
         return success
 
 

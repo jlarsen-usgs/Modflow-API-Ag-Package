@@ -116,17 +116,18 @@ def build_mf6(name):
 def build_nwt(name):
     model_ws = os.path.join(sws, "..", "data", "nwt_test_ag_wells")
 
-    ml = flopy.modflow.Modflow(name, version="mfnwt", exe_name="mfnwt")
+    ml = flopy.modflow.Modflow(
+        name,
+        version="mfnwt",
+        exe_name="mfnwt",
+        model_ws=model_ws
+    )
 
     nrow = 10
     ncol = 10
 
     perlen = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
     period_data = [(i, i, 1.0) for i in perlen]
-
-    bas = flopy.modflow.ModflowBas(
-        ml, ibound=1, strt=95,
-    )
 
     dis = flopy.modflow.ModflowDis(
         ml,
@@ -144,8 +145,15 @@ def build_nwt(name):
         lenuni=2
     )
 
+    bas = flopy.modflow.ModflowBas(
+        ml,
+        ibound=np.ones((nrow, ncol), dtype=int),
+        strt=np.ones((nrow, ncol)),
+    )
+
     upw = flopy.modflow.ModflowUpw(
         ml,
+        ipakcb=52,
         laytyp=1,
         hk=1,
         ss=1e-05,
@@ -166,21 +174,22 @@ def build_nwt(name):
     extdp = {}
     extwc = {}
     for i in range(12):
-        finf[i] = np.ones(nrow, ncol) * df.ppt_avg_m.values[i] / perlen[i]
-        pet[i] = np.ones(nrow, ncol) * df.ppt_avg_m.values[i] / perlen[i]
-        extdp[i] = np.ones(nrow, ncol) * 4
-        extwc[i] = np.ones(nrow, ncol) * 4
+        finf[i] = np.ones((nrow, ncol)) * df.ppt_avg_m.values[i] / perlen[i]
+        pet[i] = np.ones((nrow, ncol)) * df.eto_avg_m.values[i] / perlen[i]
+        extdp[i] = np.ones((nrow, ncol)) * 4
+        extwc[i] = np.ones((nrow, ncol)) * 0.05
 
     uzf = flopy.modflow.ModflowUzf1(
         ml,
         nuztop=1,
         iuzfopt=1,
         irunflg=0,
+        ipakcb=52,
         ietflg=1,
         ntrail2=7,
         nsets=40,
         surfdep=0.33,
-        iuzfbnd=ml.modelgrid.ibound,
+        iuzfbnd=np.ones((nrow, ncol)),
         vks=8.64,
         eps=5,
         thts=0.35,
@@ -218,7 +227,7 @@ def build_ag_package(name, ml=None, model_ws=None):
 
     if ml is None:
         # this is mf6
-        ml = flopy.modflow.Modflow(name, model_ws=model_ws)
+        ml = flopy.modflow.Modflow(name, model_ws=model_ws, version="mfnwt")
         dis = flopy.modflow.ModflowDis(
             ml,
             nlay=1,
@@ -232,12 +241,12 @@ def build_ag_package(name, ml=None, model_ws=None):
         dis = ml.dis
 
     options = flopy.utils.OptionBlock(
-        "ETDEMAND IRRIGATION_WELL 1 2"
-        "MAXWELLS 3".lower(),
+        "ETDEMAND IRRIGATION_WELL 1 2 "
+        "MAXWELLS 3 WELLCBC 52".lower(),
         flopy.modflow.ModflowAg
     )
 
-    well_list = flopy.modflow.ModflowAg.get_empty(2, block="well")
+    well_list = flopy.modflow.ModflowAg.get_empty(3, block="well")
     x = [[0, 4, 4, -100.], [0, 9, 9, -100.], [0, 6, 6, -50]]
     for ix, rec in enumerate(well_list):
         well_list[ix] = tuple(x[ix])
@@ -245,7 +254,7 @@ def build_ag_package(name, ml=None, model_ws=None):
     irrwell = {}
     for i in range(12):
         spd = flopy.modflow.ModflowAg.get_empty(1, 2, "irrwell")
-        spd[0] = (0, 2, 10, 0.0, 4, 4, 1, 0.5, 5, 4, 0, 0.5)
+        spd[0] = (0, 2, 10, 0.0, 4, 4, 0, 1, 5, 4, 0, 1)
         irrwell[i] = spd
 
     ag = flopy.modflow.ModflowAg(
@@ -261,8 +270,45 @@ def build_ag_package(name, ml=None, model_ws=None):
 
 def run_mfnwt(name):
     ml, ag = build_nwt(name)
-    ml.run_model()
+    success, buff = ml.run_model()
+    if not success:
+        raise AssertionError
 
 
 def run_mf6(name):
+    from modflowapi import ModflowApi
+    dll = os.path.join("..", "modflow-bmi", "libmf6.dll")
     sim, gwf, ag = build_mf6(name)
+    # mf6 = ModflowApi(dll, working_directory=os.path.join(sws, "..", "data", "mf6_test_ag_wells"))
+    # mf6.initialize()
+    mf6ag = Modflow6Ag(sim, ag)
+    mf6ag.run_model(dll)
+
+
+def compare_output(name):
+    cbc_name = "{}.cbc".format(name)
+    nwt_ws = os.path.join(sws, "..", "data", "nwt_test_ag_wells")
+    mf6_ws = os.path.join(sws, "..", "data", "mf6_test_ag_wells")
+
+    nwt_cbc = os.path.join(nwt_ws, cbc_name)
+    mf6_cbc = os.path.join(mf6_ws, cbc_name)
+
+    nwt_cbc = flopy.utils.CellBudgetFile(nwt_cbc)
+    nwt_ag_well = nwt_cbc.get_data(text="AG WE")
+    # print(nwt_ag_well)
+    l = []
+    for rec in nwt_ag_well:
+        l.append(rec["q"][0])
+
+    nwt_pump = np.sum(l) * 0.000810714
+    print(nwt_pump)
+
+    mf6_cbc = flopy.utils.CellBudgetFile(mf6_cbc)
+
+
+if __name__ == "__main__":
+    model_names = ("etdemand", "trigger", "specified")
+
+    run_mfnwt(model_names[0])
+    run_mf6(model_names[0])
+    compare_output(model_names[0])
