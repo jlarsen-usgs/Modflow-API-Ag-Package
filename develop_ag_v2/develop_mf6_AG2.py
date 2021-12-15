@@ -418,6 +418,7 @@ class Modflow6Ag(object):
             self.pet_addr = mf6.get_var_address("PET", self.name, uzf_name)
             self.uzet_addr = mf6.get_var_address("UZET", self.name, uzf_name)
             self.uz_gwet_addr = mf6.get_var_address("GWET", self.name, uzf_name)
+            self.aet_addr = mf6.get_var_address("ETACT", self.name, uzf_name)
             self.uz_rhs_addr = mf6.get_var_address("RHS", self.name, uzf_name)
             self.uz_finf_addr = mf6.get_var_address("FINF", self.name, uzf_name)
             self.uz_sinf_addr = mf6.get_var_address("SINF", self.name, uzf_name)
@@ -533,7 +534,7 @@ class Modflow6Ag(object):
         self.irrdiversion_num = self.ag.irrdiversion[kper]['segid'] - 1
         self.sfr_irrperiod = self.ag.irrdiversion[kper]['period']
         self.sfr_triggerfact = self.ag.irrdiversion[kper]['triggerfact']
-        self.sfr_timeinperiod = np.ones(self.well_irrperiod.size) * 1e+30
+        self.sfr_timeinperiod = np.ones(self.sfr_irrperiod.size) * 1e+30
         self.irrdiversion = self.__fmt_irr_spd(self.ag.irrdiversion, kper)
 
     def set_supwell_stress_period_data(self, kper):
@@ -674,8 +675,12 @@ class Modflow6Ag(object):
         factor = np.where(factor > crop_vks, crop_vks, factor)
 
         pumping = np.where(factor > np.abs(self.well_max_q[self.irrwell_num]),
-                           np.abs(self.well_max_q[self.irrwell_num]),
+                           self.well_max_q[self.irrwell_num],
                            -1 * factor)
+
+        pumping = np.where(np.abs(pumping) < 1e-10,
+                           0,
+                           pumping)
 
         wells = mf6.get_value(self.well_addr)
         wells[self.irrwell_num] = pumping
@@ -813,7 +818,7 @@ class Modflow6Ag(object):
 
         return demand, divflow
 
-    def gw_demand(self, mf6, kstp, delt):
+    def gw_demand(self, mf6, kstp, delt, kiter=1):
         """
         Method to calculate pumping demand from groundwater using
         the trigger option
@@ -829,15 +834,17 @@ class Modflow6Ag(object):
         area = mf6.get_value(self.area_addr)
         gwet = mf6.get_value(self.uz_gwet_addr)
         uzet = mf6.get_value(self.uzet_addr)
+        aet = mf6.get_value(self.aet_addr)
 
         crop_pet = np.zeros((len(self.irrwell_num),))
         crop_aet = np.zeros((len(self.irrwell_num),))
         for ix, record in enumerate(self.irrwell):
             crop_nodes = record["node"]
             crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
-            crop_uzet = uzet[crop_nodes] / delt
-            crop_gwet = gwet[crop_nodes]
-            crop_aet[ix] = np.sum((crop_gwet + crop_uzet))
+            # crop_uzet = uzet[crop_nodes] / delt
+            # crop_gwet = gwet[crop_nodes]
+            # crop_aet[ix] = np.sum((crop_gwet + crop_uzet))
+            crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
 
         demand = self.well_max_q[self.irrwell_num]
 
@@ -846,16 +853,22 @@ class Modflow6Ag(object):
                               crop_aet/crop_pet,
                               1)
 
-            mask = np.where((self.well_timeinperiod > self.well_irrperiod) &
-                            (factor <= self.well_triggerfact),
-                            True,
-                            False)
+            print(factor)
 
-            self.well_timeinperiod[mask] = 0
+            if (kstp, kiter) == (0, 0):
+                pumpage = demand * 0
+            else:
+                mask = np.where((self.well_timeinperiod > self.well_irrperiod) &
+                                (factor < self.well_triggerfact),
+                                True,
+                                False)
 
-            pumpage = np.where(self.well_timeinperiod - delt < self.well_irrperiod,
-                               demand,
-                               0)
+                self.well_timeinperiod[mask] = 0
+
+                pumpage = np.where(self.well_timeinperiod - delt < self.well_irrperiod,
+                                   demand,
+                                   0)
+
         else:
             pumpage = demand
 
@@ -893,8 +906,8 @@ class Modflow6Ag(object):
                 crop_area = area[crop_nodes]
                 vol = np.ones((len(crop_nodes),)) * pumpage[ix] / len(crop_nodes)
                 subvol = ((1 - eff_fact) * vol * field_fact)
-                return_rate = (vol - subvol)/crop_area
-                return_rates[crop_nodes] += (-1 * return_rate)
+                subrate = -1 * subvol / crop_area
+                return_rates[crop_nodes] += subrate
 
         if divflow is not None and divflow:
             for ix, record in enumerate(self.irrdiversion):
@@ -904,8 +917,8 @@ class Modflow6Ag(object):
                 crop_area = area[crop_nodes]
                 vol = np.ones((len(crop_nodes),)) * divflow[ix] / len(crop_nodes)
                 subvol = ((1 - eff_fact) * vol * field_fact)
-                return_rate = (vol - subvol) / crop_area
-                return_rates[crop_nodes] += return_rate
+                subrate = subvol / crop_area
+                return_rates[crop_nodes] += subrate
 
             if sup_pump is not None and sup_pump:
                 for ix, record in enumerate(self.supwell):
@@ -921,12 +934,11 @@ class Modflow6Ag(object):
 
                             vol = np.ones((len(crop_nodes),)) * sup_pump[ix] / len(crop_nodes)
                             subvol = ((1 - eff_fact) * vol * field_fact)
-                            return_rate = (vol - subvol) / crop_area
-                            return_rates[crop_nodes] += (-1 * return_rate)
+                            subrate = -1 * subvol / crop_area
+                            return_rates[crop_nodes] += subrate
 
         finf = finfold + return_rates
         mf6.set_value(self.uz_finf_addr, finf)
-
         return return_rates
 
     def run_model(self, dll,):
@@ -1004,7 +1016,7 @@ class Modflow6Ag(object):
                     else:
                         well_demand, divflow, sup_demand = None, None, None
                         if self.sim_wells:
-                            well_demand = self.gw_demand(mf6, kstp, delt)
+                            well_demand = self.gw_demand(mf6, kstp, delt, kiter)
                         if self.sim_diversions:
                             conj_demand, divflow = self.conjunctive_demand(mf6, delt)
                             if self.sim_supplemental:
@@ -1019,15 +1031,15 @@ class Modflow6Ag(object):
 
                 mf6.finalize_solve(sol_id)
 
-                self.sfr_timeinperiod = np.where(self.sfr_timeinperiod - delt < self.sfr_irrperiod,
-                                                 self.sfr_timeinperiod + delt,
-                                                 self.sfr_timeinperiod)
+            self.sfr_timeinperiod = np.where(self.sfr_timeinperiod - delt < self.sfr_irrperiod,
+                                             self.sfr_timeinperiod + delt,
+                                             self.sfr_timeinperiod)
 
-                self.well_timeinperiod = np.where(self.well_timeinperiod - delt < self.well_irrperiod,
-                                                  self.well_timeinperiod + delt,
-                                                  self.well_timeinperiod)
+            self.well_timeinperiod = np.where(self.well_timeinperiod - delt < self.well_irrperiod,
+                                              self.well_timeinperiod + delt,
+                                              self.well_timeinperiod)
 
-            print(well_demand)
+            # print(well_demand)
             # sup_p.append(sup_demand)
             # div.append(divflow)
             # pumping.append(conj_demand)

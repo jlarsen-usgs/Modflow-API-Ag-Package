@@ -3,9 +3,11 @@ import os
 import sys
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 sws = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(sws, "..", "develop_ag_v2"))
 from develop_mf6_AG2 import Modflow6Ag
+
 
 
 def build_mf6(name):
@@ -43,11 +45,11 @@ def build_mf6(name):
     )
 
     ic = flopy.mf6.ModflowGwfic(gwf, strt=95)
-    npf = flopy.mf6.ModflowGwfnpf(gwf, save_specific_discharge=True)
+    npf = flopy.mf6.ModflowGwfnpf(gwf, save_specific_discharge=True, icelltype=1)
     sto = flopy.mf6.ModflowGwfsto(gwf, iconvert=1)
 
     stress_period_data = {
-        i: [[(0, 4, 4), -100.], [(0, 9, 9), -100.], [(0, 6, 6), -50.]] for i in
+        i: [[(0, 4, 4), -10.], [(0, 9, 9), -10.], [(0, 6, 6), -50.]] for i in
         range(12)
     }
     wel = flopy.mf6.ModflowGwfwel(gwf, stress_period_data=stress_period_data)
@@ -127,7 +129,7 @@ def build_nwt(name):
     ncol = 10
 
     perlen = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
-    period_data = [(i, i, 1.0) for i in perlen]
+    # period_data = [(i, i, 1.0) for i in perlen]
 
     dis = flopy.modflow.ModflowDis(
         ml,
@@ -148,7 +150,7 @@ def build_nwt(name):
     bas = flopy.modflow.ModflowBas(
         ml,
         ibound=np.ones((nrow, ncol), dtype=int),
-        strt=np.ones((nrow, ncol)),
+        strt=np.ones((nrow, ncol)) * 95,
     )
 
     upw = flopy.modflow.ModflowUpw(
@@ -161,7 +163,7 @@ def build_nwt(name):
     )
 
     stress_period_data = {
-        i: [[(0, 4, 4), -100.], [(0, 9, 9), -100.], [(0, 6, 6), -50.]] for i in
+        i: [[(0, 4, 4), -10.], [(0, 9, 9), -10.], [(0, 6, 6), -50.]] for i in
         range(12)
     }
 
@@ -177,7 +179,7 @@ def build_nwt(name):
         finf[i] = np.ones((nrow, ncol)) * df.ppt_avg_m.values[i] / perlen[i]
         pet[i] = np.ones((nrow, ncol)) * df.eto_avg_m.values[i] / perlen[i]
         extdp[i] = np.ones((nrow, ncol)) * 4
-        extwc[i] = np.ones((nrow, ncol)) * 0.05
+        extwc[i] = np.ones((nrow, ncol)) * 0.06
 
     uzf = flopy.modflow.ModflowUzf1(
         ml,
@@ -187,7 +189,7 @@ def build_nwt(name):
         ipakcb=52,
         ietflg=1,
         ntrail2=7,
-        nsets=40,
+        nsets=1000,
         surfdep=0.33,
         iuzfbnd=np.ones((nrow, ncol)),
         vks=8.64,
@@ -220,6 +222,10 @@ def build_nwt(name):
 
     ag = build_ag_package(name, ml, model_ws)
     ml.write_input()
+    nam = os.path.join(model_ws, f"{name}.nam")
+    with open(nam, "a") as foo:
+        foo.write(f"DATA              53  {name}.well1.txt")
+
     return ml, ag
 
 
@@ -240,26 +246,37 @@ def build_ag_package(name, ml=None, model_ws=None):
     else:
         dis = ml.dis
 
-    options = flopy.utils.OptionBlock(
-        "ETDEMAND IRRIGATION_WELL 1 2 "
-        "MAXWELLS 3 WELLCBC 52".lower(),
-        flopy.modflow.ModflowAg
-    )
+    if name == "specified":
+        options = flopy.utils.OptionBlock(
+            "IRRIGATION_WELL 1 2 "
+            "MAXWELLS 1 WELLCBC 52 TIMESERIES_WELL".lower(),
+            flopy.modflow.ModflowAg
+        )
+    else:
+        options = flopy.utils.OptionBlock(
+            f"{name} IRRIGATION_WELL 1 2 "
+            "MAXWELLS 1 WELLCBC 52 TIMESERIES_WELL".lower(),
+            flopy.modflow.ModflowAg
+        )
 
-    well_list = flopy.modflow.ModflowAg.get_empty(3, block="well")
-    x = [[0, 4, 4, -100.], [0, 9, 9, -100.], [0, 6, 6, -50]]
+    timeseries_well = flopy.modflow.ModflowAg.get_empty(1, block='time series')
+    timeseries_well[0] = ("well", 1, 53)
+
+    well_list = flopy.modflow.ModflowAg.get_empty(1, block="well")
+    x = [[0, 4, 4, -10.],]  # [0, 9, 9, -100.], [0, 6, 6, -50]]
     for ix, rec in enumerate(well_list):
         well_list[ix] = tuple(x[ix])
 
     irrwell = {}
     for i in range(12):
         spd = flopy.modflow.ModflowAg.get_empty(1, 2, "irrwell")
-        spd[0] = (0, 2, 10, 0.0, 4, 4, 0, 1, 5, 4, 0, 1)
+        spd[0] = (0, 2, 31, 0.2, 4, 4, 0.9, 0.5, 5, 4, 0.9, 0.5)
         irrwell[i] = spd
 
     ag = flopy.modflow.ModflowAg(
         ml,
         options=options,
+        time_series=timeseries_well,
         well_list=well_list,
         irrwell=irrwell,
         nper=dis.nper
@@ -294,21 +311,37 @@ def compare_output(name):
     mf6_cbc = os.path.join(mf6_ws, cbc_name)
 
     nwt_cbc = flopy.utils.CellBudgetFile(nwt_cbc)
+    print(nwt_cbc.get_unique_record_names())
     nwt_ag_well = nwt_cbc.get_data(text="AG WE")
     # print(nwt_ag_well)
     l = []
     for rec in nwt_ag_well:
         l.append(rec["q"][0])
 
-    nwt_pump = np.sum(l) * 0.000810714
+    nwt_pump = np.sum(l)
     print(nwt_pump)
 
     mf6_cbc = flopy.utils.CellBudgetFile(mf6_cbc)
+    print(mf6_cbc.get_unique_record_names())
+    mf6_pump = mf6_cbc.get_data(text="WEL")
+    l2 = []
+    for rec in mf6_pump:
+        l2.append(rec['q'][0])
+
+    mf6_pump = np.sum(l2)
+    print(mf6_pump)
+
+    plt.plot(range(1, len(l) + 1), l2, "r-")
+    plt.plot(range(1, len(l) + 1), l, "b--")
+    plt.show()
 
 
 if __name__ == "__main__":
     model_names = ("etdemand", "trigger", "specified")
+    # todo: look at how PET and AET are being calculated,
+    #   trigger and etdemand are showing different results from
+    #   mf6AG
 
-    run_mfnwt(model_names[0])
-    run_mf6(model_names[0])
-    compare_output(model_names[0])
+    run_mfnwt(model_names[1])
+    run_mf6(model_names[1])
+    compare_output(model_names[1])
