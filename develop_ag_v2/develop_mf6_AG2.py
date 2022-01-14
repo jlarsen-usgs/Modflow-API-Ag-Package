@@ -353,6 +353,7 @@ class Modflow6Ag(object):
             self.supwell = None
 
         # set these here as placeholders to avoid if statements in run loop.
+        # todo: these need to be changed to numirrwell size/numirrdiversion size
         self.well_irrperiod = np.zeros((1,))
         self.well_timeinperiod = np.ones((1,)) * 1e+30
 
@@ -519,7 +520,9 @@ class Modflow6Ag(object):
         self.irrwell_num = self.ag.irrwell[kper]['wellid']
         self.well_irrperiod = self.ag.irrwell[kper]['period']
         self.well_triggerfact = self.ag.irrwell[kper]['triggerfact']
-        self.well_timeinperiod = np.ones(self.well_irrperiod.size) * 1e+30
+        if kper == 0:
+            # todo: change this to length of well list!
+            self.well_timeinperiod = np.ones(self.well_irrperiod.size) * 1e+30
         self.irrwell = self.__fmt_irr_spd(self.ag.irrwell, kper)
 
     def set_irrdiversion_stress_period_data(self, kper):
@@ -534,7 +537,9 @@ class Modflow6Ag(object):
         self.irrdiversion_num = self.ag.irrdiversion[kper]['segid'] - 1
         self.sfr_irrperiod = self.ag.irrdiversion[kper]['period']
         self.sfr_triggerfact = self.ag.irrdiversion[kper]['triggerfact']
-        self.sfr_timeinperiod = np.ones(self.sfr_irrperiod.size) * 1e+30
+        if kper == 0:
+            # todo: this needs to be changed to length of diversion list!
+            self.sfr_timeinperiod = np.ones(self.sfr_irrperiod.size) * 1e+30
         self.irrdiversion = self.__fmt_irr_spd(self.ag.irrdiversion, kper)
 
     def set_supwell_stress_period_data(self, kper):
@@ -562,10 +567,9 @@ class Modflow6Ag(object):
         pet = mf6.get_value(self.pet_addr)
         vks = mf6.get_value(self.vks_addr)
         area = mf6.get_value(self.area_addr)
-        gwet = mf6.get_value(self.uz_gwet_addr)
-        uzet = mf6.get_value(self.uzet_addr)
         divflow = mf6.get_value(self.sfr_divflow_addr)
         dsflow = mf6.get_value(self.sfr_dsflow_addr)
+        aet = mf6.get_value(self.aet_addr)
 
         crop_vks = np.zeros((len(self.irrdiversion_num,)))
         crop_pet = np.zeros((len(self.irrdiversion_num,)))
@@ -575,9 +579,7 @@ class Modflow6Ag(object):
             crop_nodes = record["node"]
             crop_vks[ix] = np.sum(vks[crop_nodes] * area[crop_nodes])
             crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
-            crop_uzet = uzet[crop_nodes] / delt
-            crop_gwet = gwet[crop_nodes]
-            crop_aet[ix] = np.nansum(crop_gwet + crop_uzet)
+            crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
 
         if delt < 1:
             crop_aet = crop_pet
@@ -639,8 +641,7 @@ class Modflow6Ag(object):
         pet = mf6.get_value(self.pet_addr)
         vks = mf6.get_value(self.vks_addr)
         area = mf6.get_value(self.area_addr)
-        gwet = mf6.get_value(self.uz_gwet_addr)
-        uzet = mf6.get_value(self.uzet_addr)
+        aet = mf6.get_value(self.aet_addr)
 
         crop_vks = np.zeros((len(self.irrwell_num,)))
         crop_pet = np.zeros((len(self.irrwell_num,)))
@@ -649,9 +650,7 @@ class Modflow6Ag(object):
             crop_nodes = record["node"]
             crop_vks[ix] = np.sum(vks[crop_nodes] * area[crop_nodes])
             crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
-            crop_uzet = uzet[crop_nodes] / delt
-            crop_gwet = gwet[crop_nodes]
-            crop_aet[ix] = np.nansum(crop_gwet + crop_uzet)
+            crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
 
         crop_aet = np.where(crop_vks < 1e-30, crop_pet, crop_aet)
 
@@ -773,19 +772,15 @@ class Modflow6Ag(object):
         delt : float
         """
         pet = mf6.get_value(self.pet_addr)
-        area = mf6.get_value(self.area_addr)
-        gwet = mf6.get_value(self.uz_gwet_addr)
-        uzet = mf6.get_value(self.uzet_addr)
         dsflow = mf6.get_value(self.sfr_dsflow_addr)
+        aet = mf6.get_value(self.aet_addr)
 
         crop_pet = np.zeros((len(self.irrdiversion_num),))
         crop_aet = np.zeros((len(self.irrdiversion_num),))
         for ix, record in enumerate(self.irrdiversion):
             crop_nodes = record["node"]
-            crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
-            crop_uzet = uzet[crop_nodes] / delt
-            crop_gwet = gwet[crop_nodes]
-            crop_aet[ix] = np.sum((crop_gwet + crop_uzet))
+            crop_pet[ix] = np.sum(pet[crop_nodes])
+            crop_aet[ix] = np.sum(aet[crop_nodes])
 
         demand = self.sfr_max_q
 
@@ -832,8 +827,6 @@ class Modflow6Ag(object):
         """
         pet = mf6.get_value(self.pet_addr)
         area = mf6.get_value(self.area_addr)
-        gwet = mf6.get_value(self.uz_gwet_addr)
-        uzet = mf6.get_value(self.uzet_addr)
         aet = mf6.get_value(self.aet_addr)
 
         crop_pet = np.zeros((len(self.irrwell_num),))
@@ -841,9 +834,6 @@ class Modflow6Ag(object):
         for ix, record in enumerate(self.irrwell):
             crop_nodes = record["node"]
             crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
-            # crop_uzet = uzet[crop_nodes] / delt
-            # crop_gwet = gwet[crop_nodes]
-            # crop_aet[ix] = np.sum((crop_gwet + crop_uzet))
             crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
 
         demand = self.well_max_q[self.irrwell_num]
@@ -853,7 +843,8 @@ class Modflow6Ag(object):
                               crop_aet/crop_pet,
                               1)
 
-            print(factor)
+            with open("factor.txt", "a") as foo:
+                foo.write(f"{factor[0]}, {kstp}, {kiter}\n")
 
             if (kstp, kiter) == (0, 0):
                 pumpage = demand * 0
@@ -1026,7 +1017,7 @@ class Modflow6Ag(object):
 
                     has_converged = mf6.solve(sol_id)
                     kiter += 1
-                    if has_converged:
+                    if has_converged and kiter > 5:
                         break
 
                 mf6.finalize_solve(sol_id)

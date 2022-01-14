@@ -8,6 +8,14 @@ sws = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(sws, "..", "develop_ag_v2"))
 from develop_mf6_AG2 import Modflow6Ag
 
+from math import log10, floor
+
+
+def round_to_n(x, n):
+    if x == 0:
+        return 0
+    t = round(x, -int(floor(log10(abs(x))) - (n - 1)))
+    return t
 
 
 def build_mf6(name):
@@ -49,8 +57,7 @@ def build_mf6(name):
     sto = flopy.mf6.ModflowGwfsto(gwf, iconvert=1)
 
     stress_period_data = {
-        i: [[(0, 4, 4), -10.], [(0, 9, 9), -10.], [(0, 6, 6), -50.]] for i in
-        range(12)
+        i: [[(0, 4, 4), -10.],] for i in range(12)    # [(0, 9, 9), -10.], [(0, 6, 6), -10.]]
     }
     wel = flopy.mf6.ModflowGwfwel(gwf, stress_period_data=stress_period_data)
 
@@ -77,13 +84,13 @@ def build_mf6(name):
             for _ in range(10):
                 rec = (
                     cnt,
-                    df.ppt_avg_m.values[i]/perlen[i],
-                    df.eto_avg_m.values[i]/perlen[i],
+                    round_to_n(df.ppt_avg_m.values[i]/perlen[i], 5),
+                    round_to_n(df.eto_avg_m.values[i]/perlen[i], 5),
                     4,
                     0.06,
-                    100,
-                    100,
-                    3
+                    -1.1,
+                    -75.0,
+                    1.0
                 )
                 spd.append(rec)
                 cnt += 1
@@ -96,7 +103,10 @@ def build_mf6(name):
         ntrailwaves=ntrailwaves,
         nwavesets=nwavesets,
         packagedata=package_data,
-        perioddata=period_data
+        perioddata=period_data,
+        unsat_etwc=True,
+        linear_gwet=True,
+        simulate_gwseep=True
     )
 
     budget_file = f"{name}.cbc"
@@ -162,11 +172,6 @@ def build_nwt(name):
         sy=0.15,
     )
 
-    stress_period_data = {
-        i: [[(0, 4, 4), -10.], [(0, 9, 9), -10.], [(0, 6, 6), -50.]] for i in
-        range(12)
-    }
-
     # build a UZF package
     cimis_data = os.path.join("..", "data", "davis_monthly_ppt_eto.txt")
     df = pd.read_csv(cimis_data)
@@ -176,8 +181,8 @@ def build_nwt(name):
     extdp = {}
     extwc = {}
     for i in range(12):
-        finf[i] = np.ones((nrow, ncol)) * df.ppt_avg_m.values[i] / perlen[i]
-        pet[i] = np.ones((nrow, ncol)) * df.eto_avg_m.values[i] / perlen[i]
+        finf[i] = np.ones((nrow, ncol)) * round_to_n(df.ppt_avg_m.values[i] / perlen[i], 5)
+        pet[i] = np.ones((nrow, ncol)) * round_to_n(df.eto_avg_m.values[i] / perlen[i], 5)
         extdp[i] = np.ones((nrow, ncol)) * 4
         extwc[i] = np.ones((nrow, ncol)) * 0.06
 
@@ -189,7 +194,7 @@ def build_nwt(name):
         ipakcb=52,
         ietflg=1,
         ntrail2=7,
-        nsets=1000,
+        nsets=40,
         surfdep=0.33,
         iuzfbnd=np.ones((nrow, ncol)),
         vks=8.64,
@@ -270,7 +275,7 @@ def build_ag_package(name, ml=None, model_ws=None):
     irrwell = {}
     for i in range(12):
         spd = flopy.modflow.ModflowAg.get_empty(1, 2, "irrwell")
-        spd[0] = (0, 2, 31, 0.2, 4, 4, 0.9, 0.5, 5, 4, 0.9, 0.5)
+        spd[0] = (0, 2, 31, 0.2, 4, 4, 1.0, 0.5, 5, 4, 1.0, 0.5)
         irrwell[i] = spd
 
     ag = flopy.modflow.ModflowAg(
@@ -331,17 +336,24 @@ def compare_output(name):
     mf6_pump = np.sum(l2)
     print(mf6_pump)
 
-    plt.plot(range(1, len(l) + 1), l2, "r-")
-    plt.plot(range(1, len(l) + 1), l, "b--")
+    x = pd.read_csv('factor.txt')
+    x = x.groupby(by="kstp", as_index=False)["factor"].mean()
+    x['mf6'] = l2
+    x['mfnwt'] = l
+    # x = x[x["mf6"] < 0]
+
+    plt.plot(range(1, len(l) + 1), l2, "r-", label='mf6 ag')
+    plt.plot(range(1, len(l) + 1), l, "b--", label="mfnwt ag")
+    plt.plot(range(1, 366), [0.2] * 365, 'c--')
+    plt.plot(x.kstp.values, x.factor.values, "k-", label="aet/pet")
+    plt.legend(loc=0)
+    #
     plt.show()
 
 
 if __name__ == "__main__":
     model_names = ("etdemand", "trigger", "specified")
-    # todo: look at how PET and AET are being calculated,
-    #   trigger and etdemand are showing different results from
-    #   mf6AG
 
-    run_mfnwt(model_names[1])
-    run_mf6(model_names[1])
-    compare_output(model_names[1])
+    run_mfnwt(model_names[0])
+    run_mf6(model_names[0])
+    compare_output(model_names[0])
