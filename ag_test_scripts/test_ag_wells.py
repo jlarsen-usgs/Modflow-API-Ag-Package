@@ -57,7 +57,7 @@ def build_mf6(name):
     sto = flopy.mf6.ModflowGwfsto(gwf, iconvert=1)
 
     stress_period_data = {
-        i: [[(0, 4, 4), -10.],] for i in range(12)    # [(0, 9, 9), -10.], [(0, 6, 6), -10.]]
+        i: [[(0, 4, 4), -50.],] for i in range(12)    # [(0, 9, 9), -10.], [(0, 6, 6), -10.]]
     }
     wel = flopy.mf6.ModflowGwfwel(gwf, stress_period_data=stress_period_data)
 
@@ -222,7 +222,9 @@ def build_nwt(name):
     )
 
     nwt = flopy.modflow.ModflowNwt(
-        ml
+        ml,
+        headtol=0.1,
+        fluxtol=50
     )
 
     ag = build_ag_package(name, ml, model_ws)
@@ -257,9 +259,15 @@ def build_ag_package(name, ml=None, model_ws=None):
             "MAXWELLS 1 WELLCBC 52 TIMESERIES_WELL".lower(),
             flopy.modflow.ModflowAg
         )
-    else:
+    elif name == "trigger":
         options = flopy.utils.OptionBlock(
             f"{name} IRRIGATION_WELL 1 2 "
+            "MAXWELLS 1 WELLCBC 52 TIMESERIES_WELL".lower(),
+            flopy.modflow.ModflowAg
+        )
+    else:
+        options = flopy.utils.OptionBlock(
+            f"{name} 1.0 IRRIGATION_WELL 1 2 "
             "MAXWELLS 1 WELLCBC 52 TIMESERIES_WELL".lower(),
             flopy.modflow.ModflowAg
         )
@@ -268,7 +276,7 @@ def build_ag_package(name, ml=None, model_ws=None):
     timeseries_well[0] = ("well", 1, 53)
 
     well_list = flopy.modflow.ModflowAg.get_empty(1, block="well")
-    x = [[0, 4, 4, -10.],]  # [0, 9, 9, -100.], [0, 6, 6, -50]]
+    x = [[0, 4, 4, -50.],]  # [0, 9, 9, -100.], [0, 6, 6, -50]]
     for ix, rec in enumerate(well_list):
         well_list[ix] = tuple(x[ix])
 
@@ -318,42 +326,94 @@ def compare_output(name):
     nwt_cbc = flopy.utils.CellBudgetFile(nwt_cbc)
     print(nwt_cbc.get_unique_record_names())
     nwt_ag_well = nwt_cbc.get_data(text="AG WE")
+    nwt_uzf_dis = nwt_cbc.get_data(text="GW ET")
     # print(nwt_ag_well)
     l = []
     for rec in nwt_ag_well:
         l.append(rec["q"][0])
 
+    d = []
+    for rec in nwt_uzf_dis:
+        d.append(np.sum(rec))
+
     nwt_pump = np.sum(l)
+    nwt_dis = np.sum(d)
     print(nwt_pump)
 
     mf6_cbc = flopy.utils.CellBudgetFile(mf6_cbc)
     print(mf6_cbc.get_unique_record_names())
     mf6_pump = mf6_cbc.get_data(text="WEL")
+    mf6_uzf_dis = mf6_cbc.get_data(text="UZF-GWET")
     l2 = []
     for rec in mf6_pump:
         l2.append(rec['q'][0])
 
+    d2 = []
+    for rec in mf6_uzf_dis:
+        d2.append(np.sum(rec['q']))
+
     mf6_pump = np.sum(l2)
+    mf6_dis = np.sum(d2)
     print(mf6_pump)
 
+    print(nwt_dis, mf6_dis)
+
     x = pd.read_csv('factor.txt')
-    x = x.groupby(by="kstp", as_index=False)["factor"].mean()
+    x = x.groupby(by="kstp", as_index=False)["factor"].max()
     x['mf6'] = l2
     x['mfnwt'] = l
     # x = x[x["mf6"] < 0]
 
     plt.plot(range(1, len(l) + 1), l2, "r-", label='mf6 ag')
     plt.plot(range(1, len(l) + 1), l, "b--", label="mfnwt ag")
-    plt.plot(range(1, 366), [0.2] * 365, 'c--')
-    plt.plot(x.kstp.values, x.factor.values, "k-", label="aet/pet")
+    plt.plot(range(1, len(d) + 1), d2, "g-", label='mf6 uzf discharge')
+    plt.plot(range(1, len(d) + 1), d, "k--", label="mfnwt uzf discharge")
+    # plt.plot(range(1, 366), [0.2] * 365, 'c--')
+    # plt.plot(x.kstp.values, x.factor.values * -1, "k-", label="aet/pet")
     plt.legend(loc=0)
     #
     plt.show()
 
 
-if __name__ == "__main__":
-    model_names = ("etdemand", "trigger", "specified")
+def compare_factor_calc():
+    header = ["kstp", "kiter", "pettotal", "aettotal", "dq",
+              "det", "aettotal_copy", "aetold", "sup", "supold", "factor"]
 
+    nwt_file = os.path.join("..", "data", "nwt_test_ag_wells", "debug.out")
+    mf6_file = os.path.join("mf6_debug.out")
+
+    dfnwt = pd.read_csv(nwt_file, names=header, delim_whitespace=True)
+    dfmf6 = pd.read_csv(mf6_file)
+
+    print('break')
+
+
+if __name__ == "__main__":
+    import time
+    try:
+        os.remove("factor.txt")
+        with open("factor.txt", "w") as foo:
+            foo.write("factor,kstp,kiter\n")
+    except:
+        pass
+
+    try:
+        os.remove(os.path.join("..", "data", "nwt_test_ag_wells", "debug.out"))
+    except:
+        pass
+
+    try:
+        os.remove(os.path.join("mf6_debug.out"))
+        with open("mf6_debug.out", "w") as foo:
+            foo.write(
+                "kstp,kiter,pettotal,dq,det,aettotal,aetold,sup,supold,factor\n"
+            )
+    except:
+        pass
+
+    #time.sleep(10)
+    model_names = ("etdemand", "trigger", "specified")
     run_mfnwt(model_names[0])
     run_mf6(model_names[0])
     compare_output(model_names[0])
+    compare_factor_calc()

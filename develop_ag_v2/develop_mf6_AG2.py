@@ -603,7 +603,8 @@ class Modflow6Ag(object):
             self._aetoldsw,
             sup,
             supold,
-            kiter
+            kiter,
+            1
         )
 
         factor = np.where(factor < 0, 0, factor)
@@ -652,39 +653,53 @@ class Modflow6Ag(object):
             crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
             crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
 
+        if kstp == 243:
+            print('break')
+
         crop_aet = np.where(crop_vks < 1e-30, crop_pet, crop_aet)
 
         if delt < 1:
             crop_aet = crop_pet
 
+
+        # todo: Change the dimensionalization of self._aetold, this needs to
+        #   be of numirrwells dimension! Change the dimension of self._sup
+        #   and self._supold. This can be set to irrwell_num.size
         if kiter == 0:
             sup = np.zeros(self.well_max_q.shape)[self.irrwell_num]
-            supold = np.zeros(self.well_max_q.shape)[self.irrwell_num]
-            self._aetold = crop_aet
+            if kstp == 0:
+                supold = np.zeros(self.well_max_q.shape)[self.irrwell_num]
+                self._aetold = crop_aet * 0
+            else:
+                supold = self._supold[self.irrwell_num]
         else:
             sup = self._sup[self.irrwell_num]
             supold = self._supold[self.irrwell_num]
 
-        factor = self.__calculate_factor(crop_pet, crop_aet, self._aetold, sup, supold, kiter)
+        factor = self.__calculate_factor(crop_pet, crop_aet, self._aetold, sup, supold, kiter, kstp)
+
+        qonly = np.where(sup + factor > crop_vks, crop_vks, sup + factor)
+
+        with open("factor.txt", "a") as foo:
+            foo.write(f"{qonly[0]}, {kstp}, {kiter}\n")
 
         self._supold[self.irrwell_num] = sup
-        self._sup[self.irrwell_num] = sup + factor
         self._aetold = crop_aet
 
-        factor = np.where(factor > crop_vks, crop_vks, factor)
-
-        pumping = np.where(factor > np.abs(self.well_max_q[self.irrwell_num]),
+        pumping = np.where(qonly > np.abs(self.well_max_q[self.irrwell_num]),
                            self.well_max_q[self.irrwell_num],
-                           -1 * factor)
+                           -1 * qonly)
 
         pumping = np.where(np.abs(pumping) < 1e-10,
                            0,
                            pumping)
 
+        self._sup[self.irrwell_num] = np.abs(pumping)
+
         wells = mf6.get_value(self.well_addr)
         wells[self.irrwell_num] = pumping
         self.well_out[kstp, self.irrwell_num] = pumping
-        self.well_demand_out[kstp, self.irrwell_num] = factor
+        self.well_demand_out[kstp, self.irrwell_num] = pumping
         mf6.set_value(self.well_addr, wells)
         return pumping
 
@@ -730,7 +745,7 @@ class Modflow6Ag(object):
         mf6.set_value(self.well_addr, wells)
         return sup_pump
 
-    def __calculate_factor(self, crop_pet, crop_aet, aetold, sup, supold, kiter, accel=1):
+    def __calculate_factor(self, crop_pet, crop_aet, aetold, sup, supold, kiter, kstp, accel=1):
         """
         Method to calculate unmet demand for crops
 
@@ -754,11 +769,15 @@ class Modflow6Ag(object):
                               dq * et_diff / det,
                               factor)
 
-        factor = np.where(factor < et_diff, et_diff, factor)
-        factor = np.where(factor < 1e-05, 1e-05, factor)
         factor = np.where(factor > et_diff * accel,
                           et_diff * accel,
                           factor)
+        factor = np.where(factor < et_diff, et_diff, factor)
+        factor = np.where(factor < 1e-05, 1e-05, factor)
+
+        with open("mf6_debug.out", "a") as foo:
+            s = f"{kstp + 1},{kiter + 1},{crop_pet[0]},{dq[0]},{det[0]},{crop_aet[0]},{aetold[0]},{sup[0]},{supold[0]},{factor[0]}\n"
+            foo.write(s)
 
         return factor
 
@@ -997,6 +1016,9 @@ class Modflow6Ag(object):
                 finfold = mf6.get_value(self.uz_finf_addr).copy()
                 while kiter < max_iter:
                     if self.etdemand:
+                        if kiter == 0:
+                            has_converged = mf6.solve(sol_id)
+                        well_demand, divflow, sup_demand = None, None, None
                         if self.sim_wells:
                             well_demand = self.gw_demand_etdemand(mf6, kstp, delt, kiter)
                         if self.sim_diversions:
@@ -1013,11 +1035,11 @@ class Modflow6Ag(object):
                             if self.sim_supplemental:
                                 sup_demand = self.supplemental_pumping(mf6, conj_demand, divflow, kstp, delt)
 
-                        self.apply_efficiency_factors(mf6, finfold, well_demand, divflow, sup_demand)
+                    self.apply_efficiency_factors(mf6, finfold, well_demand, divflow, sup_demand)
 
                     has_converged = mf6.solve(sol_id)
                     kiter += 1
-                    if has_converged and kiter > 5:
+                    if has_converged:
                         break
 
                 mf6.finalize_solve(sol_id)
