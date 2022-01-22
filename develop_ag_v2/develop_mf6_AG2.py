@@ -1027,6 +1027,8 @@ class Modflow6Ag(object):
                                 sup_demand = self.supplemental_pumping(mf6, conj_demand, divflow, kstp, delt)
 
                     else:
+                        if (kstp, kiter) == (0, 0):
+                            has_converged = mf6.solve(sol_id)
                         well_demand, divflow, sup_demand = None, None, None
                         if self.sim_wells:
                             well_demand = self.gw_demand(mf6, kstp, delt, kiter)
