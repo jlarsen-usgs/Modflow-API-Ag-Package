@@ -18,7 +18,7 @@ def round_to_n(x, n):
     return t
 
 
-def build_mf6(name):
+def build_mf6(name, headtol=None, fluxtol=None):
     sim_ws = os.path.join(sws, "..", "data", "mf6_test_ag_wells")
     sim = flopy.mf6.MFSimulation(name, sim_ws=sim_ws)
 
@@ -31,14 +31,51 @@ def build_mf6(name):
         time_units="days"
     )
 
-    ims = flopy.mf6.ModflowIms(sim, complexity="COMPLEX")
+
+    if headtol is None:
+        if name == "etdemand":
+            headtol = 0.0570641530019691
+        elif name == "trigger":
+            headtol = 0.0570641530019691
+
+    if fluxtol is None:
+        if name == "etdemand":
+            fluxtol = 213.1677138100136
+        elif name == "trigger":
+            fluxtol = 213.1677138100136
+
+    # ims = flopy.mf6.ModflowIms(sim,
+    #                           complexity="COMPLEX",
+    #                           outer_dvclose=headtol,
+    #                           outer_maximum=fluxtol)
+
+
+    ims = flopy.mf6.ModflowIms(
+        sim,
+        print_option="ALL",
+        complexity="COMPLEX",
+        no_ptcrecord=["ALL"],
+        outer_dvclose=headtol,
+        outer_maximum=fluxtol,
+        # inner_dvclose=1e-06,
+        # inner_maximum=50,
+        rcloserecord=[1e-10, "L2NORM_RCLOSE"],
+        scaling_method="L2NORM", # "L2NORM",
+        linear_acceleration="BICGSTAB",
+        under_relaxation="DBD",
+        under_relaxation_gamma=0.0,
+        under_relaxation_theta=0.97,
+        under_relaxation_kappa=0.0001
+    )
+
 
     gwf = flopy.mf6.ModflowGwf(
         sim,
         modelname=name,
         save_flows=True,
         print_input=True,
-        print_flows=True
+        print_flows=True,
+        newtonoptions="NEWTON UNDER_RELAXATION",
     )
 
     # define delc and delr to equal approximately 1 acre
@@ -122,7 +159,25 @@ def build_mf6(name):
     ag = build_ag_package(name, model_ws=sim_ws)
     sim.write_simulation()
     ag.write_file()
+    model_ws = gwf.model_ws
+    uzf_name = gwf.uzf.filename
+    mf6_dev_no_final_check(model_ws, uzf_name)
     return sim, gwf, ag
+
+
+def mf6_dev_no_final_check(model_ws, fname):
+    contents = []
+    with open(os.path.join(model_ws, fname)) as foo:
+        for line in foo:
+            if "options" in line.lower():
+                contents.append(line)
+                contents.append("  DEV_NO_FINAL_CHECK\n")
+            else:
+                contents.append(line)
+
+    with open(os.path.join(model_ws, fname), "w") as foo:
+        for line in contents:
+            foo.write(line)
 
 
 def build_nwt(name):
@@ -223,8 +278,9 @@ def build_nwt(name):
 
     nwt = flopy.modflow.ModflowNwt(
         ml,
-        headtol=0.1,
-        fluxtol=50
+        headtol=1e-02,
+        fluxtol=50,
+        options="COMPLEX"
     )
 
     ag = build_ag_package(name, ml, model_ws)
@@ -283,7 +339,7 @@ def build_ag_package(name, ml=None, model_ws=None):
     irrwell = {}
     for i in range(12):
         spd = flopy.modflow.ModflowAg.get_empty(1, 2, "irrwell")
-        spd[0] = (0, 2, 31, 0.2, 4, 4, 1.0, 0.5, 5, 4, 1.0, 0.5)
+        spd[0] = (0, 2, 31, 0.2, 4, 4, 0.0, 0.5, 5, 4, 0.0, 0.5)
         irrwell[i] = spd
 
     ag = flopy.modflow.ModflowAg(
@@ -305,17 +361,17 @@ def run_mfnwt(name):
         raise AssertionError
 
 
-def run_mf6(name):
+def run_mf6(name, headtol=None, fluxtol=None):
     from modflowapi import ModflowApi
     dll = os.path.join("..", "modflow-bmi", "libmf6.dll")
-    sim, gwf, ag = build_mf6(name)
+    sim, gwf, ag = build_mf6(name, headtol=headtol, fluxtol=fluxtol)
     # mf6 = ModflowApi(dll, working_directory=os.path.join(sws, "..", "data", "mf6_test_ag_wells"))
     # mf6.initialize()
     mf6ag = Modflow6Ag(sim, ag)
     mf6ag.run_model(dll)
 
 
-def compare_output(name):
+def compare_output(name, get_resid=False):
     cbc_name = "{}.cbc".format(name)
     nwt_ws = os.path.join(sws, "..", "data", "nwt_test_ag_wells")
     mf6_ws = os.path.join(sws, "..", "data", "mf6_test_ag_wells")
@@ -352,27 +408,32 @@ def compare_output(name):
     for rec in mf6_uzf_dis:
         d2.append(np.sum(rec['q']))
 
+    residsq = np.sum(np.abs(np.abs(l2) - np.abs(l))) ** 2
+
     mf6_pump = np.sum(l2)
     mf6_dis = np.sum(d2)
     print(mf6_pump)
+    print(residsq)
+    residsq2 = np.sum(np.abs(np.abs(mf6_pump) - np.abs(nwt_pump))) ** 2
+    # print(nwt_dis, mf6_dis)
+    if not get_resid:
+        x = pd.read_csv('factor.txt')
+        x = x.groupby(by="kstp", as_index=False)["factor"].max()
+        x['mf6'] = l2
+        x['mfnwt'] = l
+        # x = x[x["mf6"] < 0]
 
-    print(nwt_dis, mf6_dis)
-
-    x = pd.read_csv('factor.txt')
-    x = x.groupby(by="kstp", as_index=False)["factor"].max()
-    x['mf6'] = l2
-    x['mfnwt'] = l
-    # x = x[x["mf6"] < 0]
-
-    plt.plot(range(1, len(l) + 1), l2, "r-", label='mf6 ag')
-    plt.plot(range(1, len(l) + 1), l, "b--", label="mfnwt ag")
-    plt.plot(range(1, len(d) + 1), d2, "g-", label='mf6 uzf discharge')
-    plt.plot(range(1, len(d) + 1), d, "k--", label="mfnwt uzf discharge")
-    # plt.plot(range(1, 366), [0.2] * 365, 'c--')
-    # plt.plot(x.kstp.values, x.factor.values * -1, "k-", label="aet/pet")
-    plt.legend(loc=0)
-    #
-    plt.show()
+        plt.plot(range(1, len(l) + 1), l2, "r-", label='mf6 ag')
+        plt.plot(range(1, len(l) + 1), l, "b--", label="mfnwt ag")
+        plt.plot(range(1, len(d) + 1), d2, "g-", label='mf6 uzf discharge')
+        plt.plot(range(1, len(d) + 1), d, "k--", label="mfnwt uzf discharge")
+        # plt.plot(range(1, 366), [0.2] * 365, 'c--')
+        # plt.plot(x.kstp.values, x.factor.values * -1, "k-", label="aet/pet")
+        plt.legend(loc=0)
+        #
+        plt.show()
+    else:
+        return residsq
 
 
 def compare_factor_calc():
@@ -388,8 +449,25 @@ def compare_factor_calc():
     print('break')
 
 
+def opt_loop(args):
+    model_names = ("etdemand", "trigger", "specified")
+    model = 1
+    headtol = args["headtol"]
+    fluxtol = args["fluxtol"]
+    # run_mfnwt(model_names[model])
+    try:
+        run_mf6(model_names[model], headtol, fluxtol)
+        residsq = compare_output(model_names[model], get_resid=True)
+    except:
+        residsq = 1e+10
+    return residsq
+
+
 if __name__ == "__main__":
     import time
+    from hyperopt import hp, tpe, fmin
+    calibrate = False
+
     try:
         os.remove("factor.txt")
         with open("factor.txt", "w") as foo:
@@ -411,9 +489,30 @@ if __name__ == "__main__":
     except:
         pass
 
-    #time.sleep(10)
+    space = {
+        "headtol": hp.uniform("headtol", 1e-03, 0.1),
+        "fluxtol": hp.uniform("fluxtol", 1, 500)
+    }
+
+    if calibrate:
+        best = fmin(
+            fn=opt_loop,
+            space=space,
+            algo=tpe.suggest,
+            max_evals=100
+        )
+        print(best)
+
+        headtol = best["headtol"]
+        fluxtol = best["fluxtol"]
+        time.sleep(10)
+    else:
+        headtol = None
+        fluxtol = None
+
     model_names = ("etdemand", "trigger", "specified")
-    run_mfnwt(model_names[0])
-    run_mf6(model_names[0])
-    compare_output(model_names[0])
-    compare_factor_calc()
+    model = 1
+    run_mfnwt(model_names[model])
+    run_mf6(model_names[model], headtol, fluxtol)
+    compare_output(model_names[model])
+    # compare_factor_calc()

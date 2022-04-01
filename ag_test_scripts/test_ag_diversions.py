@@ -64,15 +64,35 @@ def build_mf6(name):
         perioddata=tuple(period_data),
         time_units="days"
     )
-
-    ims = flopy.mf6.ModflowIms(sim, complexity="COMPLEX")
+    #  headtol=2e-03,
+    #  fluxtol=50,
+    #  thickfact=1e-08,
+    n = 2e-03
+    ims = flopy.mf6.ModflowIms(
+        sim,
+        print_option="ALL",
+        complexity="SIMPLE",
+        no_ptcrecord=["ALL"],
+        outer_dvclose=2e-03,
+        outer_maximum=50,
+        # inner_dvclose=1e-06,
+        # inner_maximum=50,
+        rcloserecord=[1e-10, "L2NORM_RCLOSE"],
+        scaling_method="L2NORM", # "L2NORM",
+        linear_acceleration="BICGSTAB",
+        under_relaxation="DBD",
+        under_relaxation_gamma=0.0,
+        under_relaxation_theta=0.97,
+        under_relaxation_kappa=0.0001
+    )
 
     gwf = flopy.mf6.ModflowGwf(
         sim,
         modelname=name,
         save_flows=True,
         print_input=True,
-        print_flows=True
+        print_flows=True,
+        newtonoptions="NEWTON UNDER_RELAXATION",
     )
 
     # define delc and delr to equal approximately 1 acre
@@ -90,8 +110,8 @@ def build_mf6(name):
     npf = flopy.mf6.ModflowGwfnpf(gwf, save_specific_discharge=True, icelltype=1)
     sto = flopy.mf6.ModflowGwfsto(gwf, iconvert=1)
 
-    stress_period_data = {i: [[(0, 1, 1), -50.], ] for i in range(12)}
-    wel = flopy.mf6.ModflowGwfwel(gwf, stress_period_data=stress_period_data)
+    # stress_period_data = {i: [[(0, 1, 1), -50.], ] for i in range(12)}
+    # wel = flopy.mf6.ModflowGwfwel(gwf, stress_period_data=stress_period_data)
 
     # create SFR package
     nreaches = 11
@@ -211,7 +231,27 @@ def build_mf6(name):
     ag = build_ag_package(name, model_ws=sim_ws)
     sim.write_simulation()
     ag.write_file()
+    model_ws = gwf.model_ws
+    sfr_name = gwf.sfr.filename
+    uzf_name = gwf.uzf.filename
+    mf6_dev_no_final_check(model_ws, sfr_name)
+    mf6_dev_no_final_check(model_ws, uzf_name)
     return sim, gwf, ag
+
+
+def mf6_dev_no_final_check(model_ws, fname):
+    contents = []
+    with open(os.path.join(model_ws, fname)) as foo:
+        for line in foo:
+            if "options" in line.lower():
+                contents.append(line)
+                contents.append("  DEV_NO_FINAL_CHECK\n")
+            else:
+                contents.append(line)
+
+    with open(os.path.join(model_ws, fname), "w") as foo:
+        for line in contents:
+            foo.write(line)
 
 
 def build_nwt(name):
@@ -220,7 +260,7 @@ def build_nwt(name):
     ml = flopy.modflow.Modflow(
         name,
         version="mfnwt",
-        exe_name="mfnwt",
+        exe_name="mfnwt.exe",
         model_ws=model_ws
     )
 
@@ -317,7 +357,7 @@ def build_nwt(name):
             df.ppt_avg_m.values[i] / perlen[i], 5)
         pet[i] = np.ones((nrow, ncol)) * round_to_n(
             df.eto_avg_m.values[i] / perlen[i], 5)
-        extdp[i] = np.ones((nrow, ncol)) * 4
+        extdp[i] = np.ones((nrow, ncol)) * 5
         extwc[i] = np.ones((nrow, ncol)) * 0.06
 
     uzf = flopy.modflow.ModflowUzf1(
@@ -357,63 +397,10 @@ def build_nwt(name):
 
     nwt = flopy.modflow.ModflowNwt(
         ml,
-        headtol=0.1,
-        fluxtol=50
-    )
-
-    # build a UZF package
-    cimis_data = os.path.join("..", "data", "davis_monthly_ppt_eto.txt")
-    df = pd.read_csv(cimis_data)
-
-    finf = {}
-    pet = {}
-    extdp = {}
-    extwc = {}
-    for i in range(12):
-        finf[i] = np.ones((nrow, ncol)) * round_to_n(df.ppt_avg_m.values[i] / perlen[i], 5)
-        pet[i] = np.ones((nrow, ncol)) * round_to_n(df.eto_avg_m.values[i] / perlen[i], 5)
-        extdp[i] = np.ones((nrow, ncol)) * 4
-        extwc[i] = np.ones((nrow, ncol)) * 0.06
-
-    uzf = flopy.modflow.ModflowUzf1(
-        ml,
-        nuztop=1,
-        iuzfopt=1,
-        irunflg=0,
-        ipakcb=52,
-        ietflg=1,
-        ntrail2=7,
-        nsets=40,
-        surfdep=0.33,
-        iuzfbnd=np.ones((nrow, ncol)),
-        vks=8.64,
-        eps=5,
-        thts=0.35,
-        thtr=0.05,
-        thti=0.08,
-        specifythtr=True,
-        specifythti=True,
-        finf=finf,
-        pet=pet,
-        extdp=extdp,
-        extwc=extwc
-
-    )
-
-    stress_period_data = {}
-    for kper, nts in enumerate(perlen):
-        for ts in range(nts):
-            stress_period_data[(kper, ts)] = ["save head", "save budget"]
-
-    oc = flopy.modflow.ModflowOc(
-        ml,
-        stress_period_data=stress_period_data
-    )
-
-    nwt = flopy.modflow.ModflowNwt(
-        ml,
-        headtol=0.1,
-        fluxtol=50
+        headtol=2e-03,
+        fluxtol=50,
+        thickfact=1e-08,
+        options="SIMPLE"
     )
 
     gage = flopy.modflow.ModflowGage(
@@ -455,20 +442,20 @@ def build_ag_package(name, ml=None, model_ws=None):
 
     if name == "specified":
         options = flopy.utils.OptionBlock(
-            "IRRIGATION_DIVERSION 1 2 IRRIGATION_WELL 1 2 "
-            "MAXWELLS 1 TIMESERIES_DIVERSION".lower(),
+            "IRRIGATION_DIVERSION 1 2 "
+            "TIMESERIES_DIVERSION".lower(),
             flopy.modflow.ModflowAg
         )
     elif name == "trigger":
         options = flopy.utils.OptionBlock(
-            f"TRIGGER IRRIGATION_DIVERSION 1 2 IRRIGATION_WELL 1 2 "
-            "MAXWELLS 1 TIMESERIES_DIVERSION".lower(),
+            f"TRIGGER IRRIGATION_DIVERSION 1 2 "
+            "TIMESERIES_DIVERSION".lower(),
             flopy.modflow.ModflowAg
         )
     else:
         options = flopy.utils.OptionBlock(
-            f"{name} 1.0 IRRIGATION_DIVERSION 1 2 IRRIGATION_WELL 1 2 "
-            "MAXWELLS 1 TIMESERIES_DIVERSION".lower(),
+            f"{name} 1.0 IRRIGATION_DIVERSION 1 2 "
+            "TIMESERIES_DIVERSION".lower(),
             flopy.modflow.ModflowAg
         )
 
@@ -478,26 +465,26 @@ def build_ag_package(name, ml=None, model_ws=None):
     irrdiversion = {}
     for i in range(12):
         spd = flopy.modflow.ModflowAg.get_empty(1, 2, "irrdiversion")
-        spd[0] = (segid, 2, 31, 0.5, 3, 3, 1.0, 0.5, 4, 3, 1.0, 0.5)
+        spd[0] = (segid, 2, 7, 0.2, 4, 4, 0, 0.5, 5, 4, 0, 0.5)
         irrdiversion[i] = spd
 
-    well_list = flopy.modflow.ModflowAg.get_empty(1, block="well")
-    x = [[0, 1, 1, -50.], ]
-    for ix, rec in enumerate(well_list):
-        well_list[ix] = tuple(x[ix])
+    # well_list = flopy.modflow.ModflowAg.get_empty(1, block="well")
+    # x = [[0, 1, 1, -50.], ]
+    # for ix, rec in enumerate(well_list):
+    #     well_list[ix] = tuple(x[ix])
 
-    irrwell = {}
-    for i in range(12):
-        spd = flopy.modflow.ModflowAg.get_empty(1, 2, "irrwell")
-        spd[0] = (0, 2, 31, 0.2, 2, 1, 1.0, 0.5, 2, 2, 1.0, 0.5)
-        irrwell[i] = spd
+    # irrwell = {}
+    # for i in range(12):
+    #     spd = flopy.modflow.ModflowAg.get_empty(1, 2, "irrwell")
+    #     spd[0] = (0, 2, 31, 0.2, 2, 1, 1.0, 0.5, 2, 2, 1.0, 0.5)
+    #     irrwell[i] = spd
 
     ag = flopy.modflow.ModflowAg(
         ml,
         options=options,
         time_series=timeseries_diversion,
-        well_list=well_list,
-        irrwell=irrwell,
+        # well_list=well_list,
+        # irrwell=irrwell,
         irrdiversion=irrdiversion,
         nper=dis.nper
     )
@@ -564,18 +551,52 @@ def heads(name):
     data = hds.get_alldata()
 
 
+def compare_etdemand():
+    nwt_debug = os.path.join("..", "data", "nwt_test_ag_diversions", "debug_etdemand.out")
+    mf6_debug = os.path.join("etdiv_factor.txt")
+
+    nwt_header = ["kper", "kstp", "iseg", "crop_pet", "crop_aet", "sup", "supold", "factor"]
+
+    dfnwt = pd.read_csv(nwt_debug, names=nwt_header, delim_whitespace=True)
+    dfmf6 = pd.read_csv(mf6_debug)
+    dfmf6.kper += 1
+    dfmf6.kstp += 1
+    dfnwt.to_csv("etdiv_factor_nwt.txt", index=False)
+    print('break')
+
+
 if __name__ == "__main__":
-    try:
-        os.remove(os.path.join("..", "data", "nwt_test_ag_diversions", "debug.out"))
-    except:
-        pass
-    try:
-        os.remove(os.path.join("..", "data", "nwt_test_ag_diversions", "debug_trigger.out"))
-    except:
-        pass
-    model_names = ("etdemand", "trigger", "specified")
-    run_mfnwt(model_names[1])
-    run_mf6(model_names[1])
-    compare_output(model_names[1])
-    heads(model_names[1])
-    # compare_factor_calc()
+    debug = False
+    if not debug:
+        try:
+            os.remove(os.path.join("..", "data", "nwt_test_ag_diversions", "debug.out"))
+        except:
+            pass
+        try:
+            os.remove(os.path.join("..", "data", "nwt_test_ag_diversions", "debug_trigger.out"))
+        except:
+            pass
+        try:
+            os.remove(os.path.join("..", "data", "nwt_test_ag_diversions", "debug_etdemand.out"))
+        except:
+            pass
+        try:
+            os.remove(os.path.join("div_factor.txt"))
+        except:
+            pass
+        with open(os.path.join("div_factor.txt"), "w") as foo:
+            foo.write("factor,kstp,kiter,crop_aet,crop_pet\n")
+        try:
+            os.remove(os.path.join("etdiv_factor.txt"))
+        except:
+            pass
+        with open(os.path.join("etdiv_factor.txt"), "w") as foo:
+            foo.write("kper,kstp,crop_pet,crop_aet,sup,supold,factor\n")
+
+        model_names = ("etdemand", "trigger", "specified")
+        model = 0
+        run_mfnwt(model_names[model])
+        run_mf6(model_names[model])
+        compare_output(model_names[model])
+        heads(model_names[model])
+    compare_etdemand()

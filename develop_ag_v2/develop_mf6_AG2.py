@@ -315,6 +315,9 @@ class Modflow6Ag(object):
         self.trigger = self.ag.trigger
 
         self.sim_wells = self.ag.irrigation_well
+        if self.ag.irrwell is None:
+            self.sim_wells = False
+
         self.nummaxwell = self.ag.nummaxwell
 
         self.sim_diversions = self.ag.irrigation_diversion
@@ -324,7 +327,7 @@ class Modflow6Ag(object):
         self.numsupwell = self.ag.numsupwells
         self.irrigation_return = []
 
-        if self.sim_wells:
+        if self.sim_wells or self.sim_supplemental:
             self.well_max_q = np.zeros((self.nummaxwell,))
             self.well_out = np.zeros((self.nsteps, self.nummaxwell))
             self.well_demand_out = np.zeros((self.nsteps, self.nummaxwell))
@@ -554,7 +557,7 @@ class Modflow6Ag(object):
         self.supwell_num = self.ag.supwell[kper]['wellid']
         self.supwell = self.__fmt_supwell_spd(self.ag.supwell, kper)
 
-    def conjuctive_demand_etdemand(self, mf6, delt=1, kiter=1):
+    def conjuctive_demand_etdemand(self, mf6, kstp, delt=1, kiter=1, kper=0):
         """
         Method to determine conjunctive use demand
 
@@ -584,18 +587,16 @@ class Modflow6Ag(object):
         if delt < 1:
             crop_aet = crop_pet
 
-        if delt < 1:
-            crop_aet = crop_pet
-
         if kiter == 0:
-            sup = divflow[self.irrdiversion_num]
-            supold = np.zeros(self.sfr_max_q.shape)[self.irrdiversion_num]
             self._supact = np.zeros(self.sfr_max_q.shape)
             self._idsupold = np.zeros(self.sfr_max_q.shape)
             self._aetoldsw = crop_aet
-        else:
-            sup = divflow[self.irrdiversion_num]
-            supold = self._idsupold[self.irrdiversion_num]
+            divflow[self.irrdiversion_num] = 0
+            if kstp == 0:
+                self._aetoldsw = crop_aet * 0
+
+        sup = divflow[self.irrdiversion_num] # + actual???? must be supplementary pumping.....
+        supold = self._idsupold[self.irrdiversion_num] # + actualold??? supplementary pumping....
 
         factor = self.__calculate_factor(
             crop_pet,
@@ -607,15 +608,20 @@ class Modflow6Ag(object):
             1
         )
 
+        qonly = np.where(sup + factor > crop_vks, crop_vks, sup + factor)
         factor = np.where(factor < 0, 0, factor)
 
-        self._aetoldsw = crop_aet
+        # todo: not sure this is quite correct will check in a hot moment
         self._idsupold[self.irrdiversion_num] = divflow[self.irrdiversion_num]
         self._supact[self.irrdiversion_num] += factor
+        self._aetold = crop_aet
 
-        dvflw = np.where(self._supact >= self.sfr_max_q,
+        with open('etdiv_factor.txt', "a") as foo:
+            foo.write(f"{kper},{kstp},{crop_pet[0]},{crop_aet[0]},{self._supact[0]},{self._idsupold[0]},{factor[0]}\n")
+
+        dvflw = np.where(qonly >= self.sfr_max_q,
                          self.sfr_max_q,
-                         self._supact)
+                         qonly)
 
         div_info = self.div_info[self.irrdiversion_num]
         fmaxflow = dsflow[div_info["rno"]]
@@ -653,9 +659,6 @@ class Modflow6Ag(object):
             crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
             crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
 
-        if kstp == 243:
-            print('break')
-
         crop_aet = np.where(crop_vks < 1e-30, crop_pet, crop_aet)
 
         if delt < 1:
@@ -679,9 +682,6 @@ class Modflow6Ag(object):
         factor = self.__calculate_factor(crop_pet, crop_aet, self._aetold, sup, supold, kiter, kstp)
 
         qonly = np.where(sup + factor > crop_vks, crop_vks, sup + factor)
-
-        with open("factor.txt", "a") as foo:
-            foo.write(f"{qonly[0]}, {kstp}, {kiter}\n")
 
         self._supold[self.irrwell_num] = sup
         self._aetold = crop_aet
@@ -733,13 +733,16 @@ class Modflow6Ag(object):
                                   sup_demand,
                                   0)
 
-        sup_pump = np.where(sup_demand > np.abs(self.well_max_q[self.supwell_num]),
-                            np.abs(self.well_max_q[self.supwell_num]),
+        wells = mf6.get_value(self.well_addr)
+        sup_pump = np.where(sup_demand + wells[self.supwell_num] > np.abs(self.well_max_q[self.supwell_num]),
+                            np.abs(self.well_max_q[self.supwell_num]) - np.abs(wells[self.supwell_num]),
                             -1 * sup_demand)
 
+        if sup_pump[0] != 0.0:
+            print('break')
         # todo: need a smart way to apply sup!
-        wells = mf6.get_value(self.well_addr)
-        wells[self.supwell_num] = sup_pump
+        # todo: need to check current pumpage and apply sup to current up to max_well_q
+        wells[self.supwell_num] += sup_pump
         self.well_demand_out[kstp, self.supwell_num] = sup_pump
         self.well_out[kstp, self.supwell_num] = sup_pump
         mf6.set_value(self.well_addr, wells)
@@ -781,7 +784,7 @@ class Modflow6Ag(object):
 
         return factor
 
-    def conjunctive_demand(self, mf6, delt=1):
+    def conjunctive_demand(self, mf6, kstp, delt=1, kiter=1):
         """
         Method to calculate triggered surface water demand.
 
@@ -793,13 +796,19 @@ class Modflow6Ag(object):
         pet = mf6.get_value(self.pet_addr)
         dsflow = mf6.get_value(self.sfr_dsflow_addr)
         aet = mf6.get_value(self.aet_addr)
+        gwet = mf6.get_value(self.uz_gwet_addr)
+        area = mf6.get_value(self.area_addr)
+        uzet = mf6.get_value(self.uzet_addr)
 
         crop_pet = np.zeros((len(self.irrdiversion_num),))
         crop_aet = np.zeros((len(self.irrdiversion_num),))
         for ix, record in enumerate(self.irrdiversion):
             crop_nodes = record["node"]
-            crop_pet[ix] = np.sum(pet[crop_nodes])
-            crop_aet[ix] = np.sum(aet[crop_nodes])
+            crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
+            crop_uzet = uzet[crop_nodes] / delt
+            crop_gwet = gwet[crop_nodes]
+            crop_aet[ix] = np.sum((crop_gwet + crop_uzet))
+            # crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
 
         demand = self.sfr_max_q
 
@@ -808,16 +817,22 @@ class Modflow6Ag(object):
                               crop_aet / crop_pet,
                               1)
 
-            mask = np.where((self.sfr_timeinperiod > self.sfr_irrperiod) &
-                            (factor <= self.sfr_triggerfact),
-                            True,
-                            False)
+            with open("div_factor.txt", "a") as foo:
+                foo.write(f"{factor[0]}, {kstp + 1}, {kiter}, {crop_aet[0]}, {crop_pet[0]}\n")
 
-            self.sfr_timeinperiod[mask] = 0
+            if (kstp, kiter) == (0, 0):
+                dvflw = demand * 0
+            else:
+                mask = np.where((self.sfr_timeinperiod > self.sfr_irrperiod) &
+                                (factor <= self.sfr_triggerfact),
+                                True,
+                                False)
 
-            dvflw = np.where(self.sfr_timeinperiod - delt < self.sfr_irrperiod,
-                             demand[self.irrdiversion_num],
-                             0)
+                self.sfr_timeinperiod[mask] = 0
+
+                dvflw = np.where(self.sfr_timeinperiod - delt < self.sfr_irrperiod,
+                                 demand[self.irrdiversion_num],
+                                 0)
         else:
             dvflw = demand[self.irrdiversion_num]
 
@@ -905,7 +920,7 @@ class Modflow6Ag(object):
         finfold : np.ndarray
         """
         area = mf6.get_value(self.area_addr)
-        # finf = mf6.get_value(self.uz_finf_addr)
+        finf = mf6.get_value(self.uz_finf_addr)
 
         return_rates = np.zeros((self.gwf.modelgrid.ncpl,))
         if pumpage is not None and pumpage:
@@ -914,7 +929,7 @@ class Modflow6Ag(object):
                 eff_fact = record['eff_fact']
                 field_fact = record['field_fact']
                 crop_area = area[crop_nodes]
-                vol = np.ones((len(crop_nodes),)) * pumpage[ix] / len(crop_nodes)
+                vol = np.ones((len(crop_nodes),)) * pumpage[ix] 
                 subvol = ((1 - eff_fact) * vol * field_fact)
                 subrate = -1 * subvol / crop_area
                 return_rates[crop_nodes] += subrate
@@ -925,7 +940,7 @@ class Modflow6Ag(object):
                 eff_fact = record['eff_fact']
                 field_fact = record['field_fact']
                 crop_area = area[crop_nodes]
-                vol = np.ones((len(crop_nodes),)) * divflow[ix] / len(crop_nodes)
+                vol = np.ones((len(crop_nodes),)) * divflow[ix]
                 subvol = ((1 - eff_fact) * vol * field_fact)
                 subrate = subvol / crop_area
                 return_rates[crop_nodes] += subrate
@@ -942,12 +957,13 @@ class Modflow6Ag(object):
                             field_fact = irr_record['field_fact']
                             crop_area = area[crop_nodes]
 
-                            vol = np.ones((len(crop_nodes),)) * sup_pump[ix] / len(crop_nodes)
+                            vol = np.ones((len(crop_nodes),)) * sup_pump[ix]
                             subvol = ((1 - eff_fact) * vol * field_fact)
                             subrate = -1 * subvol / crop_area
                             return_rates[crop_nodes] += subrate
 
-        finf = finfold + return_rates
+        # finf = finfold + return_rates
+        finf = finf + return_rates
         mf6.set_value(self.uz_finf_addr, finf)
         return return_rates
 
@@ -1022,7 +1038,7 @@ class Modflow6Ag(object):
                         if self.sim_wells:
                             well_demand = self.gw_demand_etdemand(mf6, kstp, delt, kiter)
                         if self.sim_diversions:
-                            conj_demand, divflow = self.conjuctive_demand_etdemand(mf6, delt, kiter)
+                            conj_demand, divflow = self.conjuctive_demand_etdemand(mf6, kstp, delt, kiter)
                             if self.sim_supplemental:
                                 sup_demand = self.supplemental_pumping(mf6, conj_demand, divflow, kstp, delt)
 
@@ -1033,7 +1049,7 @@ class Modflow6Ag(object):
                         if self.sim_wells:
                             well_demand = self.gw_demand(mf6, kstp, delt, kiter)
                         if self.sim_diversions:
-                            conj_demand, divflow = self.conjunctive_demand(mf6, delt)
+                            conj_demand, divflow = self.conjunctive_demand(mf6, kstp, delt, kiter)
                             if self.sim_supplemental:
                                 sup_demand = self.supplemental_pumping(mf6, conj_demand, divflow, kstp, delt)
 
