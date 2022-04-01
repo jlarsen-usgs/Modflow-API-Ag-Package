@@ -10,6 +10,7 @@ from develop_mf6_AG2 import Modflow6Ag
 
 from math import log10, floor
 
+
 def read_sfr_list_data(f):
     d = {"kper": [], "kstp": [], "iseg": [], "inflow": [], "outflow": []}
     read_header = False
@@ -52,7 +53,7 @@ def round_to_n(x, n):
     return t
 
 
-def build_mf6(name):
+def build_mf6(name, headtol=None, fluxtol=None):
     sim_ws = os.path.join(sws, "..", "data", "mf6_test_ag_diversions")
     sim = flopy.mf6.MFSimulation(name, sim_ws=sim_ws)
 
@@ -64,9 +65,19 @@ def build_mf6(name):
         perioddata=tuple(period_data),
         time_units="days"
     )
-    #  headtol=2e-03,
-    #  fluxtol=50,
-    #  thickfact=1e-08,
+
+    if headtol is None:
+        if name == "etdemand":
+            headtol = 2e-03
+        elif name == "trigger":
+            headtol = 2e-03
+
+    if fluxtol is None:
+        if name == "etdemand":
+            fluxtol = 50
+        elif name == "trigger":
+            fluxtol = 50
+
     n = 2e-03
     ims = flopy.mf6.ModflowIms(
         sim,
@@ -75,8 +86,6 @@ def build_mf6(name):
         no_ptcrecord=["ALL"],
         outer_dvclose=2e-03,
         outer_maximum=50,
-        # inner_dvclose=1e-06,
-        # inner_maximum=50,
         rcloserecord=[1e-10, "L2NORM_RCLOSE"],
         scaling_method="L2NORM", # "L2NORM",
         linear_acceleration="BICGSTAB",
@@ -109,9 +118,6 @@ def build_mf6(name):
     ic = flopy.mf6.ModflowGwfic(gwf, strt=95)
     npf = flopy.mf6.ModflowGwfnpf(gwf, save_specific_discharge=True, icelltype=1)
     sto = flopy.mf6.ModflowGwfsto(gwf, iconvert=1)
-
-    # stress_period_data = {i: [[(0, 1, 1), -50.], ] for i in range(12)}
-    # wel = flopy.mf6.ModflowGwfwel(gwf, stress_period_data=stress_period_data)
 
     # create SFR package
     nreaches = 11
@@ -268,7 +274,6 @@ def build_nwt(name):
     ncol = 10
 
     perlen = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
-    # period_data = [(i, i, 1.0) for i in perlen]
 
     dis = flopy.modflow.ModflowDis(
         ml,
@@ -468,23 +473,10 @@ def build_ag_package(name, ml=None, model_ws=None):
         spd[0] = (segid, 2, 7, 0.2, 4, 4, 0, 0.5, 5, 4, 0, 0.5)
         irrdiversion[i] = spd
 
-    # well_list = flopy.modflow.ModflowAg.get_empty(1, block="well")
-    # x = [[0, 1, 1, -50.], ]
-    # for ix, rec in enumerate(well_list):
-    #     well_list[ix] = tuple(x[ix])
-
-    # irrwell = {}
-    # for i in range(12):
-    #     spd = flopy.modflow.ModflowAg.get_empty(1, 2, "irrwell")
-    #     spd[0] = (0, 2, 31, 0.2, 2, 1, 1.0, 0.5, 2, 2, 1.0, 0.5)
-    #     irrwell[i] = spd
-
     ag = flopy.modflow.ModflowAg(
         ml,
         options=options,
         time_series=timeseries_diversion,
-        # well_list=well_list,
-        # irrwell=irrwell,
         irrdiversion=irrdiversion,
         nper=dis.nper
     )
@@ -526,77 +518,43 @@ def compare_output(name):
 
     print(nwt_dis, mf6_dis)
 
-    # x = pd.read_csv('factor.txt')
-    # x = x.groupby(by="kstp", as_index=False)["factor"].max()
-    # x['mf6'] = l2
-    # x['mfnwt'] = l
-    # x = x[x["mf6"] < 0]
+    print('break')
 
     plt.plot(range(1, len(mf6_div) + 1), mf6_div['inflow'].values, "r-", label='mf6 ag')
     plt.plot(range(1, len(nwt_div) + 1), nwt_div["SW-DIVERSION"].values, "b--", label="mfnwt ag")
-    # plt.plot(range(1, len(d) + 1), d2, "g-", label='mf6 uzf discharge')
-    # plt.plot(range(1, len(d) + 1), d, "k--", label="mfnwt uzf discharge")
-    # plt.plot(range(1, 366), [0.2] * 365, 'c--')
-    # plt.plot(x.kstp.values, x.factor.values * -1, "k-", label="aet/pet")
     plt.legend(loc=0)
-    #
     plt.show()
 
 
-def heads(name):
-    name = f"{name}.hds"
-    head_file = os.path.join("..", "data", "nwt_test_ag_diversions", name)
-
-    hds = flopy.utils.HeadFile(head_file)
-    data = hds.get_alldata()
-
-
-def compare_etdemand():
-    nwt_debug = os.path.join("..", "data", "nwt_test_ag_diversions", "debug_etdemand.out")
-    mf6_debug = os.path.join("etdiv_factor.txt")
-
-    nwt_header = ["kper", "kstp", "iseg", "crop_pet", "crop_aet", "sup", "supold", "factor"]
-
-    dfnwt = pd.read_csv(nwt_debug, names=nwt_header, delim_whitespace=True)
-    dfmf6 = pd.read_csv(mf6_debug)
-    dfmf6.kper += 1
-    dfmf6.kstp += 1
-    dfnwt.to_csv("etdiv_factor_nwt.txt", index=False)
-    print('break')
-
-
 if __name__ == "__main__":
-    debug = False
-    if not debug:
-        try:
-            os.remove(os.path.join("..", "data", "nwt_test_ag_diversions", "debug.out"))
-        except:
-            pass
-        try:
-            os.remove(os.path.join("..", "data", "nwt_test_ag_diversions", "debug_trigger.out"))
-        except:
-            pass
-        try:
-            os.remove(os.path.join("..", "data", "nwt_test_ag_diversions", "debug_etdemand.out"))
-        except:
-            pass
-        try:
-            os.remove(os.path.join("div_factor.txt"))
-        except:
-            pass
-        with open(os.path.join("div_factor.txt"), "w") as foo:
-            foo.write("factor,kstp,kiter,crop_aet,crop_pet\n")
-        try:
-            os.remove(os.path.join("etdiv_factor.txt"))
-        except:
-            pass
-        with open(os.path.join("etdiv_factor.txt"), "w") as foo:
-            foo.write("kper,kstp,crop_pet,crop_aet,sup,supold,factor\n")
 
-        model_names = ("etdemand", "trigger", "specified")
-        model = 0
-        run_mfnwt(model_names[model])
-        run_mf6(model_names[model])
-        compare_output(model_names[model])
-        heads(model_names[model])
-    compare_etdemand()
+    try:
+        os.remove(os.path.join("..", "data", "nwt_test_ag_diversions", "debug.out"))
+    except:
+        pass
+    try:
+        os.remove(os.path.join("..", "data", "nwt_test_ag_diversions", "debug_trigger.out"))
+    except:
+        pass
+    try:
+        os.remove(os.path.join("..", "data", "nwt_test_ag_diversions", "debug_etdemand.out"))
+    except:
+        pass
+    try:
+        os.remove(os.path.join("div_factor.txt"))
+    except:
+        pass
+    with open(os.path.join("div_factor.txt"), "w") as foo:
+        foo.write("factor,kstp,kiter,crop_aet,crop_pet\n")
+    try:
+        os.remove(os.path.join("etdiv_factor.txt"))
+    except:
+        pass
+    with open(os.path.join("etdiv_factor.txt"), "w") as foo:
+        foo.write("kper,kstp,crop_pet,crop_aet,sup,supold,factor\n")
+
+    model_names = ("etdemand", "trigger", "specified")
+    model = 1
+    run_mfnwt(model_names[model])
+    run_mf6(model_names[model])
+    compare_output(model_names[model])

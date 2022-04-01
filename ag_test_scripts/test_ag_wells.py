@@ -44,12 +44,6 @@ def build_mf6(name, headtol=None, fluxtol=None):
         elif name == "trigger":
             fluxtol = 213.1677138100136
 
-    # ims = flopy.mf6.ModflowIms(sim,
-    #                           complexity="COMPLEX",
-    #                           outer_dvclose=headtol,
-    #                           outer_maximum=fluxtol)
-
-
     ims = flopy.mf6.ModflowIms(
         sim,
         print_option="ALL",
@@ -57,17 +51,14 @@ def build_mf6(name, headtol=None, fluxtol=None):
         no_ptcrecord=["ALL"],
         outer_dvclose=headtol,
         outer_maximum=fluxtol,
-        # inner_dvclose=1e-06,
-        # inner_maximum=50,
         rcloserecord=[1e-10, "L2NORM_RCLOSE"],
-        scaling_method="L2NORM", # "L2NORM",
+        scaling_method="L2NORM",
         linear_acceleration="BICGSTAB",
         under_relaxation="DBD",
         under_relaxation_gamma=0.0,
         under_relaxation_theta=0.97,
         under_relaxation_kappa=0.0001
     )
-
 
     gwf = flopy.mf6.ModflowGwf(
         sim,
@@ -94,7 +85,7 @@ def build_mf6(name, headtol=None, fluxtol=None):
     sto = flopy.mf6.ModflowGwfsto(gwf, iconvert=1)
 
     stress_period_data = {
-        i: [[(0, 4, 4), -50.],] for i in range(12)    # [(0, 9, 9), -10.], [(0, 6, 6), -10.]]
+        i: [[(0, 4, 4), -50.],] for i in range(12)
     }
     wel = flopy.mf6.ModflowGwfwel(gwf, stress_period_data=stress_period_data)
 

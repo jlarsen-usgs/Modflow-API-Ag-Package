@@ -1,294 +1,5 @@
 from modflowapi import ModflowApi
 import numpy as np
-import pandas as pd
-import flopy
-import os
-
-
-def create_test_model(name):
-
-    sim_ws = os.path.join(".",)
-    sim = flopy.mf6.MFSimulation(name, sim_ws=sim_ws)
-
-    # create TDIS with monthly stress periods and daily time steps
-    perlen = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
-    period_data = [(i, i, 1.0) for i in perlen]
-    tdis = flopy.mf6.ModflowTdis(
-        sim,
-        nper=12,
-        perioddata=tuple(period_data),
-        time_units="days"
-    )
-
-    # create IMS
-    ims = flopy.mf6.ModflowIms(sim, complexity="COMPLEX")
-
-    # create model!
-    gwf = flopy.mf6.ModflowGwf(
-        sim,
-        modelname=name,
-        save_flows=True,
-        print_input=True,
-        print_flows=True
-    )
-
-    # define delc and delr to equal approximately 1 acre
-    dis = flopy.mf6.ModflowGwfdis(
-        gwf,
-        nrow=10,
-        ncol=10,
-        delr=63.6,
-        delc=63.6,
-        top=100,
-        length_units='meters'
-    )
-
-    ic = flopy.mf6.ModflowGwfic(gwf, strt=95)
-    npf = flopy.mf6.ModflowGwfnpf(gwf, save_specific_discharge=True)
-    sto = flopy.mf6.ModflowGwfsto(gwf, iconvert=1)
-
-    stress_period_data = {
-        i: [[(0, 4, 4), -100.], [(0, 9, 9), -100.], [(0, 6, 6), -50.]] for i in range(12)
-    }
-    wel = flopy.mf6.ModflowGwfwel(gwf, stress_period_data=stress_period_data)
-
-    # create RCH and EVT packages from DAVIS monthly average CIMIS data
-    cimis_data = os.path.join("..", "data", "davis_monthly_ppt_eto.txt")
-    df = pd.read_csv(cimis_data)
-
-    # recharge = {i: v / perlen[i] for i, v in enumerate(df.ppt_avg_m.values)}
-    # rch = flopy.mf6.ModflowGwfrcha(gwf, recharge=recharge)
-
-    # surface = {i: 100 for i in range(12)}
-    # eto = {i: v / perlen[i] for i, v in enumerate(df.eto_avg_m.values)}
-    # depth = {i: 3 for i in range(12)}
-    # evt = flopy.mf6.ModflowGwfevta(gwf, surface=surface, rate=eto, depth=depth)
-
-    # build a UZF package
-    nuzfcells = 100
-    ntrailwaves = 7
-    nwavesets = 40
-    package_data = []
-    cnt = 0
-    for i in range(10):
-        for j in range(10):
-            rec = (cnt, (0, i, j), 1, 0, 0.33, 8.64, 0.05, 0.35, 0.08, 5)
-            package_data.append(rec)
-            cnt += 1
-
-    period_data = {}
-    for i in range(12):
-        cnt = 0
-        spd = []
-        for _ in range(10):
-            for _ in range(10):
-                rec = (
-                    cnt,
-                    df.ppt_avg_m.values[i]/perlen[i],
-                    df.eto_avg_m.values[i]/perlen[i],
-                    4,
-                    0.06,
-                    100,
-                    100,
-                    3
-                )
-                spd.append(rec)
-                cnt += 1
-        period_data[i] = spd
-
-    uzf = flopy.mf6.ModflowGwfuzf(
-        gwf,
-        simulate_et=True,
-        nuzfcells=nuzfcells,
-        ntrailwaves=ntrailwaves,
-        nwavesets=nwavesets,
-        packagedata=package_data,
-        perioddata=period_data
-    )
-
-    # create SFR package
-    nreaches = 11
-    package_data = []
-    for i in range(nreaches):
-        ustrf = 1.0
-        if i in (0, 9, 10):
-            ncon = 1
-        elif i == 6:
-            ncon = 3
-        else:
-            ncon = 2
-
-        if i == 6:
-            ndiv = 1
-        else:
-            ndiv = 0
-
-        cellid = (0, i, 7)
-        kh = 0.000015
-        if i == 10:
-            kh = 0.0000015
-            cellid = (0, 6, 6)
-            ustrf = 0.0
-
-        rch_data = (i, cellid, 100, 5, 0.02, 99, 0.5, kh, 0.03, ncon, ustrf, ndiv)
-        package_data.append(rch_data)
-
-    connection_data = []
-    for i in range(nreaches):
-        if i == 0:
-            cd = [i, -1 * (i + 1)]
-        elif i == 9:
-            cd = [i, i - 1]
-        elif i == 10:
-            cd = [i, 6]
-        elif i == 6:
-            cd = [i, i - 1, -1 * (i + 1), -10]
-        else:
-            cd = [i, i - 1, -1 * (i + 1)]
-        connection_data.append(cd)
-
-    diversions = [[6, 0, 10, "UPTO"]]
-
-    period_data = {
-        i: [(0, "INFLOW", 8),  (6, "DIVERSION", 0, 10)] for i in range(12)
-    }
-
-    sfr = flopy.mf6.ModflowGwfsfr(gwf,
-                               nreaches=nreaches,
-                               packagedata=package_data,
-                               connectiondata=connection_data,
-                               diversions=diversions,
-                               perioddata=period_data)
-
-    budget_file = f"{name}.cbc"
-    head_file = f"{name}.hds"
-    saverecord = {i: [("HEAD", "ALL"), ("BUDGET", "ALL")] for i in range(10)}
-    printrecord = {i: [("HEAD", "ALL"), ("BUDGET", "ALL")] for i in range(10)}
-    oc = flopy.mf6.ModflowGwfoc(gwf,
-                             budget_filerecord=budget_file,
-                             head_filerecord=head_file,
-                             saverecord=saverecord,
-                             printrecord=printrecord)
-
-    sim.write_simulation()
-    return sim, gwf
-
-
-def create_ag_package_etdemand():
-    """
-    Method to create an ETDEMAND AG package
-    """
-    ml = flopy.modflow.Modflow("etdemand", version='mfnwt')
-    dis = flopy.modflow.ModflowDis(
-        ml,
-        nlay=1,
-        nrow=10,
-        ncol=10,
-        nper=12,
-        delr=63.6,
-        delc=63.6
-    )
-
-    options = flopy.utils.OptionBlock(
-        "ETDEMAND IRRIGATION_WELL 1 2 SUPPLEMENTAL_WELL 1 1 "
-        "MAXWELLS 3 IRRIGATION_DIVERSION 1 2".lower(),
-        flopy.modflow.ModflowAg
-    )
-
-    well_list = flopy.modflow.ModflowAg.get_empty(2, block="well")
-
-    x = [[0, 4, 4, -100.], [0, 9, 9, -100.], [0, 6, 6, -50]]
-    for ix, rec in enumerate(well_list):
-        well_list[ix] = tuple(x[ix])
-
-    irrwell = {}
-    for i in range(12):
-        spd = flopy.modflow.ModflowAg.get_empty(1, 2, "irrwell")
-        spd[0] = (0, 2, 10, 0.0, 4, 4, 0, 0.5, 5, 4, 0, 0.5)
-        irrwell[i] = spd
-
-    irrdiversion = {}
-    for i in range(12):
-        spd = flopy.modflow.ModflowAg.get_empty(1, 2, "irrdiversion")
-        # todo: update triggerfact and period parameters
-        spd[0] = (1, 2, 10, 0.0, 6, 6, 0, 0.5, 7, 6, 0, 0.5)
-        irrdiversion[i] = spd
-
-    supwell = {}
-    for i in range(12):
-        spd = flopy.modflow.ModflowAg.get_empty(1, 1, "supwell")
-        spd[0] = (2, 1, 1, 0.9, 1)
-        supwell[i] = spd
-
-    ag = flopy.modflow.ModflowAg(
-        ml,
-        options=options,
-        well_list=well_list,
-        irrwell=irrwell,
-        irrdiversion=irrdiversion,
-        supwell=supwell,
-        nper=12
-    )
-    ag.write_file()
-    return ag
-
-
-def create_ag_package_trigger():
-    """
-    Method to create an TRIGGER AG package
-    """
-    ml = flopy.modflow.Modflow("trigger", version='mfnwt')
-    dis = flopy.modflow.ModflowDis(
-        ml,
-        nlay=1,
-        nrow=10,
-        ncol=10,
-        nper=12,
-        delr=63.6,
-        delc=63.6
-    )
-
-    options = flopy.utils.OptionBlock(
-        "TRIGGER IRRIGATION_WELL 1 2 SUPPLEMENTAL_WELL 1 1 "
-        "MAXWELLS 3 IRRIGATION_DIVERSION 1 2".lower(),
-        flopy.modflow.ModflowAg
-    )
-
-    well_list = flopy.modflow.ModflowAg.get_empty(2, block="well")
-
-    x = [[0, 4, 4, -100.], [0, 9, 9, -100.], [0, 6, 6, -50]]
-    for ix, rec in enumerate(well_list):
-        well_list[ix] = tuple(x[ix])
-
-    irrwell = {}
-    for i in range(12):
-        spd = flopy.modflow.ModflowAg.get_empty(1, 2, "irrwell")
-        spd[0] = (0, 2, 10, 0.1, 4, 4, 0, 0.5, 5, 4, 0, 0.5)
-        irrwell[i] = spd
-
-    irrdiversion = {}
-    for i in range(12):
-        spd = flopy.modflow.ModflowAg.get_empty(1, 2, "irrdiversion")
-        spd[0] = (1, 2, 10, 0.1, 6, 6, 0, 0.5, 7, 6, 0, 0.5)
-        irrdiversion[i] = spd
-
-    supwell = {}
-    for i in range(12):
-        spd = flopy.modflow.ModflowAg.get_empty(1, 1, "supwell")
-        spd[0] = (2, 1, 1, 1, 1)
-        supwell[i] = spd
-
-    ag = flopy.modflow.ModflowAg(
-        ml,
-        options=options,
-        well_list=well_list,
-        irrwell=irrwell,
-        irrdiversion=irrdiversion,
-        supwell=supwell,
-        nper=12
-    )
-    ag.write_file()
-    return ag
 
 
 class Modflow6Ag(object):
@@ -735,14 +446,14 @@ class Modflow6Ag(object):
 
         wells = mf6.get_value(self.well_addr)
         sup_pump = np.where(sup_demand + wells[self.supwell_num] > np.abs(self.well_max_q[self.supwell_num]),
-                            np.abs(self.well_max_q[self.supwell_num]) - np.abs(wells[self.supwell_num]),
+                            -1 * np.abs(self.well_max_q[self.supwell_num]) - np.abs(wells[self.supwell_num]),
                             -1 * sup_demand)
 
-        if sup_pump[0] != 0.0:
-            print('break')
-        # todo: need a smart way to apply sup!
-        # todo: need to check current pumpage and apply sup to current up to max_well_q
+        # todo: create supplemental pumping check!!!! for test ag_supplemental
         wells[self.supwell_num] += sup_pump
+        wells = np.where(wells < self.well_max_q,
+                         self.well_max_q,
+                         wells)
         self.well_demand_out[kstp, self.supwell_num] = sup_pump
         self.well_out[kstp, self.supwell_num] = sup_pump
         mf6.set_value(self.well_addr, wells)
@@ -929,7 +640,7 @@ class Modflow6Ag(object):
                 eff_fact = record['eff_fact']
                 field_fact = record['field_fact']
                 crop_area = area[crop_nodes]
-                vol = np.ones((len(crop_nodes),)) * pumpage[ix] 
+                vol = np.ones((len(crop_nodes),)) * pumpage[ix]
                 subvol = ((1 - eff_fact) * vol * field_fact)
                 subrate = -1 * subvol / crop_area
                 return_rates[crop_nodes] += subrate
@@ -960,7 +671,10 @@ class Modflow6Ag(object):
                             vol = np.ones((len(crop_nodes),)) * sup_pump[ix]
                             subvol = ((1 - eff_fact) * vol * field_fact)
                             subrate = -1 * subvol / crop_area
-                            return_rates[crop_nodes] += subrate
+                            # note: not applying return from SUP allows for trend match....
+                            #   this is most likely applied in NWT/GSFLOW during the IRRWELL LOOP
+                            #   and then in effect not properly applied in the case of no IRRWELLS!
+                            # return_rates[crop_nodes] += subrate
 
         # finf = finfold + return_rates
         finf = finf + return_rates
@@ -1023,6 +737,8 @@ class Modflow6Ag(object):
                         self.set_max_q_diversion(mf6)
                         self.set_irrdiversion_stress_period_data(kper)
                         if self.sim_supplemental:
+                            if not self.sim_wells:
+                                self.set_max_q_well(mf6)
                             self.set_supwell_stress_period_data(kper)
 
             n_solutions = mf6.get_subcomponent_count()
@@ -1094,21 +810,3 @@ class Modflow6Ag(object):
         # print(f"supplemental pumping use 2-ac almonds {np.sum(sup_p) * 0.000810714 :.2f}")
         # print(f"gw pumping 2-ac almonds {np.sum(pumping2) * 0.000810714 :.2f}")
         return success
-
-
-if __name__ == "__main__":
-    dll = os.path.join("..", "modflow-bmi", "libmf6.dll")
-    sim, gwf = create_test_model("GWF")
-    ag = create_ag_package_etdemand()
-    ag2 = create_ag_package_trigger()
-
-    mf6ag = Modflow6Ag(sim, ag2)
-    mf6ag.run_model(dll, )
-
-    # todo: create methods to store and write
-    #  demands, pumpage, sfr, and diversions
-
-    # todo: setup tests for MF6 AG package (compare to mf-nwt AG1).
-    # todo: create methods that allow this class to be used by other
-    #   driver classes (ie. let it be called by another class, but
-    #   still be able to perform the setup etc....
