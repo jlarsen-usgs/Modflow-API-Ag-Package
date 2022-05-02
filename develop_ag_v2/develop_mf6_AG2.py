@@ -322,8 +322,8 @@ class Modflow6Ag(object):
         qonly = np.where(sup + factor > crop_vks, crop_vks, sup + factor)
         factor = np.where(factor < 0, 0, factor)
 
-        # todo: not sure this is quite correct will check in a hot moment
         self._idsupold[self.irrdiversion_num] = divflow[self.irrdiversion_num]
+        # self._idsupold[self.irrdiversion_num] = idsflow[self.irrdiversion_num]
         self._supact[self.irrdiversion_num] += factor
         self._aetold = crop_aet
 
@@ -336,9 +336,11 @@ class Modflow6Ag(object):
 
         div_info = self.div_info[self.irrdiversion_num]
         fmaxflow = dsflow[div_info["rno"]]
+        # fmaxflow = divflow[self.irrdiversion_num]
 
         dvflw = np.where(dvflw > fmaxflow, fmaxflow, dvflw)
         divflow[self.irrdiversion_num] = dvflw
+
         mf6.set_value(self.sfr_divflow_addr, divflow)
 
         # for supplemental pumping this needs to be dimensioned as sfr ndiv
@@ -431,8 +433,11 @@ class Modflow6Ag(object):
         """
         # todo: check that this completely correct. not sure that the dimesnsionalization is...
         sup_demand = np.zeros((len(self.supwell_num),))
+        div_list = []
         for ix, well in enumerate(self.supwell):
             segid = well['segid']
+            div_list += [i for i in segid]
+
             sup_demand[ix] = np.sum(
                 well['fracsup'] * (well['fracsupmax'] * (conj_demand[segid] - divflow[segid]))
             )
@@ -449,11 +454,14 @@ class Modflow6Ag(object):
                             -1 * np.abs(self.well_max_q[self.supwell_num]) - np.abs(wells[self.supwell_num]),
                             -1 * sup_demand)
 
-        # todo: create supplemental pumping check!!!! for test ag_supplemental
         wells[self.supwell_num] += sup_pump
         wells = np.where(wells < self.well_max_q,
                          self.well_max_q,
                          wells)
+
+        # if self.etdemand:
+        #     self._idsupold[div_list] += -1 * wells[self.supwell_num][:, 0]
+
         self.well_demand_out[kstp, self.supwell_num] = sup_pump
         self.well_out[kstp, self.supwell_num] = sup_pump
         mf6.set_value(self.well_addr, wells)
@@ -632,6 +640,7 @@ class Modflow6Ag(object):
         """
         area = mf6.get_value(self.area_addr)
         finf = mf6.get_value(self.uz_finf_addr)
+        # todo: work on putting together output for ag_package
 
         return_rates = np.zeros((self.gwf.modelgrid.ncpl,))
         if pumpage is not None and pumpage:
@@ -671,9 +680,9 @@ class Modflow6Ag(object):
                             vol = np.ones((len(crop_nodes),)) * sup_pump[ix]
                             subvol = ((1 - eff_fact) * vol * field_fact)
                             subrate = -1 * subvol / crop_area
-                            # note: not applying return from SUP allows for trend match....
-                            #   this is most likely applied in NWT/GSFLOW during the IRRWELL LOOP
-                            #   and then in effect not properly applied in the case of no IRRWELLS!
+                            # note: not applying return from SUP allows for trend match in via triggered irrigation....
+                            #  this is most likely applied in NWT/GSFLOW during the IRRWELL LOOP
+                            #  and then in effect not properly applied in the case of no IRRWELLS!
                             # return_rates[crop_nodes] += subrate
 
         # finf = finfold + return_rates

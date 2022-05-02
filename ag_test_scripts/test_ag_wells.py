@@ -31,7 +31,6 @@ def build_mf6(name, headtol=None, fluxtol=None):
         time_units="days"
     )
 
-
     if headtol is None:
         if name == "etdemand":
             headtol = 0.0570641530019691
