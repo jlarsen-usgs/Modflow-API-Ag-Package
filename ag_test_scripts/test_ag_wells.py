@@ -501,7 +501,7 @@ if __name__ == "__main__":
         fluxtol = None
 
     model_names = ("etdemand", "trigger", "specified")
-    model = 1
+    model = 0
     run_mfnwt(model_names[model])
     run_mf6(model_names[model], headtol, fluxtol)
     compare_output(model_names[model])

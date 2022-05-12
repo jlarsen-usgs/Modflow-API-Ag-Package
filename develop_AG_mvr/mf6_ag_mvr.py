@@ -178,9 +178,13 @@ class ModflowAgmvr(object):
 
         """
         if self.sim_wells:
-            qformvr = mf6.get_value(self.wellq_for_mvr_addr)
-            qtomvr = mf6.get_value(self.wellq_to_mvr_addr)
-            max_q = np.min(np.vstack((qformvr, qtomvr)), axis=0)
+            # qformvr = mf6.get_value(self.wellq_for_mvr_addr)
+            # qtomvr = mf6.get_value(self.wellq_to_mvr_addr)
+            well = mf6.get_value(self.well_addr)
+            max_q = np.abs(np.copy(well.T[0]))
+            # change max_q to zero and reset based on AG-Demand
+            well[:, 0] = 0
+            mf6.set_value(self.well_addr, well)
             recarray = self.mvr.perioddata.data[kper]
             wlidx = np.where(recarray['pname1'] == self.well_name)[0]
             if len(wlidx) > 0:
@@ -306,8 +310,11 @@ class ModflowAgmvr(object):
             qonly = qonly - sfr_applied
             qonly = np.where(qonly < 0, 0, qonly)
 
-        pumping = np.where(qonly > self.well_maxq, self.well_maxq, -1 * qonly)
-        pumping = np.where(np.abs(pumping) < 1e-10, 0, pumping)
+        pumping = np.where(qonly > self.well_maxq, -1 * self.well_maxq, -1 * qonly)
+        pumping = np.where(np.abs(pumping) <= 1e-10, 0, pumping)
+        # if kiter == 3:
+        #     with open("debug.txt", "a") as foo:
+        #        foo.write(f'{pumping[0]},{pumping[1]}')
 
         self.sup = np.abs(pumping)
 
@@ -321,9 +328,9 @@ class ModflowAgmvr(object):
             mvr = mf6.get_value(self.mvr_value_addr)
             for well in active_ix:
                 idx = self.well_mvr_index[well]
-                mvr[idx] = pumping[well] * self.well_irrigated_proportion[well]
+                mvr[idx] = np.abs(pumping[well]) * self.well_irrigated_proportion[well]
                 self.applied_irrigation[self.well_irrigated_cells[well]] = \
-                    pumping[well] * self.well_irrigated_proportion[well]
+                    np.abs(pumping[well]) * self.well_irrigated_proportion[well]
 
             mf6.set_value(self.mvr_value_addr, mvr)
 
@@ -453,20 +460,27 @@ class ModflowAgmvr(object):
             mf6.prepare_time_step(dt)
             kiter = 0
 
+            if current_time in self.totim or current_time == 0.:
+                if current_time == 0:
+                    pass
+                else:
+                    kper += 1
+                # mf6.solve(sol_id)
+                self.set_stress_period_data(mf6, kper)
+
             n_solutions = mf6.get_subcomponent_count()
             for sol_id in range(1, n_solutions + 1):
                 mf6.prepare_solve(sol_id)
-                mf6.solve(sol_id)
+
+                if kiter == 0:
+                    # todo: set mvr value to zero before solve....
+                #    mvr = mf6.get_value(self.mvr_value_addr)
+                #    mvr *= 0
+                #    mf6.set_value(self.mvr_value_addr, mvr)
+                    mf6.solve(sol_id)
 
                 self.applied_irrigation = np.zeros(self.uzf_shape)
                 # updated stress period information
-                if current_time in self.totim or current_time == 0.:
-                    if current_time == 0:
-                        pass
-                    else:
-                        kper += 1
-
-                    self.set_stress_period_data(mf6, kper)
 
                 while kiter < max_iter:
                     if self.sim_diversions:

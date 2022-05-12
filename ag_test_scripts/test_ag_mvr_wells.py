@@ -211,10 +211,10 @@ def run_mf6_exe(fpsim):
 
 if __name__ == "__main__":
     # set dll path
-    load_existing = True
+    load_existing = False
     dll = os.path.join("..", "modflow-bmi", "libmf6.dll")
     if not load_existing:
-        sim, gwf = build_mf6("specified")
+        sim, gwf = build_mf6("test_ag_wells")
     else:
         sim = flopy.mf6.MFSimulation.load(sim_ws=os.path.join(sws, "..", "data", "mf6_mvr_ag_wells"))
     # run_mf6_exe(sim)
