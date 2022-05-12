@@ -178,8 +178,6 @@ class ModflowAgmvr(object):
 
         """
         if self.sim_wells:
-            # qformvr = mf6.get_value(self.wellq_for_mvr_addr)
-            # qtomvr = mf6.get_value(self.wellq_to_mvr_addr)
             well = mf6.get_value(self.well_addr)
             max_q = np.abs(np.copy(well.T[0]))
             # change max_q to zero and reset based on AG-Demand
@@ -221,9 +219,12 @@ class ModflowAgmvr(object):
             self.aetold = np.zeros(max_q.shape)
 
         if self.sim_diversions:
+            # todo: set mvr value to zero, change how we calculate max_q
+            #   from mvr...
             qformvr = mf6.get_value(self.sfrq_for_mvr_addr)
             qtomvr = mf6.get_value(self.sfrq_to_mvr_addr)
             max_q = np.min(np.vstack((qformvr, qtomvr)), axis=0)
+            mvr = mf6.get_value(self.mvr_value_addr)
             recarray = self.mvr.perioddata.data[kper]
             sfridx = np.where(recarray["pname1"] == self.sfr_name)[0]
             if len(sfridx) > 0:
@@ -465,7 +466,7 @@ class ModflowAgmvr(object):
                     pass
                 else:
                     kper += 1
-                # mf6.solve(sol_id)
+
                 self.set_stress_period_data(mf6, kper)
 
             n_solutions = mf6.get_subcomponent_count()
