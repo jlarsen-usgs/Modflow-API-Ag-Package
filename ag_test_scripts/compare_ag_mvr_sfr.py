@@ -1,4 +1,5 @@
 import flopy
+from flopy.plot import styles
 import os
 import sys
 import pandas as pd
@@ -7,6 +8,7 @@ import matplotlib.pyplot as plt
 sws = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(sws, "..", "develop_AG_mvr"))
 from mf6_ag_mvr import ModflowAgmvr
+from get_mvr_budget import MvrBudget
 
 from math import log10, floor
 
@@ -48,8 +50,8 @@ def build_mf6(name, headtol=None, fluxtol=None):
         print_option="ALL",
         complexity="COMPLEX",
         no_ptcrecord=["ALL"],
-        outer_dvclose=headtol,
-        outer_maximum=fluxtol,
+        outer_dvclose=5e-02,
+        outer_maximum=213.16,
         rcloserecord=[1e-10, "L2NORM_RCLOSE"],
         scaling_method="L2NORM",
         linear_acceleration="BICGSTAB",
@@ -114,6 +116,10 @@ def build_mf6(name, headtol=None, fluxtol=None):
         i: [(0, "INFLOW", 50),] for i in range(12)
     }
 
+    obs_dict = {
+        "etdemand_div.obs.out": [["sw_outflow", "outflow", 9]],
+        "filename": "etdemand_div.obs"
+    }
     sfr = flopy.mf6.ModflowGwfsfr(gwf,
                                   nreaches=nreaches,
                                   packagedata=package_data,
@@ -121,8 +127,8 @@ def build_mf6(name, headtol=None, fluxtol=None):
                                   perioddata=period_data,
                                   unit_conversion=86400,
                                   save_flows=True,
-                                  mover=True)
-
+                                  mover=True,
+                                  observations=obs_dict)
 
     cimis_data = os.path.join("..", "data", "davis_monthly_ppt_eto.txt")
     df = pd.read_csv(cimis_data)
@@ -191,7 +197,7 @@ def build_mf6(name, headtol=None, fluxtol=None):
             rec = ("sfr_0", 2, "uzf_0", col, "UPTO", 10.)
             mvr_rec.append(rec)
         for col in range(43, 45):
-            rec = ("sfr_0", 4, "uzf_0", col, "UPTO", 10.)
+            rec = ("sfr_0", 4, "uzf_0", col, "UPTO", 5.)
             mvr_rec.append(rec)
         period_data[i] = mvr_rec
 
@@ -200,15 +206,17 @@ def build_mf6(name, headtol=None, fluxtol=None):
         maxmvr=4,
         maxpackages=2,
         packages=[("sfr_0",), ("uzf_0",)],
-        perioddata=period_data
+        perioddata=period_data,
+        budgetcsv_filerecord=f"{name}_mvr.csv",
+        budget_filerecord=f"{name}_mvr.cbc"
     )
 
     sim.write_simulation()
     model_ws = gwf.model_ws
     uzf_name = gwf.uzf.filename
     sfr_name = gwf.sfr.filename
-    mf6_dev_no_final_check(model_ws, uzf_name)
-    mf6_dev_no_final_check(model_ws, sfr_name)
+    # mf6_dev_no_final_check(model_ws, uzf_name)
+    # mf6_dev_no_final_check(model_ws, sfr_name)
     return sim, gwf
 
 
@@ -230,37 +238,40 @@ def mf6_dev_no_final_check(model_ws, fname):
 def compare_model_output(nwt, mf6, model):
     nwt_div1 = os.path.join(nwt, f"{model}.diversion11.txt")
     nwt_div2 = os.path.join(nwt, f"{model}.diversion12.txt")
-    mf6_cbc = os.path.join(mf6, f"{model}.cbc")
+    mf6_lst = os.path.join(mf6, f"{model}.lst")
+    mf6_cbc = os.path.join(mf6, f"etdemand_well.cbc")
 
     nwt_div1 = pd.read_csv(nwt_div1, delim_whitespace=True)
     nwt_div2 = pd.read_csv(nwt_div2, delim_whitespace=True)
 
     mf6_cbc = flopy.utils.CellBudgetFile(mf6_cbc)
-
     mf6_pump = mf6_cbc.get_data(text="WEL-TO-MVR")
-    mf6_pump2 = mf6_cbc.get_data(text="WEL")
+    well_1 = []
+    for recarray in mf6_pump:
+        well_1.append(recarray[0]["q"])
 
-    fig, ax = plt.subplots(figsize=(8, 8))
-    for wl in (45, 23):
-        nwt_well = []
-        mf6_well = []
-        mf6_well2 = []
-        for ix, recarray in enumerate(mf6_pump):
-            idx = np.where(recarray["node"] == wl)[0]
-            nwt_well.append(recarray[idx]['q'])
-            idx = np.where(mf6_pump[ix]["node"] == wl)[0]
-            mf6_well.append(mf6_pump[ix][idx]["q"])
-            idx = np.where(mf6_pump2[ix]["node"] == wl)[0]
-            mf6_well2.append(mf6_pump2[ix][idx]["q"])
-        ax.plot(range(1, len(nwt_well) + 1), nwt_well, label=f"nwt well, node {wl}", lw=2)
-        ax.plot(range(1, len(mf6_well) + 1), mf6_well, label=f"mf6 well to mvr, node {wl}", ls="--")
-        ax.plot(range(1, len(mf6_well) + 1), mf6_well2, label=f"mf6 well, node {wl}", ls="-.")
-        ax.plot()
-        print("MF6: ", np.sum(mf6_well) * 0.000810714)
-        print("NWT: ", np.sum(np.abs(nwt_well)) * 0.000810714)
+    mf6_div = MvrBudget(mf6_lst).inc
+    mf6_div = mf6_div.groupby(by=["provider", "pid", "totim"], as_index=False)[["qa", "qp"]].sum()
+    mf6_div1 = mf6_div[mf6_div.pid == 2]
+    mf6_div2 = mf6_div[mf6_div.pid == 4]
 
-    plt.legend(loc=0)
-    plt.show()
+    with styles.USGSPlot():
+        fig, ax = plt.subplots(figsize=(8, 8))
+        ax.plot(range(1, len(nwt_div1) + 1), nwt_div1["SW-DIVERSION"], "k", label=f"nwt diversion, 1", lw=2)
+        ax.plot(range(1, len(nwt_div2) + 1), nwt_div2["SW-DIVERSION"], "dimgray", label=f"nwt diversion, 2", lw=2)
+        ax.plot(range(1, len(mf6_div1) + 1), mf6_div1.qp, color="skyblue",  label=f"mf6 diversion 1", ls="--", lw=2.5, zorder=3)
+        ax.plot(range(1, len(mf6_div2) + 1), mf6_div2.qp, color="darkblue", label=f"mf6 diversion 2", ls="--", lw=2.5, zorder=3)
+        styles.heading(ax=ax, heading="Comparison of MF6 API AG and MF-NWT AG diversions")
+        styles.xlabel(ax=ax, label="Days", fontsize=10)
+        styles.ylabel(ax=ax, label="Applied irrigation, in " + r"$m^{3}$", fontsize=10)
+        styles.graph_legend(ax=ax, loc=2, fancybox=True, shadow=True, frameon=True)
+
+        print("MF6: ", np.sum(mf6_div1.qp) * 0.000810714)
+        print("NWT: ", np.sum(nwt_div1["SW-DIVERSION"]) * 0.000810714)
+        print("MF6: ", np.sum(mf6_div2.qp) * 0.000810714)
+        print("NWT: ", np.sum(nwt_div2["SW-DIVERSION"]) * 0.000810714)
+
+        plt.show()
 
 
 if __name__ == "__main__":
@@ -278,5 +289,6 @@ if __name__ == "__main__":
             )
         mfag = ModflowAgmvr(sim, ag_type="etdemand", mvr_name="mvr")
         mfag.run_model(dll)
-
+    else:
+        gwf = None
     compare_model_output(nwt_ws, mf6_ws, "etdemand_div")

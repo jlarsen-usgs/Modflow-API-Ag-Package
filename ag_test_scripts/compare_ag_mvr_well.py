@@ -1,4 +1,5 @@
 import flopy
+from flopy.plot import styles
 import os
 import sys
 import pandas as pd
@@ -86,11 +87,11 @@ def build_mf6(name, headtol=None, fluxtol=None):
     stress_period_data = {}
     for i in range(12):
         if i == 2:
-            stress_period_data[i] = [[(0, 4, 4), -100.],
-                                     [(0, 2, 2), -50.],]
+            stress_period_data[i] = [[(0, 5, 4), -100.],
+                                     [(0, 1, 2), -50.],]
         else:
-            stress_period_data[i] = [[(0, 4, 4), -100.],
-                                     [(0, 2, 2), -50.],]
+            stress_period_data[i] = [[(0, 5, 4), -100.],
+                                     [(0, 1, 2), -50.],]
 
     wel = flopy.mf6.ModflowGwfwel(
         gwf,
@@ -219,30 +220,37 @@ def compare_model_output(nwt, mf6, model):
     mf6_pump = mf6_cbc.get_data(text="WEL-TO-MVR")
     mf6_pump2 = mf6_cbc.get_data(text="WEL")
 
-    fig, ax = plt.subplots(figsize=(8, 8))
-    for wl in (45, 23):
-        nwt_well = []
-        mf6_well = []
-        mf6_well2 = []
-        for ix, recarray in enumerate(nwt_pump):
-            idx = np.where(recarray["node"] == wl)[0]
-            nwt_well.append(recarray[idx]['q'])
-            idx = np.where(mf6_pump[ix]["node"] == wl)[0]
-            mf6_well.append(mf6_pump[ix][idx]["q"])
-            idx = np.where(mf6_pump2[ix]["node"] == wl)[0]
-            mf6_well2.append(mf6_pump2[ix][idx]["q"])
-        ax.plot(range(1, len(nwt_well) + 1), nwt_well, label=f"nwt well, node {wl}", lw=2)
-        ax.plot(range(1, len(mf6_well) + 1), mf6_well, label=f"mf6 well to mvr, node {wl}", ls="--")
-        ax.plot(range(1, len(mf6_well) + 1), mf6_well2, label=f"mf6 well, node {wl}", ls="-.")
-        ax.plot()
-        print("MF6: ", np.sum(mf6_well) * 0.000810714)
-        print("NWT: ", np.sum(np.abs(nwt_well)) * 0.000810714)
+    with styles.USGSPlot():
+        fig, ax = plt.subplots(figsize=(8, 8))
+        n = 1
+        nwt_c = ["k", "yellow"]
+        mf6_c = ["skyblue", "darkblue"]
+        for wl in (13, 55):
+            nwt_well = []
+            mf6_well = []
+            mf6_well2 = []
+            for ix, recarray in enumerate(nwt_pump):
+                idx = np.where(recarray["node"] == wl)[0]
+                nwt_well.append(recarray[idx]['q'])
+                idx = np.where(mf6_pump[ix]["node"] == wl)[0]
+                mf6_well.append(mf6_pump[ix][idx]["q"])
+                idx = np.where(mf6_pump2[ix]["node"] == wl)[0]
+                mf6_well2.append(mf6_pump2[ix][idx]["q"])
 
-    plt.legend(loc=0)
+            ax.plot(range(1, len(nwt_well) + 1), np.abs(nwt_well), color=nwt_c[n - 1], label=f"nwt well {n} irrigation", lw=2)
+            ax.plot(range(1, len(mf6_well) + 1), np.abs(mf6_well), color=mf6_c[n - 1], label=f"mf6 well {n} irrigation", lw=2.5, ls="--")
+            n += 1
+
+            print("MF6: ", np.sum(np.abs(mf6_well)) * 0.000810714)
+            print("NWT: ", np.sum(np.abs(nwt_well)) * 0.000810714)
+
+    styles.heading(ax=ax,
+                   heading="Comparison of MF6 API AG and MF-NWT AG well pumping")
+    styles.xlabel(ax=ax, label="Days", fontsize=10)
+    styles.ylabel(ax=ax, label="Applied irrigation, in " + r"$m^{3}$",
+                  fontsize=10)
+    styles.graph_legend(ax=ax, loc=2, fancybox=True, shadow=True, frameon=True)
     plt.show()
-    print('break')
-
-
 
 
 if __name__ == "__main__":

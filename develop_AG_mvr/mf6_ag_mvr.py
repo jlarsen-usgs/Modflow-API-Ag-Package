@@ -222,16 +222,17 @@ class ModflowAgmvr(object):
             # todo: set mvr value to zero, change how we calculate max_q
             #   from mvr...
             qformvr = mf6.get_value(self.sfrq_for_mvr_addr)
-            qtomvr = mf6.get_value(self.sfrq_to_mvr_addr)
-            max_q = np.min(np.vstack((qformvr, qtomvr)), axis=0)
+            max_q = np.zeros(qformvr.shape)
             mvr = mf6.get_value(self.mvr_value_addr)
             recarray = self.mvr.perioddata.data[kper]
             sfridx = np.where(recarray["pname1"] == self.sfr_name)[0]
             if len(sfridx) > 0:
+                mvr[sfridx] = 0
                 sfrids = sorted(np.unique(recarray[sfridx]["id1"]))
             else:
                 sfrids = []
 
+            mf6.set_value(self.mvr_value_addr, mvr)
             active = np.zeros(max_q.shape, dtype=int)
             active[sfrids] = 1
 
@@ -245,6 +246,8 @@ class ModflowAgmvr(object):
                 if len(idx) > 0:
                     icells = recarray[idx]["id2"]
                     iprop = recarray[idx]["value"] / np.sum(recarray[idx]["value"])
+                    for mvr_rec in idx:
+                        max_q[sfrid] += recarray[mvr_rec]["value"]
 
                 irrigated_cells.append(icells)
                 irrigated_proportion.append(iprop)
@@ -258,6 +261,14 @@ class ModflowAgmvr(object):
             self.idsup = np.zeros(max_q.shape)
             self.idsupold = np.zeros(max_q.shape)
             self.idaetold = np.zeros(max_q.shape)
+
+    def zero_mvr(self, mf6):
+        """
+        Method to zero out MVR values before initial solve
+        """
+        mvr = mf6.get_value(self.mvr_value_addr)
+        mvr[:] = 0
+        mf6.set_value(self.mvr_value_addr, mvr)
 
     def gw_demand_etdemand(self, mf6, kstp, delt=1, kiter=1):
         """
@@ -313,9 +324,6 @@ class ModflowAgmvr(object):
 
         pumping = np.where(qonly > self.well_maxq, -1 * self.well_maxq, -1 * qonly)
         pumping = np.where(np.abs(pumping) <= 1e-10, 0, pumping)
-        # if kiter == 3:
-        #     with open("debug.txt", "a") as foo:
-        #        foo.write(f'{pumping[0]},{pumping[1]}')
 
         self.sup = np.abs(pumping)
 
@@ -361,15 +369,16 @@ class ModflowAgmvr(object):
                 crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
                 crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
 
-        crop_aet = np.where(crop_vks < 1e-30, crop_pet, crop_aet)
+        # crop_aet = np.where(crop_vks < 1e-30, crop_pet, crop_aet)
 
         if delt < 1:
             crop_aet = crop_pet
 
         if kiter == 0:
             self.idsupold = np.zeros(self.sfr_maxq.shape)
+            self.idsup = np.zeros(self.sfr_maxq.shape)
             qtomvr[:] = 0
-            self.idaetold = crop_aet
+            self.idaetold[:] = crop_aet[:]
             if kstp == 0:
                 self.idaetold[:] = 0
 
@@ -380,7 +389,7 @@ class ModflowAgmvr(object):
         qonly = np.where(sup + factor > crop_vks, crop_vks, sup + factor)
         factor = np.where(factor < 0, 0, factor)
 
-        self.idsupold = qtomvr
+        self.idsupold[:] = qtomvr[:]
         self.idsup += factor
         self.idaetold = crop_aet
 
@@ -474,10 +483,8 @@ class ModflowAgmvr(object):
                 mf6.prepare_solve(sol_id)
 
                 if kiter == 0:
-                    # todo: set mvr value to zero before solve....
-                #    mvr = mf6.get_value(self.mvr_value_addr)
-                #    mvr *= 0
-                #    mf6.set_value(self.mvr_value_addr, mvr)
+                    # todo: need to zero out mvr values....
+                    self.zero_mvr(mf6)
                     mf6.solve(sol_id)
 
                 self.applied_irrigation = np.zeros(self.uzf_shape)
