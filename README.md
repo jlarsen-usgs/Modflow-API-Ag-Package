@@ -1,4 +1,4 @@
-[![pygsflow continuous integration](https://github.com/jlarsen-usgs/modflow6api_agMVR/actions/workflows/ci.yml/badge.svg)](https://github.com/jlarsen-usgs/modflow6api_agMVR/actions/workflows/ci.yml)
+[![ModflowAgmvr CI](https://github.com/jlarsen-usgs/modflow6api_agMVR/actions/workflows/ci.yml/badge.svg)](https://github.com/jlarsen-usgs/modflow6api_agMVR/actions/workflows/ci.yml)
 
 # modflow6api_AGmvr
 This repository contains the ModflowAgmvr class that interfaces with the modflowapi to simulate

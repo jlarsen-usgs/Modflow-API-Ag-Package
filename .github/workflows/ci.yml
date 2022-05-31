@@ -1,4 +1,4 @@
-name: pygsflow continuous integration
+name: ModflowAgmvr continuous integration
 
 on:
   push:
