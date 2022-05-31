@@ -5,6 +5,8 @@ import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+from scipy.stats import linregress
 sws = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(sws, "..", "develop_AG_mvr"))
 from mf6_ag_mvr import ModflowAgmvr
@@ -255,7 +257,16 @@ def compare_model_output(nwt, mf6, model):
     mf6_div1 = mf6_div[mf6_div.pid == 2]
     mf6_div2 = mf6_div[mf6_div.pid == 4]
 
+    nwt_total = nwt_div1["SW-DIVERSION"].values + nwt_div2["SW-DIVERSION"].values
+    mf6_total = mf6_div1.qp.values + mf6_div2.qp.values
+
+    r2 = linregress(mf6_total, np.abs(nwt_total))[2] ** 2
+    err = np.sum(mf6_total - nwt_total)
+    perr = err / np.sum(nwt_total)
+
     with styles.USGSPlot():
+        mpl.rcParams["ytick.labelsize"] = 9
+        mpl.rcParams["xtick.labelsize"] = 9
         fig, ax = plt.subplots(figsize=(8, 8))
         ax.plot(range(1, len(nwt_div1) + 1), nwt_div1["SW-DIVERSION"], "k", label=f"nwt diversion, 1", lw=2)
         ax.plot(range(1, len(nwt_div2) + 1), nwt_div2["SW-DIVERSION"], "dimgray", label=f"nwt diversion, 2", lw=2)
@@ -264,7 +275,11 @@ def compare_model_output(nwt, mf6, model):
         styles.heading(ax=ax, heading="Comparison of MF6 API AG and MF-NWT AG diversions")
         styles.xlabel(ax=ax, label="Days", fontsize=10)
         styles.ylabel(ax=ax, label="Applied irrigation, in " + r"$m^{3}$", fontsize=10)
-        styles.graph_legend(ax=ax, loc=2, fancybox=True, shadow=True, frameon=True)
+        styles.graph_legend(ax=ax, loc=2, fancybox=True, shadow=True, frameon=True, fontsize=10)
+        styles.add_text(ax=ax, text=r"$r^{2}$" + f" = {r2 :.2f}", x=0.03,
+                        y=0.78, fontsize=10)
+        styles.add_text(ax=ax, text=f"dif. = {err :.2f} " + r"$m^{3}$", x=0.03,
+                        y=0.75, fontsize=10)
 
         print("MF6: ", np.sum(mf6_div1.qp) * 0.000810714)
         print("NWT: ", np.sum(nwt_div1["SW-DIVERSION"]) * 0.000810714)

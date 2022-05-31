@@ -12705,6 +12705,6 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
          TOTAL TIME 3.15360E+07 5.25600E+05  8760.0      365.00     0.99932    
 1
 
- Run end date and time (yyyy/mm/dd hh:mm:ss): 2022/05/20 14:06:12
- Elapsed run time:  0.550 Seconds
+ Run end date and time (yyyy/mm/dd hh:mm:ss): 2022/05/20 16:29:30
+ Elapsed run time:  0.455 Seconds
 

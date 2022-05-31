@@ -5,6 +5,8 @@ import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib as mpl
+from scipy.stats import linregress
 sws = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(sws, "..", "develop_AG_mvr"))
 from mf6_ag_mvr import ModflowAgmvr
@@ -220,7 +222,11 @@ def compare_model_output(nwt, mf6, model):
     mf6_pump = mf6_cbc.get_data(text="WEL-TO-MVR")
     mf6_pump2 = mf6_cbc.get_data(text="WEL")
 
+    mf6_total = []
+    nwt_total = []
     with styles.USGSPlot():
+        mpl.rcParams["ytick.labelsize"] = 9
+        mpl.rcParams["xtick.labelsize"] = 9
         fig, ax = plt.subplots(figsize=(8, 8))
         n = 1
         nwt_c = ["k", "yellow"]
@@ -228,14 +234,13 @@ def compare_model_output(nwt, mf6, model):
         for wl in (13, 55):
             nwt_well = []
             mf6_well = []
-            mf6_well2 = []
             for ix, recarray in enumerate(nwt_pump):
                 idx = np.where(recarray["node"] == wl)[0]
                 nwt_well.append(recarray[idx]['q'])
+                nwt_total.append(recarray[idx]['q'][0])
                 idx = np.where(mf6_pump[ix]["node"] == wl)[0]
                 mf6_well.append(mf6_pump[ix][idx]["q"])
-                idx = np.where(mf6_pump2[ix]["node"] == wl)[0]
-                mf6_well2.append(mf6_pump2[ix][idx]["q"])
+                mf6_total.append(mf6_pump[ix][idx]["q"][0])
 
             ax.plot(range(1, len(nwt_well) + 1), np.abs(nwt_well), color=nwt_c[n - 1], label=f"nwt well {n} irrigation", lw=2)
             ax.plot(range(1, len(mf6_well) + 1), np.abs(mf6_well), color=mf6_c[n - 1], label=f"mf6 well {n} irrigation", lw=2.5, ls="--")
@@ -244,13 +249,20 @@ def compare_model_output(nwt, mf6, model):
             print("MF6: ", np.sum(np.abs(mf6_well)) * 0.000810714)
             print("NWT: ", np.sum(np.abs(nwt_well)) * 0.000810714)
 
-    styles.heading(ax=ax,
-                   heading="Comparison of MF6 API AG and MF-NWT AG well pumping")
-    styles.xlabel(ax=ax, label="Days", fontsize=10)
-    styles.ylabel(ax=ax, label="Applied irrigation, in " + r"$m^{3}$",
-                  fontsize=10)
-    styles.graph_legend(ax=ax, loc=2, fancybox=True, shadow=True, frameon=True)
-    plt.show()
+        r2 = linregress(np.abs(nwt_total), np.abs(mf6_total))[2] ** 2
+        err = np.sum(np.abs(mf6_total) - np.abs(nwt_total))
+
+        styles.heading(ax=ax,
+                       heading="Comparison of MF6 API AG and MF-NWT AG well pumping")
+        styles.xlabel(ax=ax, label="Days", fontsize=10)
+        styles.ylabel(ax=ax, label="Applied irrigation, in " + r"$m^{3}$",
+                      fontsize=10)
+        styles.graph_legend(ax=ax, loc=2, fancybox=True, shadow=True, frameon=True, fontsize=10)
+        styles.add_text(ax=ax, text=r"$r^{2}$" + f" = {r2 :.2f}", x=0.03,
+                        y=0.78, fontsize=10)
+        styles.add_text(ax=ax, text=f"dif. = {err :.2f} " + r"$m^{3}$", x=0.03,
+                        y=0.75, fontsize=10)
+        plt.show()
 
 
 if __name__ == "__main__":

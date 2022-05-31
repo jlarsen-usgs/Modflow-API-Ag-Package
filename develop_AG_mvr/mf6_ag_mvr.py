@@ -5,7 +5,17 @@ import flopy
 
 class ModflowAgmvr(object):
     """
+    Modflow6 API AG pacakge that uses the MVR to facilitate irrigation
 
+    Package is based on the ETDEMAND AG method in MODFLOW-NWT
+
+    Parameters
+    ----------
+    sim : flopy.mf6.MFSimulation object
+    ag_type : str
+        "etdemand" is the only supported method currently
+    mvr_name : str
+        short name for the Modflow6 MVR package. Ex. "mvr_0"
     """
     def __init__(self, sim, ag_type, mvr_name):
         self.sim = sim
@@ -95,7 +105,7 @@ class ModflowAgmvr(object):
             for recarray in period_data:
                 dividx = np.where(recarray["pname1"] == self.sfr_name)[0]
                 if len(dividx) > 0:
-                    # todo: this is zero based....
+                    # this is zero based....
                     divids = recarray[dividx]["id1"]
                     mxdiv = np.max(divids) + 1
                     if mxdiv > mxdivnum:
@@ -110,6 +120,10 @@ class ModflowAgmvr(object):
     def create_addresses(self, mf6):
         """
         Method to create MODFLOW-API addresses
+
+        Parameters
+        ----------
+        mf6 : ModflowApi object
 
         """
         self.area_addr = mf6.get_var_address(
@@ -176,6 +190,11 @@ class ModflowAgmvr(object):
         """
         Method to set stress period data from MVR (MAXQ, Delivery cells, etc)
 
+        Parameters
+        ----------
+        mf6 : ModflowApi object
+        kper : int
+            zero based stress period number
         """
         if self.sim_wells:
             well = mf6.get_value(self.well_addr)
@@ -219,8 +238,6 @@ class ModflowAgmvr(object):
             self.aetold = np.zeros(max_q.shape)
 
         if self.sim_diversions:
-            # todo: set mvr value to zero, change how we calculate max_q
-            #   from mvr...
             qformvr = mf6.get_value(self.sfrq_for_mvr_addr)
             max_q = np.zeros(qformvr.shape)
             mvr = mf6.get_value(self.mvr_value_addr)
@@ -277,8 +294,12 @@ class ModflowAgmvr(object):
         Parameters
         ----------
         mf6 : ModflowApi object
+        kstp : int
+            modflow6 time step
         delt : float
+            length of time step
         kiter : int
+            iteration number
         """
         pet = mf6.get_value(self.pet_addr)
         vks = mf6.get_value(self.vks_addr)
@@ -350,9 +371,12 @@ class ModflowAgmvr(object):
         Parameters
         ----------
         mf6 : ModflowApi object
+        kstp : int
+            modflow6 time step
         delt : float
+            length of time step
         kiter : int
-
+            iteration number
         """
         qtomvr = mf6.get_value(self.sfrq_to_mvr_addr)
         pet = mf6.get_value(self.pet_addr)
@@ -408,16 +432,23 @@ class ModflowAgmvr(object):
 
     def _calculate_factor(self, crop_pet, crop_aet, aetold, sup, supold, kiter, accel=1):
         """
-        Method to calculate unmet demand for crops
+        Method to calculate unmet demand based on PET and AET difference for
+        crops
 
         Parameters
         ----------
-        crop_pet :
-        crop_aet :
-        aetold :
-        sup :
-        supold :
+        crop_pet : np.ndarray
+            array of crop potential ET values
+        crop_aet : np.ndarray
+            array of crop actual ET values
+        aetold : np.ndarray
+            array of actual ET from previous iteration
+        sup : np.ndarray
+            current demand
+        supold : np.ndarray
+            demand from previous iteration
         kiter : float
+            iteration number
         accel : float
         """
         et_diff = crop_pet - crop_aet
@@ -438,6 +469,14 @@ class ModflowAgmvr(object):
         return factor
 
     def run_model(self, dll):
+        """
+        Method to run MODFLOW6 with the MF6 API AG package
+
+        Parameters
+        ----------
+        dll : str
+            path to modflow API ".dll" or ".so"
+        """
         mf6 = ModflowApi(
             dll,
             working_directory=self.sim.simulation_data.mfpath.get_sim_path()
@@ -483,13 +522,11 @@ class ModflowAgmvr(object):
                 mf6.prepare_solve(sol_id)
 
                 if kiter == 0:
-                    # todo: need to zero out mvr values....
+                    # need to zero out mvr values
                     self.zero_mvr(mf6)
                     mf6.solve(sol_id)
 
                 self.applied_irrigation = np.zeros(self.uzf_shape)
-                # updated stress period information
-
                 while kiter < max_iter:
                     if self.sim_diversions:
                         self.sw_demand_etdemand(mf6, kstp, delt, kiter)
