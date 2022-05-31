@@ -1,0 +1,11 @@
+name: modflowapi
+channels:
+  - conda-forge
+dependencies:
+  - numpy
+  - pandas
+  - matplotlib
+  - coverage
+  - appdirs
+  - requests
+  - scipy
