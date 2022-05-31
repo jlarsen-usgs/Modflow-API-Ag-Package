@@ -9,7 +9,7 @@ import matplotlib as mpl
 from scipy.stats import linregress
 sws = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(sws, "..", "develop_AG_mvr"))
-from mf6_ag_mvr import ModflowAgmvr
+from mf6_agmvr import ModflowAgmvr
 from get_mvr_budget import MvrBudget
 
 from math import log10, floor
@@ -374,10 +374,10 @@ def compare_model_output(nwt, mf6, model, gwf):
 
 if __name__ == "__main__":
     load_existing = False
-    run_model = False
+    run_model = True
     dll = os.path.join("..", "modflow-bmi", "libmf6.dll")
     mf6_ws = os.path.join(sws, "..", "data", "mf6_etdemand_test_problems")
-    nwt_ws = os.path.join(sws, "..", "data", "nwt_etdemand_test_problems2")
+    nwt_ws = os.path.join(sws, "..", "data", "nwt_etdemand_test_problems")
     if run_model:
         if not load_existing:
             sim, gwf = build_mf6("etdemand_sup")

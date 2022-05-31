@@ -9,7 +9,7 @@ import matplotlib as mpl
 from scipy.stats import linregress
 sws = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(sws, "..", "develop_AG_mvr"))
-from mf6_ag_mvr import ModflowAgmvr
+from mf6_agmvr import ModflowAgmvr
 
 from math import log10, floor
 
