@@ -4309,18 +4309,18 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-        INFILTRATION =      109777.6725          INFILTRATION =         376.3769
+        INFILTRATION =      109786.0051          INFILTRATION =         379.3538
 
           OUT:                                     OUT:
           ----                                     ----
               UZF ET =      122466.5551                UZF ET =        1221.2381
-        UZF RECHARGE =        6309.3554          UZF RECHARGE =         107.0534
+        UZF RECHARGE =        6307.1883          UZF RECHARGE =         106.2849
 
-            IN - OUT =      -18998.2379              IN - OUT =        -951.9146
+            IN - OUT =      -18987.7383              IN - OUT =        -948.1693
 
           STORAGE:                                 STORAGE:
           --------                                 --------
-      STORAGE CHANGE =      -18998.4511        STORAGE CHANGE =        -951.9147
+      STORAGE CHANGE =      -18987.9515        STORAGE CHANGE =        -948.1693
 
  PERCENT DISCREPANCY IS DIFFERENCE BETWEEN IN-OUT MINUS CHANGE IN STORAGE
  DIVIDED BY THE AVERAGE OF IN AND OUT TIMES 100
@@ -4342,25 +4342,25 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-               AG WELLS  =           0.0000                 AG WELLS  =           0.0000
+               AG WELLS  =           8.3326                 AG WELLS  =           2.9769
       DIVERSION SEGMENTS =         189.4805        DIVERSION SEGMENTS =          22.9769
            GW IRRIGATION =           0.0000             GW IRRIGATION =           0.0000
            SW IRRIGATION =           0.0000             SW IRRIGATION =           0.0000
         SYSTEM LOSSES GW =           0.0000          SYSTEM LOSSES GW =           0.0000
         SYSTEM LOSSES SW =           0.0000          SYSTEM LOSSES SW =           0.0000
 
-                TOTAL IN =         189.4805                  TOTAL IN =          22.9769
+                TOTAL IN =         197.8131                  TOTAL IN =          25.9537
 
           OUT:                                     OUT:
           ----                                     ----
                AG WELLS  =           0.0000                 AG WELLS  =           0.0000
       DIVERSION SEGMENTS =           0.0000        DIVERSION SEGMENTS =           0.0000
-           GW IRRIGATION =           0.0000             GW IRRIGATION =           0.0000
+           GW IRRIGATION =           8.3326             GW IRRIGATION =           2.9769
            SW IRRIGATION =         189.4805             SW IRRIGATION =          22.9769
         SYSTEM LOSSES GW =           0.0000          SYSTEM LOSSES GW =           0.0000
         SYSTEM LOSSES SW =           0.0000          SYSTEM LOSSES SW =           0.0000
 
-               TOTAL OUT =         189.4805                 TOTAL OUT =          22.9769
+               TOTAL OUT =         197.8131                 TOTAL OUT =          25.9537
 
                 IN - OUT =           0.0000                  IN - OUT =           0.0000
 
@@ -4379,31 +4379,31 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-             STORAGE     =           0.0000               STORAGE     =           0.0000
+             STORAGE     =           0.3598               STORAGE     =           0.2072
        CONSTANT HEAD     =           0.0000         CONSTANT HEAD     =           0.0000
       STREAM LEAKAGE     =           9.1228        STREAM LEAKAGE     =       7.6023E-02
-        UZF RECHARGE     =        6309.3545          UZF RECHARGE     =         107.0534
+        UZF RECHARGE     =        6307.1885          UZF RECHARGE     =         106.2849
                GW ET     =           0.0000                 GW ET     =           0.0000
      SURFACE LEAKAGE     =           0.0000       SURFACE LEAKAGE     =           0.0000
            AG WELLS      =           0.0000             AG WELLS      =           0.0000
 
-                TOTAL IN =        6318.4771                  TOTAL IN =         107.1294
+                TOTAL IN =        6316.6709                  TOTAL IN =         106.5682
 
           OUT:                                     OUT:
           ----                                     ----
-             STORAGE     =        5616.2412               STORAGE     =          93.4798
+             STORAGE     =        5607.4404               STORAGE     =          90.4176
        CONSTANT HEAD     =           0.0000         CONSTANT HEAD     =           0.0000
       STREAM LEAKAGE     =           0.0000        STREAM LEAKAGE     =           0.0000
         UZF RECHARGE     =           0.0000          UZF RECHARGE     =           0.0000
                GW ET     =           0.0000                 GW ET     =           0.0000
      SURFACE LEAKAGE     =           0.0000       SURFACE LEAKAGE     =           0.0000
-           AG WELLS      =           0.0000             AG WELLS      =           0.0000
+           AG WELLS      =           8.3326             AG WELLS      =           2.9769
 
-               TOTAL OUT =        5616.2412                 TOTAL OUT =          93.4798
+               TOTAL OUT =        5615.7729                 TOTAL OUT =          93.3945
 
-                IN - OUT =         702.2358                  IN - OUT =          13.6496
+                IN - OUT =         700.8979                  IN - OUT =          13.1737
 
-     PERCENT DISCREPANCY =          11.77         PERCENT DISCREPANCY =          13.61
+     PERCENT DISCREPANCY =          11.75         PERCENT DISCREPANCY =          13.18
 
 
 
@@ -5355,18 +5355,18 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-        INFILTRATION =      116670.9180          INFILTRATION =         222.5118
+        INFILTRATION =      117502.0595          INFILTRATION =         241.3361
 
           OUT:                                     OUT:
           ----                                     ----
-              UZF ET =      140107.2665                UZF ET =         216.6233
-        UZF RECHARGE =        8212.1184          UZF RECHARGE =          40.5699
+              UZF ET =      140325.5620                UZF ET =         232.5283
+        UZF RECHARGE =        8032.9979          UZF RECHARGE =          36.4994
 
-            IN - OUT =      -31648.4669              IN - OUT =         -34.6813
+            IN - OUT =      -30856.5004              IN - OUT =         -27.6917
 
           STORAGE:                                 STORAGE:
           --------                                 --------
-      STORAGE CHANGE =      -31648.7236        STORAGE CHANGE =         -34.6813
+      STORAGE CHANGE =      -30856.7557        STORAGE CHANGE =         -27.6917
 
  PERCENT DISCREPANCY IS DIFFERENCE BETWEEN IN-OUT MINUS CHANGE IN STORAGE
  DIVIDED BY THE AVERAGE OF IN AND OUT TIMES 100
@@ -5388,25 +5388,25 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-               AG WELLS  =           0.0000                 AG WELLS  =           0.0000
+               AG WELLS  =         831.1415                 AG WELLS  =          18.8243
       DIVERSION SEGMENTS =        1114.8610        DIVERSION SEGMENTS =          30.0000
            GW IRRIGATION =           0.0000             GW IRRIGATION =           0.0000
            SW IRRIGATION =           0.0000             SW IRRIGATION =           0.0000
         SYSTEM LOSSES GW =           0.0000          SYSTEM LOSSES GW =           0.0000
         SYSTEM LOSSES SW =           0.0000          SYSTEM LOSSES SW =           0.0000
 
-                TOTAL IN =        1114.8610                  TOTAL IN =          30.0000
+                TOTAL IN =        1946.0024                  TOTAL IN =          48.8243
 
           OUT:                                     OUT:
           ----                                     ----
                AG WELLS  =           0.0000                 AG WELLS  =           0.0000
       DIVERSION SEGMENTS =           0.0000        DIVERSION SEGMENTS =           0.0000
-           GW IRRIGATION =           0.0000             GW IRRIGATION =           0.0000
+           GW IRRIGATION =         831.1415             GW IRRIGATION =          18.8243
            SW IRRIGATION =        1114.8610             SW IRRIGATION =          30.0000
         SYSTEM LOSSES GW =           0.0000          SYSTEM LOSSES GW =           0.0000
         SYSTEM LOSSES SW =           0.0000          SYSTEM LOSSES SW =           0.0000
 
-               TOTAL OUT =        1114.8610                 TOTAL OUT =          30.0000
+               TOTAL OUT =        1946.0024                 TOTAL OUT =          48.8243
 
                 IN - OUT =           0.0000                  IN - OUT =           0.0000
 
@@ -5425,31 +5425,31 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-             STORAGE     =           0.0000               STORAGE     =           0.0000
+             STORAGE     =         196.2315               STORAGE     =           0.1025
        CONSTANT HEAD     =           0.0000         CONSTANT HEAD     =           0.0000
       STREAM LEAKAGE     =          11.4795        STREAM LEAKAGE     =       7.6023E-02
-        UZF RECHARGE     =        8212.1182          UZF RECHARGE     =          40.5699
+        UZF RECHARGE     =        8032.9980          UZF RECHARGE     =          36.4994
                GW ET     =           0.0000                 GW ET     =           0.0000
      SURFACE LEAKAGE     =           0.0000       SURFACE LEAKAGE     =           0.0000
            AG WELLS      =           0.0000             AG WELLS      =           0.0000
 
-                TOTAL IN =        8223.5977                  TOTAL IN =          40.6459
+                TOTAL IN =        8240.7090                  TOTAL IN =          36.6779
 
           OUT:                                     OUT:
           ----                                     ----
-             STORAGE     =        7312.7681               STORAGE     =          36.7617
+             STORAGE     =        6598.9526               STORAGE     =          16.1629
        CONSTANT HEAD     =           0.0000         CONSTANT HEAD     =           0.0000
       STREAM LEAKAGE     =           0.0000        STREAM LEAKAGE     =           0.0000
         UZF RECHARGE     =           0.0000          UZF RECHARGE     =           0.0000
                GW ET     =           0.0000                 GW ET     =           0.0000
      SURFACE LEAKAGE     =           0.0000       SURFACE LEAKAGE     =           0.0000
-           AG WELLS      =           0.0000             AG WELLS      =           0.0000
+           AG WELLS      =         831.1415             AG WELLS      =          18.8243
 
-               TOTAL OUT =        7312.7681                 TOTAL OUT =          36.7617
+               TOTAL OUT =        7430.0942                 TOTAL OUT =          34.9871
 
-                IN - OUT =         910.8296                  IN - OUT =           3.8842
+                IN - OUT =         810.6147                  IN - OUT =           1.6908
 
-     PERCENT DISCREPANCY =          11.73         PERCENT DISCREPANCY =          10.04
+     PERCENT DISCREPANCY =          10.35         PERCENT DISCREPANCY =           4.72
 
 
 
@@ -5992,7 +5992,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          2 INNER ITERATIONS.
+       AND A TOTAL OF          1 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    6   TIME STEP   17
@@ -6019,7 +6019,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          2 INNER ITERATIONS.
+       AND A TOTAL OF          1 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    6   TIME STEP   18
@@ -6046,7 +6046,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          2 INNER ITERATIONS.
+       AND A TOTAL OF          1 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    6   TIME STEP   19
@@ -6073,7 +6073,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          2 INNER ITERATIONS.
+       AND A TOTAL OF          1 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    6   TIME STEP   20
@@ -6100,7 +6100,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          2 INNER ITERATIONS.
+       AND A TOTAL OF          1 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    6   TIME STEP   21
@@ -6127,7 +6127,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          2 INNER ITERATIONS.
+       AND A TOTAL OF          1 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    6   TIME STEP   22
@@ -6154,7 +6154,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          2 INNER ITERATIONS.
+       AND A TOTAL OF          1 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    6   TIME STEP   23
@@ -6181,7 +6181,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          2 INNER ITERATIONS.
+       AND A TOTAL OF          1 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    6   TIME STEP   24
@@ -6208,7 +6208,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          2 INNER ITERATIONS.
+       AND A TOTAL OF          1 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    6   TIME STEP   25
@@ -6235,7 +6235,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          2 INNER ITERATIONS.
+       AND A TOTAL OF          1 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    6   TIME STEP   26
@@ -6262,7 +6262,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          2 INNER ITERATIONS.
+       AND A TOTAL OF          1 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    6   TIME STEP   27
@@ -6374,18 +6374,18 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-        INFILTRATION =      119645.2543          INFILTRATION =          99.1445
+        INFILTRATION =      121153.3508          INFILTRATION =         124.2302
 
           OUT:                                     OUT:
           ----                                     ----
-              UZF ET =      145607.1353                UZF ET =          99.0007
-        UZF RECHARGE =        9090.1279          UZF RECHARGE =          21.3550
+              UZF ET =      146501.2437                UZF ET =         125.0239
+        UZF RECHARGE =        8807.0288          UZF RECHARGE =          17.3415
 
-            IN - OUT =      -35052.0089              IN - OUT =         -21.2112
+            IN - OUT =      -34154.9217              IN - OUT =         -18.1352
 
           STORAGE:                                 STORAGE:
           --------                                 --------
-      STORAGE CHANGE =      -35052.2830        STORAGE CHANGE =         -21.2112
+      STORAGE CHANGE =      -34155.1933        STORAGE CHANGE =         -18.1352
 
  PERCENT DISCREPANCY IS DIFFERENCE BETWEEN IN-OUT MINUS CHANGE IN STORAGE
  DIVIDED BY THE AVERAGE OF IN AND OUT TIMES 100
@@ -6407,25 +6407,25 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-               AG WELLS  =           0.0000                 AG WELLS  =           0.0000
+               AG WELLS  =        1508.0967                 AG WELLS  =          25.0856
       DIVERSION SEGMENTS =        2014.8610        DIVERSION SEGMENTS =          30.0000
            GW IRRIGATION =           0.0000             GW IRRIGATION =           0.0000
            SW IRRIGATION =           0.0000             SW IRRIGATION =           0.0000
         SYSTEM LOSSES GW =           0.0000          SYSTEM LOSSES GW =           0.0000
         SYSTEM LOSSES SW =           0.0000          SYSTEM LOSSES SW =           0.0000
 
-                TOTAL IN =        2014.8610                  TOTAL IN =          30.0000
+                TOTAL IN =        3522.9575                  TOTAL IN =          55.0856
 
           OUT:                                     OUT:
           ----                                     ----
                AG WELLS  =           0.0000                 AG WELLS  =           0.0000
       DIVERSION SEGMENTS =           0.0000        DIVERSION SEGMENTS =           0.0000
-           GW IRRIGATION =           0.0000             GW IRRIGATION =           0.0000
+           GW IRRIGATION =        1508.0967             GW IRRIGATION =          25.0856
            SW IRRIGATION =        2014.8610             SW IRRIGATION =          30.0000
         SYSTEM LOSSES GW =           0.0000          SYSTEM LOSSES GW =           0.0000
         SYSTEM LOSSES SW =           0.0000          SYSTEM LOSSES SW =           0.0000
 
-               TOTAL OUT =        2014.8610                 TOTAL OUT =          30.0000
+               TOTAL OUT =        3522.9575                 TOTAL OUT =          55.0856
 
                 IN - OUT =           0.0000                  IN - OUT =           0.0000
 
@@ -6444,31 +6444,31 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-             STORAGE     =           0.0000               STORAGE     =           0.0000
+             STORAGE     =         239.2340               STORAGE     =           7.1124
        CONSTANT HEAD     =           0.0000         CONSTANT HEAD     =           0.0000
       STREAM LEAKAGE     =          13.7602        STREAM LEAKAGE     =       7.6023E-02
-        UZF RECHARGE     =        9090.1309          UZF RECHARGE     =          21.3550
+        UZF RECHARGE     =        8807.0312          UZF RECHARGE     =          17.3415
                GW ET     =           0.0000                 GW ET     =           0.0000
      SURFACE LEAKAGE     =           0.0000       SURFACE LEAKAGE     =           0.0000
            AG WELLS      =           0.0000             AG WELLS      =           0.0000
 
-                TOTAL IN =        9103.8906                  TOTAL IN =          21.4310
+                TOTAL IN =        9060.0254                  TOTAL IN =          24.5299
 
           OUT:                                     OUT:
           ----                                     ----
-             STORAGE     =        8117.6855               STORAGE     =          19.7982
+             STORAGE     =        6732.3418               STORAGE     =       5.9889E-02
        CONSTANT HEAD     =           0.0000         CONSTANT HEAD     =           0.0000
       STREAM LEAKAGE     =           0.0000        STREAM LEAKAGE     =           0.0000
         UZF RECHARGE     =           0.0000          UZF RECHARGE     =           0.0000
                GW ET     =           0.0000                 GW ET     =           0.0000
      SURFACE LEAKAGE     =           0.0000       SURFACE LEAKAGE     =           0.0000
-           AG WELLS      =           0.0000             AG WELLS      =           0.0000
+           AG WELLS      =        1508.0967             AG WELLS      =          25.0856
 
-               TOTAL OUT =        8117.6855                 TOTAL OUT =          19.7982
+               TOTAL OUT =        8240.4385                 TOTAL OUT =          25.1455
 
-                IN - OUT =         986.2051                  IN - OUT =           1.6328
+                IN - OUT =         819.5869                  IN - OUT =          -0.6156
 
-     PERCENT DISCREPANCY =          11.45         PERCENT DISCREPANCY =           7.92
+     PERCENT DISCREPANCY =           9.47         PERCENT DISCREPANCY =          -2.48
 
 
 
@@ -6606,7 +6606,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          2 INNER ITERATIONS.
+       AND A TOTAL OF          1 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    7   TIME STEP    2
@@ -7389,7 +7389,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    7   TIME STEP   31
@@ -7420,18 +7420,18 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-        INFILTRATION =      121021.2423          INFILTRATION =          44.3867
+        INFILTRATION =      123341.2296          INFILTRATION =          69.3893
 
           OUT:                                     OUT:
           ----                                     ----
-              UZF ET =      147601.0749                UZF ET =          44.2429
-        UZF RECHARGE =        9653.8490          UZF RECHARGE =          13.4174
+              UZF ET =      149189.1349                UZF ET =          68.9297
+        UZF RECHARGE =        9245.6103          UZF RECHARGE =          12.3560
 
-            IN - OUT =      -36233.6816              IN - OUT =         -13.2736
+            IN - OUT =      -35093.5157              IN - OUT =         -11.8964
 
           STORAGE:                                 STORAGE:
           --------                                 --------
-      STORAGE CHANGE =      -36233.9471        STORAGE CHANGE =         -13.2736
+      STORAGE CHANGE =      -35093.7787        STORAGE CHANGE =         -11.8964
 
  PERCENT DISCREPANCY IS DIFFERENCE BETWEEN IN-OUT MINUS CHANGE IN STORAGE
  DIVIDED BY THE AVERAGE OF IN AND OUT TIMES 100
@@ -7453,25 +7453,25 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-               AG WELLS  =           0.0000                 AG WELLS  =           0.0000
+               AG WELLS  =        2319.9878                 AG WELLS  =          25.0026
       DIVERSION SEGMENTS =        2944.8608        DIVERSION SEGMENTS =          30.0000
            GW IRRIGATION =           0.0000             GW IRRIGATION =           0.0000
            SW IRRIGATION =           0.0000             SW IRRIGATION =           0.0000
         SYSTEM LOSSES GW =           0.0000          SYSTEM LOSSES GW =           0.0000
         SYSTEM LOSSES SW =           0.0000          SYSTEM LOSSES SW =           0.0000
 
-                TOTAL IN =        2944.8608                  TOTAL IN =          30.0000
+                TOTAL IN =        5264.8486                  TOTAL IN =          55.0026
 
           OUT:                                     OUT:
           ----                                     ----
                AG WELLS  =           0.0000                 AG WELLS  =           0.0000
       DIVERSION SEGMENTS =           0.0000        DIVERSION SEGMENTS =           0.0000
-           GW IRRIGATION =           0.0000             GW IRRIGATION =           0.0000
+           GW IRRIGATION =        2319.9878             GW IRRIGATION =          25.0026
            SW IRRIGATION =        2944.8608             SW IRRIGATION =          30.0000
         SYSTEM LOSSES GW =           0.0000          SYSTEM LOSSES GW =           0.0000
         SYSTEM LOSSES SW =           0.0000          SYSTEM LOSSES SW =           0.0000
 
-               TOTAL OUT =        2944.8608                 TOTAL OUT =          30.0000
+               TOTAL OUT =        5264.8486                 TOTAL OUT =          55.0026
 
                 IN - OUT =           0.0000                  IN - OUT =           0.0000
 
@@ -7490,31 +7490,31 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-             STORAGE     =           0.0000               STORAGE     =           0.0000
+             STORAGE     =         583.5671               STORAGE     =          11.7795
        CONSTANT HEAD     =           0.0000         CONSTANT HEAD     =           0.0000
       STREAM LEAKAGE     =          16.1169        STREAM LEAKAGE     =       7.6023E-02
-        UZF RECHARGE     =        9653.8457          UZF RECHARGE     =          13.4174
+        UZF RECHARGE     =        9245.6133          UZF RECHARGE     =          12.3560
                GW ET     =           0.0000                 GW ET     =           0.0000
      SURFACE LEAKAGE     =           0.0000       SURFACE LEAKAGE     =           0.0000
            AG WELLS      =           0.0000             AG WELLS      =           0.0000
 
-                TOTAL IN =        9669.9629                  TOTAL IN =          13.4934
+                TOTAL IN =        9845.2969                  TOTAL IN =          24.2116
 
           OUT:                                     OUT:
           ----                                     ----
-             STORAGE     =        8643.2529               STORAGE     =          12.6429
+             STORAGE     =        6732.9434               STORAGE     =       9.7690E-02
        CONSTANT HEAD     =           0.0000         CONSTANT HEAD     =           0.0000
       STREAM LEAKAGE     =           0.0000        STREAM LEAKAGE     =           0.0000
         UZF RECHARGE     =           0.0000          UZF RECHARGE     =           0.0000
                GW ET     =           0.0000                 GW ET     =           0.0000
      SURFACE LEAKAGE     =           0.0000       SURFACE LEAKAGE     =           0.0000
-           AG WELLS      =           0.0000             AG WELLS      =           0.0000
+           AG WELLS      =        2319.9878             AG WELLS      =          25.0026
 
-               TOTAL OUT =        8643.2529                 TOTAL OUT =          12.6429
+               TOTAL OUT =        9052.9316                 TOTAL OUT =          25.1003
 
-                IN - OUT =        1026.7100                  IN - OUT =           0.8505
+                IN - OUT =         792.3652                  IN - OUT =          -0.8888
 
-     PERCENT DISCREPANCY =          11.21         PERCENT DISCREPANCY =           6.51
+     PERCENT DISCREPANCY =           8.39         PERCENT DISCREPANCY =          -3.60
 
 
 
@@ -7625,7 +7625,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP    1
@@ -7652,7 +7652,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP    2
@@ -7679,7 +7679,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP    3
@@ -7706,7 +7706,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP    4
@@ -7733,7 +7733,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP    5
@@ -7760,7 +7760,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP    6
@@ -7787,7 +7787,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP    7
@@ -7814,7 +7814,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP    8
@@ -7841,7 +7841,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP    9
@@ -7868,7 +7868,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP   10
@@ -7895,7 +7895,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP   11
@@ -7922,7 +7922,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP   12
@@ -7949,7 +7949,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP   13
@@ -7976,7 +7976,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP   14
@@ -8003,7 +8003,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP   15
@@ -8030,7 +8030,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP   16
@@ -8057,7 +8057,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP   17
@@ -8084,7 +8084,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP   18
@@ -8111,7 +8111,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP   19
@@ -8138,7 +8138,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP   20
@@ -8165,7 +8165,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP   21
@@ -8192,7 +8192,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP   22
@@ -8219,7 +8219,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP   23
@@ -8246,7 +8246,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    8   TIME STEP   24
@@ -8466,18 +8466,18 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-        INFILTRATION =      122846.3155          INFILTRATION =          58.8733
+        INFILTRATION =      125699.9989          INFILTRATION =          74.8658
 
           OUT:                                     OUT:
           ----                                     ----
-              UZF ET =      149178.0183                UZF ET =          57.7009
-        UZF RECHARGE =       10036.0411          UZF RECHARGE =          10.2899
+              UZF ET =      151485.7048                UZF ET =          80.4483
+        UZF RECHARGE =        9574.8203          UZF RECHARGE =           8.8362
 
-            IN - OUT =      -36367.7440              IN - OUT =          -9.1175
+            IN - OUT =      -35360.5263              IN - OUT =         -14.4186
 
           STORAGE:                                 STORAGE:
           --------                                 --------
-      STORAGE CHANGE =      -36368.0095        STORAGE CHANGE =          -9.1175
+      STORAGE CHANGE =      -35360.7893        STORAGE CHANGE =         -14.4186
 
  PERCENT DISCREPANCY IS DIFFERENCE BETWEEN IN-OUT MINUS CHANGE IN STORAGE
  DIVIDED BY THE AVERAGE OF IN AND OUT TIMES 100
@@ -8499,25 +8499,25 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-               AG WELLS  =           0.0000                 AG WELLS  =           0.0000
+               AG WELLS  =        2853.6836                 AG WELLS  =          15.9925
       DIVERSION SEGMENTS =        3874.8608        DIVERSION SEGMENTS =          30.0000
            GW IRRIGATION =           0.0000             GW IRRIGATION =           0.0000
            SW IRRIGATION =           0.0000             SW IRRIGATION =           0.0000
         SYSTEM LOSSES GW =           0.0000          SYSTEM LOSSES GW =           0.0000
         SYSTEM LOSSES SW =           0.0000          SYSTEM LOSSES SW =           0.0000
 
-                TOTAL IN =        3874.8608                  TOTAL IN =          30.0000
+                TOTAL IN =        6728.5444                  TOTAL IN =          45.9925
 
           OUT:                                     OUT:
           ----                                     ----
                AG WELLS  =           0.0000                 AG WELLS  =           0.0000
       DIVERSION SEGMENTS =           0.0000        DIVERSION SEGMENTS =           0.0000
-           GW IRRIGATION =           0.0000             GW IRRIGATION =           0.0000
+           GW IRRIGATION =        2853.6836             GW IRRIGATION =          15.9925
            SW IRRIGATION =        3874.8608             SW IRRIGATION =          30.0000
         SYSTEM LOSSES GW =           0.0000          SYSTEM LOSSES GW =           0.0000
         SYSTEM LOSSES SW =           0.0000          SYSTEM LOSSES SW =           0.0000
 
-               TOTAL OUT =        3874.8608                 TOTAL OUT =          30.0000
+               TOTAL OUT =        6728.5444                 TOTAL OUT =          45.9925
 
                 IN - OUT =           0.0000                  IN - OUT =           0.0000
 
@@ -8536,31 +8536,31 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-             STORAGE     =           0.0000               STORAGE     =           0.0000
+             STORAGE     =         814.9960               STORAGE     =           7.1071
        CONSTANT HEAD     =           0.0000         CONSTANT HEAD     =           0.0000
       STREAM LEAKAGE     =          18.4736        STREAM LEAKAGE     =       7.6023E-02
-        UZF RECHARGE     =       10036.0459          UZF RECHARGE     =          10.2899
+        UZF RECHARGE     =        9574.8213          UZF RECHARGE     =           8.8362
                GW ET     =           0.0000                 GW ET     =           0.0000
      SURFACE LEAKAGE     =           0.0000       SURFACE LEAKAGE     =           0.0000
            AG WELLS      =           0.0000             AG WELLS      =           0.0000
 
-                TOTAL IN =       10054.5195                  TOTAL IN =          10.3659
+                TOTAL IN =       10408.2910                  TOTAL IN =          16.0193
 
           OUT:                                     OUT:
           ----                                     ----
-             STORAGE     =        9004.3896               STORAGE     =           9.7874
+             STORAGE     =        6775.1982               STORAGE     =           0.4392
        CONSTANT HEAD     =           0.0000         CONSTANT HEAD     =           0.0000
       STREAM LEAKAGE     =           0.0000        STREAM LEAKAGE     =           0.0000
         UZF RECHARGE     =           0.0000          UZF RECHARGE     =           0.0000
                GW ET     =           0.0000                 GW ET     =           0.0000
      SURFACE LEAKAGE     =           0.0000       SURFACE LEAKAGE     =           0.0000
-           AG WELLS      =           0.0000             AG WELLS      =           0.0000
+           AG WELLS      =        2853.6836             AG WELLS      =          15.9925
 
-               TOTAL OUT =        9004.3896                 TOTAL OUT =           9.7874
+               TOTAL OUT =        9628.8818                 TOTAL OUT =          16.4317
 
-                IN - OUT =        1050.1299                  IN - OUT =           0.5786
+                IN - OUT =         779.4092                  IN - OUT =          -0.4124
 
-     PERCENT DISCREPANCY =          11.02         PERCENT DISCREPANCY =           5.74
+     PERCENT DISCREPANCY =           7.78         PERCENT DISCREPANCY =          -2.54
 
 
 
@@ -8671,7 +8671,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    9   TIME STEP    1
@@ -8698,7 +8698,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    9   TIME STEP    2
@@ -8725,7 +8725,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    9   TIME STEP    3
@@ -8752,7 +8752,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    9   TIME STEP    4
@@ -8779,7 +8779,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    9   TIME STEP    5
@@ -8806,7 +8806,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    9   TIME STEP    6
@@ -8833,7 +8833,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    9   TIME STEP    7
@@ -8860,7 +8860,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    9   TIME STEP    8
@@ -8887,7 +8887,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    9   TIME STEP    9
@@ -8914,7 +8914,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    9   TIME STEP   10
@@ -8941,7 +8941,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD    9   TIME STEP   11
@@ -9485,18 +9485,18 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-        INFILTRATION =      126727.0061          INFILTRATION =         129.3564
+        INFILTRATION =      129854.4544          INFILTRATION =         137.7582
 
           OUT:                                     OUT:
           ----                                     ----
-              UZF ET =      151629.4691                UZF ET =         111.5348
-        UZF RECHARGE =       10319.0860          UZF RECHARGE =           7.8737
+              UZF ET =      154362.1143                UZF ET =         123.2818
+        UZF RECHARGE =        9837.5482          UZF RECHARGE =           8.2700
 
-            IN - OUT =      -35221.5490              IN - OUT =           9.9479
+            IN - OUT =      -34345.2081              IN - OUT =           6.2065
 
           STORAGE:                                 STORAGE:
           --------                                 --------
-      STORAGE CHANGE =      -35221.8145        STORAGE CHANGE =           9.9479
+      STORAGE CHANGE =      -34345.4746        STORAGE CHANGE =           6.2065
 
  PERCENT DISCREPANCY IS DIFFERENCE BETWEEN IN-OUT MINUS CHANGE IN STORAGE
  DIVIDED BY THE AVERAGE OF IN AND OUT TIMES 100
@@ -9518,25 +9518,25 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-               AG WELLS  =           0.0000                 AG WELLS  =           0.0000
-      DIVERSION SEGMENTS =        4774.8608        DIVERSION SEGMENTS =          30.0000
+               AG WELLS  =        3140.7380                 AG WELLS  =           9.2009
+      DIVERSION SEGMENTS =        4761.5713        DIVERSION SEGMENTS =          29.2009
            GW IRRIGATION =           0.0000             GW IRRIGATION =           0.0000
            SW IRRIGATION =           0.0000             SW IRRIGATION =           0.0000
         SYSTEM LOSSES GW =           0.0000          SYSTEM LOSSES GW =           0.0000
         SYSTEM LOSSES SW =           0.0000          SYSTEM LOSSES SW =           0.0000
 
-                TOTAL IN =        4774.8608                  TOTAL IN =          30.0000
+                TOTAL IN =        7902.3096                  TOTAL IN =          38.4019
 
           OUT:                                     OUT:
           ----                                     ----
                AG WELLS  =           0.0000                 AG WELLS  =           0.0000
       DIVERSION SEGMENTS =           0.0000        DIVERSION SEGMENTS =           0.0000
-           GW IRRIGATION =           0.0000             GW IRRIGATION =           0.0000
-           SW IRRIGATION =        4774.8608             SW IRRIGATION =          30.0000
+           GW IRRIGATION =        3140.7380             GW IRRIGATION =           9.2009
+           SW IRRIGATION =        4761.5713             SW IRRIGATION =          29.2009
         SYSTEM LOSSES GW =           0.0000          SYSTEM LOSSES GW =           0.0000
         SYSTEM LOSSES SW =           0.0000          SYSTEM LOSSES SW =           0.0000
 
-               TOTAL OUT =        4774.8608                 TOTAL OUT =          30.0000
+               TOTAL OUT =        7902.3096                 TOTAL OUT =          38.4019
 
                 IN - OUT =           0.0000                  IN - OUT =           0.0000
 
@@ -9555,31 +9555,31 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-             STORAGE     =           0.0000               STORAGE     =           0.0000
+             STORAGE     =         944.0638               STORAGE     =           3.3005
        CONSTANT HEAD     =           0.0000         CONSTANT HEAD     =           0.0000
       STREAM LEAKAGE     =          20.7543        STREAM LEAKAGE     =       7.6023E-02
-        UZF RECHARGE     =       10319.0957          UZF RECHARGE     =           7.8737
+        UZF RECHARGE     =        9837.5488          UZF RECHARGE     =           8.2700
                GW ET     =           0.0000                 GW ET     =           0.0000
      SURFACE LEAKAGE     =           0.0000       SURFACE LEAKAGE     =           0.0000
            AG WELLS      =           0.0000             AG WELLS      =           0.0000
 
-                TOTAL IN =       10339.8496                  TOTAL IN =           7.9498
+                TOTAL IN =       10802.3672                  TOTAL IN =          11.6465
 
           OUT:                                     OUT:
           ----                                     ----
-             STORAGE     =        9274.4023               STORAGE     =           7.5622
+             STORAGE     =        6883.5542               STORAGE     =           2.4857
        CONSTANT HEAD     =           0.0000         CONSTANT HEAD     =           0.0000
       STREAM LEAKAGE     =           0.0000        STREAM LEAKAGE     =           0.0000
         UZF RECHARGE     =           0.0000          UZF RECHARGE     =           0.0000
                GW ET     =           0.0000                 GW ET     =           0.0000
      SURFACE LEAKAGE     =           0.0000       SURFACE LEAKAGE     =           0.0000
-           AG WELLS      =           0.0000             AG WELLS      =           0.0000
+           AG WELLS      =        3140.7380             AG WELLS      =           9.2009
 
-               TOTAL OUT =        9274.4023                 TOTAL OUT =           7.5622
+               TOTAL OUT =       10024.2920                 TOTAL OUT =          11.6866
 
-                IN - OUT =        1065.4473                  IN - OUT =           0.3876
+                IN - OUT =         778.0752                  IN - OUT =      -4.0087E-02
 
-     PERCENT DISCREPANCY =          10.86         PERCENT DISCREPANCY =           5.00
+     PERCENT DISCREPANCY =           7.47         PERCENT DISCREPANCY =          -0.34
 
 
 
@@ -9690,7 +9690,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP    1
@@ -9717,7 +9717,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP    2
@@ -9744,7 +9744,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP    3
@@ -9771,7 +9771,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP    4
@@ -9798,7 +9798,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP    5
@@ -9825,7 +9825,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP    6
@@ -9852,7 +9852,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP    7
@@ -9879,7 +9879,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP    8
@@ -9906,7 +9906,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP    9
@@ -9933,7 +9933,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   10
@@ -9960,7 +9960,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   11
@@ -9987,7 +9987,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   12
@@ -10014,7 +10014,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   13
@@ -10041,7 +10041,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   14
@@ -10068,7 +10068,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   15
@@ -10095,7 +10095,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   16
@@ -10122,7 +10122,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   17
@@ -10149,7 +10149,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   18
@@ -10176,7 +10176,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   19
@@ -10203,7 +10203,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   20
@@ -10230,7 +10230,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   21
@@ -10257,7 +10257,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   22
@@ -10284,7 +10284,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   23
@@ -10311,7 +10311,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   24
@@ -10338,7 +10338,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   25
@@ -10365,7 +10365,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   26
@@ -10392,7 +10392,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   27
@@ -10419,7 +10419,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   28
@@ -10446,7 +10446,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   29
@@ -10473,7 +10473,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   30
@@ -10500,7 +10500,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   10   TIME STEP   31
@@ -10531,18 +10531,18 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-        INFILTRATION =      140316.4586          INFILTRATION =         436.3521
+        INFILTRATION =      143502.0372          INFILTRATION =         436.9907
 
           OUT:                                     OUT:
           ----                                     ----
-              UZF ET =      156864.2114                UZF ET =         258.4697
-        UZF RECHARGE =       10555.0655          UZF RECHARGE =           6.0144
+              UZF ET =      159809.1667                UZF ET =         264.0484
+        UZF RECHARGE =       10074.8785          UZF RECHARGE =           7.7654
 
-            IN - OUT =      -27102.8183              IN - OUT =         171.8680
+            IN - OUT =      -26382.0079              IN - OUT =         165.1768
 
           STORAGE:                                 STORAGE:
           --------                                 --------
-      STORAGE CHANGE =      -27103.0832        STORAGE CHANGE =         171.8681
+      STORAGE CHANGE =      -26382.2739        STORAGE CHANGE =         165.1768
 
  PERCENT DISCREPANCY IS DIFFERENCE BETWEEN IN-OUT MINUS CHANGE IN STORAGE
  DIVIDED BY THE AVERAGE OF IN AND OUT TIMES 100
@@ -10564,25 +10564,25 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-               AG WELLS  =           0.0000                 AG WELLS  =           0.0000
-      DIVERSION SEGMENTS =        5480.1064        DIVERSION SEGMENTS =          20.7325
+               AG WELLS  =        3212.4246                 AG WELLS  =           0.6855
+      DIVERSION SEGMENTS =        5453.2588        DIVERSION SEGMENTS =          20.6855
            GW IRRIGATION =           0.0000             GW IRRIGATION =           0.0000
            SW IRRIGATION =           0.0000             SW IRRIGATION =           0.0000
         SYSTEM LOSSES GW =           0.0000          SYSTEM LOSSES GW =           0.0000
         SYSTEM LOSSES SW =           0.0000          SYSTEM LOSSES SW =           0.0000
 
-                TOTAL IN =        5480.1064                  TOTAL IN =          20.7325
+                TOTAL IN =        8665.6836                  TOTAL IN =          21.3711
 
           OUT:                                     OUT:
           ----                                     ----
                AG WELLS  =           0.0000                 AG WELLS  =           0.0000
       DIVERSION SEGMENTS =           0.0000        DIVERSION SEGMENTS =           0.0000
-           GW IRRIGATION =           0.0000             GW IRRIGATION =           0.0000
-           SW IRRIGATION =        5480.1064             SW IRRIGATION =          20.7325
+           GW IRRIGATION =        3212.4246             GW IRRIGATION =           0.6855
+           SW IRRIGATION =        5453.2588             SW IRRIGATION =          20.6855
         SYSTEM LOSSES GW =           0.0000          SYSTEM LOSSES GW =           0.0000
         SYSTEM LOSSES SW =           0.0000          SYSTEM LOSSES SW =           0.0000
 
-               TOTAL OUT =        5480.1064                 TOTAL OUT =          20.7325
+               TOTAL OUT =        8665.6836                 TOTAL OUT =          21.3711
 
                 IN - OUT =           0.0000                  IN - OUT =           0.0000
 
@@ -10601,31 +10601,31 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-             STORAGE     =           0.0000               STORAGE     =           0.0000
+             STORAGE     =         992.3105               STORAGE     =           0.2703
        CONSTANT HEAD     =           0.0000         CONSTANT HEAD     =           0.0000
       STREAM LEAKAGE     =          23.1110        STREAM LEAKAGE     =       7.6023E-02
-        UZF RECHARGE     =       10555.0830          UZF RECHARGE     =           6.0144
+        UZF RECHARGE     =       10074.8818          UZF RECHARGE     =           7.7654
                GW ET     =           0.0000                 GW ET     =           0.0000
      SURFACE LEAKAGE     =           0.0000       SURFACE LEAKAGE     =           0.0000
            AG WELLS      =           0.0000             AG WELLS      =           0.0000
 
-                TOTAL IN =       10578.1943                  TOTAL IN =           6.0905
+                TOTAL IN =       11090.3037                  TOTAL IN =           8.1117
 
           OUT:                                     OUT:
           ----                                     ----
-             STORAGE     =        9501.3457               STORAGE     =           5.8356
+             STORAGE     =        7091.4604               STORAGE     =           7.0784
        CONSTANT HEAD     =           0.0000         CONSTANT HEAD     =           0.0000
       STREAM LEAKAGE     =           0.0000        STREAM LEAKAGE     =           0.0000
         UZF RECHARGE     =           0.0000          UZF RECHARGE     =           0.0000
                GW ET     =           0.0000                 GW ET     =           0.0000
      SURFACE LEAKAGE     =           0.0000       SURFACE LEAKAGE     =           0.0000
-           AG WELLS      =           0.0000             AG WELLS      =           0.0000
+           AG WELLS      =        3212.4246             AG WELLS      =           0.6855
 
-               TOTAL OUT =        9501.3457                 TOTAL OUT =           5.8356
+               TOTAL OUT =       10303.8848                 TOTAL OUT =           7.7639
 
-                IN - OUT =        1076.8486                  IN - OUT =           0.2548
+                IN - OUT =         786.4189                  IN - OUT =           0.3478
 
-     PERCENT DISCREPANCY =          10.73         PERCENT DISCREPANCY =           4.27
+     PERCENT DISCREPANCY =           7.35         PERCENT DISCREPANCY =           4.38
 
 
 
@@ -10736,7 +10736,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   11   TIME STEP    1
@@ -10763,7 +10763,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   11   TIME STEP    2
@@ -10790,7 +10790,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   11   TIME STEP    3
@@ -10817,7 +10817,7 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
     ------------------------------------------------
        NWT REQUIRED            1 OUTER ITERATIONS 
-       AND A TOTAL OF          1 INNER ITERATIONS.
+       AND A TOTAL OF          2 INNER ITERATIONS.
     ------------------------------------------------
 
  OUTPUT CONTROL FOR STRESS PERIOD   11   TIME STEP    4
@@ -11550,18 +11550,18 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-        INFILTRATION =      161028.2094          INFILTRATION =         687.3976
+        INFILTRATION =      164148.3593          INFILTRATION =         685.7998
 
           OUT:                                     OUT:
           ----                                     ----
-              UZF ET =      162778.7696                UZF ET =         269.3525
-        UZF RECHARGE =       10733.3175          UZF RECHARGE =           5.9394
+              UZF ET =      165789.1537                UZF ET =         270.9503
+        UZF RECHARGE =       10274.9040          UZF RECHARGE =           5.9392
 
-            IN - OUT =      -12483.8777              IN - OUT =         412.1056
+            IN - OUT =      -11915.6984              IN - OUT =         408.9102
 
           STORAGE:                                 STORAGE:
           --------                                 --------
-      STORAGE CHANGE =      -12484.1427        STORAGE CHANGE =         412.1056
+      STORAGE CHANGE =      -11915.9644        STORAGE CHANGE =         408.9102
 
  PERCENT DISCREPANCY IS DIFFERENCE BETWEEN IN-OUT MINUS CHANGE IN STORAGE
  DIVIDED BY THE AVERAGE OF IN AND OUT TIMES 100
@@ -11583,25 +11583,25 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-               AG WELLS  =           0.0000                 AG WELLS  =           0.0000
-      DIVERSION SEGMENTS =        5811.3271        DIVERSION SEGMENTS =           8.0466
+               AG WELLS  =        3212.4246                 AG WELLS  =           0.0000
+      DIVERSION SEGMENTS =        5719.0513        DIVERSION SEGMENTS =           6.4488
            GW IRRIGATION =           0.0000             GW IRRIGATION =           0.0000
            SW IRRIGATION =           0.0000             SW IRRIGATION =           0.0000
         SYSTEM LOSSES GW =           0.0000          SYSTEM LOSSES GW =           0.0000
         SYSTEM LOSSES SW =           0.0000          SYSTEM LOSSES SW =           0.0000
 
-                TOTAL IN =        5811.3271                  TOTAL IN =           8.0466
+                TOTAL IN =        8931.4756                  TOTAL IN =           6.4488
 
           OUT:                                     OUT:
           ----                                     ----
                AG WELLS  =           0.0000                 AG WELLS  =           0.0000
       DIVERSION SEGMENTS =           0.0000        DIVERSION SEGMENTS =           0.0000
-           GW IRRIGATION =           0.0000             GW IRRIGATION =           0.0000
-           SW IRRIGATION =        5811.3271             SW IRRIGATION =           8.0466
+           GW IRRIGATION =        3212.4246             GW IRRIGATION =           0.0000
+           SW IRRIGATION =        5719.0513             SW IRRIGATION =           6.4488
         SYSTEM LOSSES GW =           0.0000          SYSTEM LOSSES GW =           0.0000
         SYSTEM LOSSES SW =           0.0000          SYSTEM LOSSES SW =           0.0000
 
-               TOTAL OUT =        5811.3271                 TOTAL OUT =           8.0466
+               TOTAL OUT =        8931.4756                 TOTAL OUT =           6.4488
 
                 IN - OUT =           0.0000                  IN - OUT =           0.0000
 
@@ -11620,31 +11620,31 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    30 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-             STORAGE     =           0.0000               STORAGE     =           0.0000
+             STORAGE     =         994.2090               STORAGE     =           0.0000
        CONSTANT HEAD     =           0.0000         CONSTANT HEAD     =           0.0000
       STREAM LEAKAGE     =          25.3917        STREAM LEAKAGE     =       7.6023E-02
-        UZF RECHARGE     =       10733.3359          UZF RECHARGE     =           5.9394
+        UZF RECHARGE     =       10274.9092          UZF RECHARGE     =           5.9392
                GW ET     =           0.0000                 GW ET     =           0.0000
      SURFACE LEAKAGE     =           0.0000       SURFACE LEAKAGE     =           0.0000
            AG WELLS      =           0.0000             AG WELLS      =           0.0000
 
-                TOTAL IN =       10758.7275                  TOTAL IN =           6.0154
+                TOTAL IN =       11294.5098                  TOTAL IN =           6.0152
 
           OUT:                                     OUT:
           ----                                     ----
-             STORAGE     =        9674.3809               STORAGE     =           5.7656
+             STORAGE     =        7286.5781               STORAGE     =           5.7651
        CONSTANT HEAD     =           0.0000         CONSTANT HEAD     =           0.0000
       STREAM LEAKAGE     =           0.0000        STREAM LEAKAGE     =           0.0000
         UZF RECHARGE     =           0.0000          UZF RECHARGE     =           0.0000
                GW ET     =           0.0000                 GW ET     =           0.0000
      SURFACE LEAKAGE     =           0.0000       SURFACE LEAKAGE     =           0.0000
-           AG WELLS      =           0.0000             AG WELLS      =           0.0000
+           AG WELLS      =        3212.4246             AG WELLS      =           0.0000
 
-               TOTAL OUT =        9674.3809                 TOTAL OUT =           5.7656
+               TOTAL OUT =       10499.0029                 TOTAL OUT =           5.7651
 
-                IN - OUT =        1084.3467                  IN - OUT =           0.2498
+                IN - OUT =         795.5068                  IN - OUT =           0.2502
 
-     PERCENT DISCREPANCY =          10.61         PERCENT DISCREPANCY =           4.24
+     PERCENT DISCREPANCY =           7.30         PERCENT DISCREPANCY =           4.25
 
 
 
@@ -12596,18 +12596,18 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-        INFILTRATION =      193160.2591          INFILTRATION =        1034.2527
+        INFILTRATION =      196259.3670          INFILTRATION =        1033.7850
 
           OUT:                                     OUT:
           ----                                     ----
-              UZF ET =      169549.4577                UZF ET =         283.4418
-        UZF RECHARGE =       10892.3678          UZF RECHARGE =           4.4095
+              UZF ET =      172580.8837                UZF ET =         283.9095
+        UZF RECHARGE =       10459.0229          UZF RECHARGE =           5.9394
 
-            IN - OUT =       12718.4335              IN - OUT =         746.4014
+            IN - OUT =       13219.4605              IN - OUT =         743.9361
 
           STORAGE:                                 STORAGE:
           --------                                 --------
-      STORAGE CHANGE =       12718.1689        STORAGE CHANGE =         746.4014
+      STORAGE CHANGE =       13219.1949        STORAGE CHANGE =         743.9361
 
  PERCENT DISCREPANCY IS DIFFERENCE BETWEEN IN-OUT MINUS CHANGE IN STORAGE
  DIVIDED BY THE AVERAGE OF IN AND OUT TIMES 100
@@ -12629,25 +12629,25 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-               AG WELLS  =           0.0000                 AG WELLS  =           0.0000
-      DIVERSION SEGMENTS =        5896.4946        DIVERSION SEGMENTS =           0.4824
+               AG WELLS  =        3212.4246                 AG WELLS  =           0.0000
+      DIVERSION SEGMENTS =        5783.1782        DIVERSION SEGMENTS =       1.4657E-02
            GW IRRIGATION =           0.0000             GW IRRIGATION =           0.0000
            SW IRRIGATION =           0.0000             SW IRRIGATION =           0.0000
         SYSTEM LOSSES GW =           0.0000          SYSTEM LOSSES GW =           0.0000
         SYSTEM LOSSES SW =           0.0000          SYSTEM LOSSES SW =           0.0000
 
-                TOTAL IN =        5896.4946                  TOTAL IN =           0.4824
+                TOTAL IN =        8995.6025                  TOTAL IN =       1.4657E-02
 
           OUT:                                     OUT:
           ----                                     ----
                AG WELLS  =           0.0000                 AG WELLS  =           0.0000
       DIVERSION SEGMENTS =           0.0000        DIVERSION SEGMENTS =           0.0000
-           GW IRRIGATION =           0.0000             GW IRRIGATION =           0.0000
-           SW IRRIGATION =        5896.4946             SW IRRIGATION =           0.4824
+           GW IRRIGATION =        3212.4246             GW IRRIGATION =           0.0000
+           SW IRRIGATION =        5783.1782             SW IRRIGATION =       1.4657E-02
         SYSTEM LOSSES GW =           0.0000          SYSTEM LOSSES GW =           0.0000
         SYSTEM LOSSES SW =           0.0000          SYSTEM LOSSES SW =           0.0000
 
-               TOTAL OUT =        5896.4946                 TOTAL OUT =           0.4824
+               TOTAL OUT =        8995.6025                 TOTAL OUT =       1.4657E-02
 
                 IN - OUT =           0.0000                  IN - OUT =           0.0000
 
@@ -12666,31 +12666,31 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
 
            IN:                                      IN:
            ---                                      ---
-             STORAGE     =           0.0000               STORAGE     =           0.0000
+             STORAGE     =         994.2090               STORAGE     =           0.0000
        CONSTANT HEAD     =           0.0000         CONSTANT HEAD     =           0.0000
       STREAM LEAKAGE     =          27.7484        STREAM LEAKAGE     =       7.6023E-02
-        UZF RECHARGE     =       10892.3838          UZF RECHARGE     =           4.4095
+        UZF RECHARGE     =       10459.0322          UZF RECHARGE     =           5.9394
                GW ET     =           0.0000                 GW ET     =           0.0000
      SURFACE LEAKAGE     =           0.0000       SURFACE LEAKAGE     =           0.0000
            AG WELLS      =           0.0000             AG WELLS      =           0.0000
 
-                TOTAL IN =       10920.1318                  TOTAL IN =           4.4855
+                TOTAL IN =       11480.9893                  TOTAL IN =           6.0154
 
           OUT:                                     OUT:
           ----                                     ----
-             STORAGE     =        9829.6416               STORAGE     =           4.3324
+             STORAGE     =        7465.2998               STORAGE     =           5.7654
        CONSTANT HEAD     =           0.0000         CONSTANT HEAD     =           0.0000
       STREAM LEAKAGE     =           0.0000        STREAM LEAKAGE     =           0.0000
         UZF RECHARGE     =           0.0000          UZF RECHARGE     =           0.0000
                GW ET     =           0.0000                 GW ET     =           0.0000
      SURFACE LEAKAGE     =           0.0000       SURFACE LEAKAGE     =           0.0000
-           AG WELLS      =           0.0000             AG WELLS      =           0.0000
+           AG WELLS      =        3212.4246             AG WELLS      =           0.0000
 
-               TOTAL OUT =        9829.6416                 TOTAL OUT =           4.3324
+               TOTAL OUT =       10677.7246                 TOTAL OUT =           5.7654
 
-                IN - OUT =        1090.4902                  IN - OUT =           0.1531
+                IN - OUT =         803.2646                  IN - OUT =           0.2500
 
-     PERCENT DISCREPANCY =          10.51         PERCENT DISCREPANCY =           3.47
+     PERCENT DISCREPANCY =           7.25         PERCENT DISCREPANCY =           4.24
 
 
 
@@ -12705,6 +12705,6 @@ UNSATURATED ZONE PACKAGE VOLUMETRIC BUDGET FOR  TIME STEP    31 STRESS PERIOD   
          TOTAL TIME 3.15360E+07 5.25600E+05  8760.0      365.00     0.99932    
 1
 
- Run end date and time (yyyy/mm/dd hh:mm:ss): 2022/05/20 16:29:30
- Elapsed run time:  0.455 Seconds
+ Run end date and time (yyyy/mm/dd hh:mm:ss): 2022/05/31 16:04:06
+ Elapsed run time:  0.498 Seconds
 

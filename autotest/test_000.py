@@ -1,0 +1,2 @@
+# test importing ModflowAgmvr
+
