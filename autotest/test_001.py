@@ -22,18 +22,6 @@ def test_etdemand_well():
         perioddata=tuple(period_data),
         time_units="days"
     )
-    headtol, fluxtol = None, None
-    if headtol is None:
-        if name == "etdemand":
-            headtol = 0.0570641530019691
-        elif name == "trigger":
-            headtol = 0.0570641530019691
-
-    if fluxtol is None:
-        if name == "etdemand":
-            fluxtol = 213.1677138100136
-        elif name == "trigger":
-            fluxtol = 213.1677138100136
 
     ims = flopy.mf6.ModflowIms(
         sim,

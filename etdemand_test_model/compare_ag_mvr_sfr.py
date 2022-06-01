@@ -241,16 +241,9 @@ def compare_model_output(nwt, mf6, model):
     nwt_div1 = os.path.join(nwt, f"{model}.diversion11.txt")
     nwt_div2 = os.path.join(nwt, f"{model}.diversion12.txt")
     mf6_lst = os.path.join(mf6, f"{model}.lst")
-    mf6_cbc = os.path.join(mf6, f"etdemand_well.cbc")
 
     nwt_div1 = pd.read_csv(nwt_div1, delim_whitespace=True)
     nwt_div2 = pd.read_csv(nwt_div2, delim_whitespace=True)
-
-    mf6_cbc = flopy.utils.CellBudgetFile(mf6_cbc)
-    mf6_pump = mf6_cbc.get_data(text="WEL-TO-MVR")
-    well_1 = []
-    for recarray in mf6_pump:
-        well_1.append(recarray[0]["q"])
 
     mf6_div = MvrBudget(mf6_lst).inc
     mf6_div = mf6_div.groupby(by=["provider", "pid", "totim"], as_index=False)[["qa", "qp"]].sum()
