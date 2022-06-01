@@ -1,6 +1,6 @@
 [![ModflowAgmvr CI](https://github.com/jlarsen-usgs/modflow6api_agMVR/actions/workflows/ci.yml/badge.svg)](https://github.com/jlarsen-usgs/modflow6api_agMVR/actions/workflows/ci.yml)
 
-# modflow6api_AGmvr
+# modflowapi_Agmvr
 This repository contains the ModflowAgmvr class that interfaces with the modflowapi to simulate
 irrigated agriculture with Modflow6. 
 
