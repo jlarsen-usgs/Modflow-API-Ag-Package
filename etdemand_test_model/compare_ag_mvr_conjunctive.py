@@ -263,11 +263,8 @@ def compare_model_output(nwt, mf6, model, gwf):
     nwt_div1 = os.path.join(nwt, f"{model}.diversion11.txt")
     nwt_div2 = os.path.join(nwt, f"{model}.diversion12.txt")
     nwt_cbc = os.path.join(nwt, f"{model}.cbc")
-    nwt_hds = os.path.join(nwt, f"{model}.hds")
     mf6_lst = os.path.join(mf6, f"{model}.lst")
     mf6_cbc = os.path.join(mf6, f"{model}.cbc")
-    mf6_hds = os.path.join(mf6, f"{model}.hds")
-    valid_cbc = os.path.join(mf6, f"etdemand_well.cbc")
 
     nwt_div1 = pd.read_csv(nwt_div1, delim_whitespace=True)
     nwt_div2 = pd.read_csv(nwt_div2, delim_whitespace=True)
@@ -291,12 +288,6 @@ def compare_model_output(nwt, mf6, model, gwf):
         nwt_well.append(nwt_pump[ix][idx]["q"][0])
         idx = np.where(nwt_pump[ix]["node"] == 55)[0]
         nwt_well2.append(nwt_pump[ix][idx]["q"][0])
-
-    valid_cbc = flopy.utils.CellBudgetFile(valid_cbc)
-    valid_pump = valid_cbc.get_data(text="WEL-TO-MVR")
-    valid_well = []
-    for recarray in valid_pump:
-        valid_well.append(recarray[0]["q"])
 
     mf6_div = MvrBudget(mf6_lst).inc
     mf6_div = mf6_div.groupby(by=["provider", "pid", "totim"], as_index=False)[["qa", "qp"]].sum()
@@ -322,7 +313,6 @@ def compare_model_output(nwt, mf6, model, gwf):
         ax.plot(range(1, len(nwt_total1) + 1), nwt_total1, color="dimgray", label="nwt total applied irrigation", zorder=2)
         ax.plot(range(1, len(mf6_div1) + 1), mf6_div1.qp, color="skyblue", label=f"mf6 diversion", ls="--", lw=2.5, zorder=5)
         ax.plot(range(1, len(total_ag1) + 1), total_ag1, color="darkblue", label="total applied irrigation", ls="--", lw=2.5, zorder=4)
-        # ax.plot(range(1, len(valid_pump) + 1), np.abs(valid_well), "r", label="ET demand validation curve", ls="-", zorder=1)
         styles.heading(ax=ax,
                        heading="Comparison of MF6 API AG and MF-NWT AG conjuctive use farm 1")
         styles.xlabel(ax=ax, label="Days", fontsize=10)
@@ -354,8 +344,6 @@ def compare_model_output(nwt, mf6, model, gwf):
                 label=f"mf6 diversion", ls="--", lw=2.5, zorder=5)
         ax.plot(range(1, len(total_ag2) + 1), total_ag2, color="darkblue",
                 label="total applied irrigation", ls="--", lw=2.5, zorder=4)
-        # ax.plot(range(1, len(valid_pump) + 1), np.abs(valid_well), "r",
-        #         label="ET demand validation curve", ls="-", zorder=1)
         styles.heading(ax=ax,
                        heading="Comparison of MF6 API AG and MF-NWT AG conjuctive use farm 2")
         styles.xlabel(ax=ax, label="Days", fontsize=10)
