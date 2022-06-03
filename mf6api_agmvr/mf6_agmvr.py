@@ -31,15 +31,16 @@ class ModflowAgmvr(object):
         self.totim = np.add.accumulate(self.gwf.modeltime.perlen)
 
         self.sim_wells = False
+        self.sim_maw = False
         self.sim_diversions = False
 
         self.well_name = None
+        self.maw_name = None
         self.sfr_name = None
         self.uzf_name = None
 
         self.get_pkgs()
         self.create_arrays()
-
 
     def get_pkgs(self):
         """
@@ -51,12 +52,16 @@ class ModflowAgmvr(object):
         well = None
         sfr = None
         uzf = None
+        maw = None
         for ix, name in enumerate(pkg_names.array):
             name = name[-1]
             pkg = self.gwf.get_package(name)
             if isinstance(pkg, flopy.mf6.ModflowGwfwel):
                 well = name
                 self.sim_wells = True
+            elif isinstance(pkg, flopy.mf6.ModflowGwfmaw):
+                maw = name
+                self.sim_maw = True
             elif isinstance(pkg, flopy.mf6.ModflowGwfsfr):
                 sfr = name
                 self.sim_diversions = True
@@ -67,6 +72,8 @@ class ModflowAgmvr(object):
 
         if self.sim_wells:
             self.well_name = well
+        if self.sim_maw:
+            self.maw_name = maw
         if self.sim_diversions:
             self.sfr_name = sfr
         if uzf is None:
@@ -98,6 +105,22 @@ class ModflowAgmvr(object):
             self.sup = np.zeros((mxwlnum,))
             self.supold = np.zeros((mxwlnum,))
             self.well_num = np.arange(mxwlnum, dtype=int)
+
+        if self.sim_maw:
+            mxmawnum = 0
+            for recarray in period_data:
+                mawidx = np.where(recarray["pname1"] == self.maw_name)[0]
+                if len(mawidx) > 0:
+                    mawids = recarray[mawidx]["id1"]
+                    mxmaw = np.max(mawids) + 1
+                    if mxmaw > mxmawnum:
+                        mxmawnum = mxmaw
+
+            self.maw_mq = np.zeros((mxmawnum,), dtype=int)
+            self.maw_active = np.zeros((mxmawnum,), dtype=int)
+            self.mawsup = np.zeros((mxmawnum,))
+            self.mawsupold = np.zeros((mxmawnum,))
+            self.maw_num = np.arange(mxmawnum, dtype=int)
 
         # create diversion arrays
         if self.sim_diversions:
@@ -162,11 +185,9 @@ class ModflowAgmvr(object):
                 "BOUND", self.name, self.well_name.upper()
             )
 
-            self.wellq_for_mvr_addr = mf6.get_var_address(
-                "QFORMVR", self.name, self.well_name.upper()
-            )
-            self.wellq_to_mvr_addr = mf6.get_var_address(
-                "QTOMVR", self.name, self.well_name.upper()
+        if self.sim_maw:
+            self.maw_addr = mf6.get_var_address(
+                "RATE", self.name, self.maw_name.upper()
             )
 
         if self.sim_diversions:
@@ -175,15 +196,6 @@ class ModflowAgmvr(object):
             )
             self.sfrq_to_mvr_addr = mf6.get_var_address(
                 "QTOMVR", self.name, self.sfr_name.upper()
-            )
-            self.sfrqt_for_mvr_addr = mf6.get_var_address(
-                "QTFORMVR", self.name, self.sfr_name.upper()
-            )
-            self.sfrq_sim_to_mvr_addr = mf6.get_var_address(
-                "SIMTOMVR", self.name, self.sfr_name.upper()
-            )
-            self.sfr_qextoutflow_addr = mf6.get_var_address(
-                "QEXTOUTFLOW", self.name, self.sfr_name.upper()
             )
 
     def set_stress_period_data(self, mf6, kper):
@@ -236,6 +248,47 @@ class ModflowAgmvr(object):
             self.sup = np.zeros(max_q.shape)
             self.supold = np.zeros(max_q.shape)
             self.aetold = np.zeros(max_q.shape)
+
+        if self.sim_maw:
+            maw = mf6.get_value(self.maw_addr)
+            max_q = np.abs(maw)
+            # change max_q to zero and reset based on AG-Demand
+            maw[:] = 0
+            mf6.set_value(self.maw_addr, maw)
+            recarray = self.mvr.perioddata.data[kper]
+            wlidx = np.where(recarray['pname1'] == self.maw_name)[0]
+            if len(wlidx) > 0:
+                wellids = sorted(np.unique(recarray[wlidx]["id1"]))
+            else:
+                wellids = []
+
+            active = np.zeros(max_q.shape, dtype=int)
+            active[wellids] = 1
+
+            irrigated_cells = []
+            irrigated_proportion = []
+            mvr_index = []
+            for wlid in range(max_q.size):
+                icells = []
+                iprop = []
+                idx = np.where(recarray["id1"] == wlid)[0]
+                if len(idx) > 0:
+                    icells = recarray[idx]["id2"]
+                    iprop = recarray[idx]["value"] / np.sum(
+                        recarray[idx]["value"])
+
+                irrigated_cells.append(icells)
+                irrigated_proportion.append(iprop)
+                mvr_index.append(idx)
+
+            self.maw_active = active
+            self.maw_maxq = max_q
+            self.maw_irrigated_cells = irrigated_cells
+            self.maw_irrigated_proportion = irrigated_proportion
+            self.maw_mvr_index = mvr_index
+            self.mawsup = np.zeros(max_q.shape)
+            self.mawsupold = np.zeros(max_q.shape)
+            self.mawaetold = np.zeros(max_q.shape)
 
         if self.sim_diversions:
             qformvr = mf6.get_value(self.sfrq_for_mvr_addr)
@@ -361,6 +414,83 @@ class ModflowAgmvr(object):
                 mvr[idx] = np.abs(pumping[well]) * self.well_irrigated_proportion[well]
                 self.applied_irrigation[self.well_irrigated_cells[well]] = \
                     np.abs(pumping[well]) * self.well_irrigated_proportion[well]
+
+            mf6.set_value(self.mvr_value_addr, mvr)
+
+    def maw_demand_etdemand(self, mf6, kstp, delt=1, kiter=1):
+        """
+        Method to determine groundwater use demand for multi aquifer wells
+
+        Parameters
+        ----------
+        mf6 : ModflowApi object
+        kstp : int
+            modflow6 time step
+        delt : float
+            length of time step
+        kiter : int
+            iteration number
+        """
+        pet = mf6.get_value(self.pet_addr)
+        vks = mf6.get_value(self.vks_addr)
+        area = mf6.get_value(self.area_addr)
+        aet = mf6.get_value(self.aet_addr)
+
+        crop_vks = np.zeros(self.maw_maxq.shape)
+        crop_pet = np.zeros(self.maw_maxq.shape)
+        crop_aet = np.zeros(self.maw_maxq.shape)
+        sfr_applied = np.zeros(self.maw_maxq.shape)
+        for ix, crop_nodes in enumerate(self.maw_irrigated_cells):
+            if len(crop_nodes) > 0:
+                crop_vks[ix] = np.sum(vks[crop_nodes] * area[crop_nodes])
+                crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
+                crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
+                sfr_applied[ix] = np.sum(self.applied_irrigation[crop_nodes])
+
+        crop_aet = np.where(crop_vks < 1e-30, crop_pet, crop_aet)
+
+        if delt < 1:
+            crop_aet = crop_pet
+
+        if kiter == 0:
+            sup = np.zeros(self.maw_maxq.shape)
+            if kstp == 0:
+                supold = np.zeros(self.maw_maxq.shape)
+            else:
+                supold = self.mawsupold
+        else:
+            sup = self.mawsup
+            supold = self.mawsupold
+
+        factor = self._calculate_factor(crop_pet, crop_aet, self.mawaetold, sup, supold, kiter)
+
+        qonly = np.where(sup + factor > crop_vks, crop_vks, sup + factor)
+
+        self.mawsupold = sup
+        self.mawaetold = crop_aet
+
+        if self.sim_diversions:
+            qonly = qonly - sfr_applied
+            qonly = np.where(qonly < 0, 0, qonly)
+
+        pumping = np.where(qonly > self.maw_maxq, -1 * self.maw_maxq, -1 * qonly)
+        pumping = np.where(np.abs(pumping) <= 1e-10, 0, pumping)
+
+        self.sup = np.abs(pumping)
+
+        active_ix = np.where(self.maw_active)[0]
+
+        if len(active_ix) > 0:
+            maws = mf6.get_value(self.maw_addr)
+            maws[active_ix] = pumping[active_ix]
+            mf6.set_value(self.maw_addr, maws)
+
+            mvr = mf6.get_value(self.mvr_value_addr)
+            for maw in active_ix:
+                idx = self.maw_mvr_index[maw]
+                mvr[idx] = np.abs(pumping[maw]) * self.maw_irrigated_proportion[maw]
+                self.applied_irrigation[self.maw_irrigated_cells[maw]] = \
+                    np.abs(pumping[maw]) * self.maw_irrigated_proportion[maw]
 
             mf6.set_value(self.mvr_value_addr, mvr)
 
@@ -530,6 +660,9 @@ class ModflowAgmvr(object):
                 while kiter < max_iter:
                     if self.sim_diversions:
                         self.sw_demand_etdemand(mf6, kstp, delt, kiter)
+
+                    if self.sim_maw:
+                        self.maw_demand_etdemand(mf6, kstp, delt, kiter)
 
                     if self.sim_wells:
                         self.gw_demand_etdemand(mf6, kstp, delt, kiter)
