@@ -161,6 +161,9 @@ class ModflowAgmvr(object):
         self.aet_addr = mf6.get_var_address(
             "ETACT", self.name, self.uzf_name.upper()
         )
+        self.gwet_addr = mf6.get_var_address(
+            "GWET", self.name, self.uzf_name.upper()
+        )
         self.uzf_mvr_addr = mf6.get_var_address(
             "QFROMMVR", self.name, self.uzf_name.upper()
         )
@@ -358,18 +361,22 @@ class ModflowAgmvr(object):
         vks = mf6.get_value(self.vks_addr)
         area = mf6.get_value(self.area_addr)
         aet = mf6.get_value(self.aet_addr)
+        gwet = mf6.get_value(self.gwet_addr)
 
         crop_vks = np.zeros(self.well_maxq.shape)
         crop_pet = np.zeros(self.well_maxq.shape)
         crop_aet = np.zeros(self.well_maxq.shape)
+        crop_gwet = np.zeros(self.well_maxq.shape)
         sfr_applied = np.zeros(self.well_maxq.shape)
         for ix, crop_nodes in enumerate(self.well_irrigated_cells):
             if len(crop_nodes) > 0:
                 crop_vks[ix] = np.sum(vks[crop_nodes] * area[crop_nodes])
                 crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
                 crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
+                crop_gwet[ix] = np.sum(gwet[crop_nodes])
                 sfr_applied[ix] = np.sum(self.applied_irrigation[crop_nodes])
 
+        crop_aet += crop_gwet
         crop_aet = np.where(crop_vks < 1e-30, crop_pet, crop_aet)
 
         if delt < 1:
@@ -435,18 +442,22 @@ class ModflowAgmvr(object):
         vks = mf6.get_value(self.vks_addr)
         area = mf6.get_value(self.area_addr)
         aet = mf6.get_value(self.aet_addr)
+        gwet = mf6.get_value(self.gwet_addr)
 
         crop_vks = np.zeros(self.maw_maxq.shape)
         crop_pet = np.zeros(self.maw_maxq.shape)
         crop_aet = np.zeros(self.maw_maxq.shape)
+        crop_gwet = np.zeros(self.maw_maxq.shape)
         sfr_applied = np.zeros(self.maw_maxq.shape)
         for ix, crop_nodes in enumerate(self.maw_irrigated_cells):
             if len(crop_nodes) > 0:
                 crop_vks[ix] = np.sum(vks[crop_nodes] * area[crop_nodes])
                 crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
                 crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
+                crop_gwet[ix] = np.sum(gwet[crop_nodes])
                 sfr_applied[ix] = np.sum(self.applied_irrigation[crop_nodes])
 
+        crop_aet += crop_gwet
         crop_aet = np.where(crop_vks < 1e-30, crop_pet, crop_aet)
 
         if delt < 1:
@@ -513,16 +524,20 @@ class ModflowAgmvr(object):
         vks = mf6.get_value(self.vks_addr)
         area = mf6.get_value(self.area_addr)
         aet = mf6.get_value(self.aet_addr)
+        gwet = mf6.get_value(self.gwet_addr)
 
         crop_vks = np.zeros(self.sfr_maxq.shape)
         crop_pet = np.zeros(self.sfr_maxq.shape)
         crop_aet = np.zeros(self.sfr_maxq.shape)
+        crop_gwet = np.zeros(self.sfr_maxq.shape)
         for ix, crop_nodes in enumerate(self.sfr_irrigated_cells):
             if len(crop_nodes) > 0:
                 crop_vks[ix] = np.sum(vks[crop_nodes] * area[crop_nodes])
                 crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
                 crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
+                crop_gwet[ix] = np.sum(gwet[crop_nodes])
 
+        crop_aet += crop_gwet
         # crop_aet = np.where(crop_vks < 1e-30, crop_pet, crop_aet)
 
         if delt < 1:
@@ -613,6 +628,7 @@ class ModflowAgmvr(object):
         )
 
         mf6.initialize()
+
         self.create_addresses(mf6)
         prev_time = 0
         current_time = mf6.get_current_time()
