@@ -538,7 +538,7 @@ class ModflowAgmvr(object):
                 crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
                 crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
                 crop_gwet[ix] = np.sum(gwet[crop_nodes])
-                app_frac[ix] = np.sum(self.maw_application_fraction[ix])
+                app_frac[ix] = np.mean(self.maw_application_fraction[ix])
                 sfr_applied[ix] = np.sum(self.applied_irrigation[crop_nodes])
 
         crop_aet += crop_gwet
