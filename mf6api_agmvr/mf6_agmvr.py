@@ -263,20 +263,28 @@ class ModflowAgmvr(object):
 
             irrigated_cells = []
             irrigated_proportion = []
-            irrigation_efficiency = np.ones((self.gwf.modelgrid.nnodes,))
-            application_fraction = np.ones((self.gwf.modelgrid.nnodes,))
+            irrigation_efficiency = []
+            application_fraction = []
             mvr_index = []
             for wlid in range(max_q.size):
                 icells = []
                 iprop = []
+                irreff = []
+                appfrac = []
                 idx = np.where(recarray["id1"] == wlid)[0]
                 if len(idx) > 0:
                     icells = recarray[idx]["id2"]
                     iprop = recarray[idx]["value"] / np.sum(recarray[idx]["value"])
-                    if "irr_eff" in recarray.dtype.names:
-                        irrigation_efficiency[icells] = recarray[idx]["irr_eff"]
-                        application_fraction[icells] = recarray[idx]["app_frac"]
 
+                    if "irr_eff" in recarray.dtype.names:
+                        irreff = recarray[idx]["irr_eff"]
+                        appfrac = recarray[idx]["app_frac"]
+                    else:
+                        irreff = np.ones((len(icells),))
+                        appfrac = np.ones((len(icells),))
+
+                irrigation_efficiency.append(irreff)
+                application_fraction.append(appfrac)
                 irrigated_cells.append(icells)
                 irrigated_proportion.append(iprop)
                 mvr_index.append(idx)
@@ -405,9 +413,6 @@ class ModflowAgmvr(object):
             self.idsupold = np.zeros(max_q.shape)
             self.idaetold = np.zeros(max_q.shape)
 
-            x = self.__dict__
-            print('break')
-
     def zero_mvr(self, mf6):
         """
         Method to zero out MVR values before initial solve
@@ -440,6 +445,7 @@ class ModflowAgmvr(object):
         crop_pet = np.zeros(self.well_maxq.shape)
         crop_aet = np.zeros(self.well_maxq.shape)
         crop_gwet = np.zeros(self.well_maxq.shape)
+        app_frac = np.zeros(self.well_maxq.shape)
         sfr_applied = np.zeros(self.well_maxq.shape)
         for ix, crop_nodes in enumerate(self.well_irrigated_cells):
             if len(crop_nodes) > 0:
@@ -447,6 +453,7 @@ class ModflowAgmvr(object):
                 crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
                 crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
                 crop_gwet[ix] = np.sum(gwet[crop_nodes])
+                app_frac[ix] = np.mean(self.well_application_fraction[ix])
                 sfr_applied[ix] = np.sum(self.applied_irrigation[crop_nodes])
 
         crop_aet += crop_gwet
@@ -466,6 +473,7 @@ class ModflowAgmvr(object):
             supold = self.supold
 
         factor = self._calculate_factor(crop_pet, crop_aet, self.aetold, sup, supold, kiter)
+        factor *= app_frac
 
         qonly = np.where(sup + factor > crop_vks, crop_vks, sup + factor)
 
@@ -491,9 +499,10 @@ class ModflowAgmvr(object):
             mvr = mf6.get_value(self.mvr_value_addr)
             for well in active_ix:
                 idx = self.well_mvr_index[well]
-                mvr[idx] = np.abs(pumping[well]) * self.well_irrigated_proportion[well]
+                app_frac_proportion = (self.well_application_fraction[well] / np.sum(self.well_application_fraction[well])) / (1 / len(idx))
+                mvr[idx] = (np.abs(pumping[well]) * self.well_irrigated_proportion[well]) * app_frac_proportion
                 self.applied_irrigation[self.well_irrigated_cells[well]] = \
-                    np.abs(pumping[well]) * self.well_irrigated_proportion[well]
+                    (np.abs(pumping[well]) * self.well_irrigated_proportion[well]) * app_frac_proportion
 
             mf6.set_value(self.mvr_value_addr, mvr)
 
@@ -521,6 +530,7 @@ class ModflowAgmvr(object):
         crop_pet = np.zeros(self.maw_maxq.shape)
         crop_aet = np.zeros(self.maw_maxq.shape)
         crop_gwet = np.zeros(self.maw_maxq.shape)
+        app_frac = np.zeros(self.maw_maxq.shape)
         sfr_applied = np.zeros(self.maw_maxq.shape)
         for ix, crop_nodes in enumerate(self.maw_irrigated_cells):
             if len(crop_nodes) > 0:
@@ -528,6 +538,7 @@ class ModflowAgmvr(object):
                 crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
                 crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
                 crop_gwet[ix] = np.sum(gwet[crop_nodes])
+                app_frac[ix] = np.sum(self.maw_application_fraction[ix])
                 sfr_applied[ix] = np.sum(self.applied_irrigation[crop_nodes])
 
         crop_aet += crop_gwet
@@ -547,6 +558,7 @@ class ModflowAgmvr(object):
             supold = self.mawsupold
 
         factor = self._calculate_factor(crop_pet, crop_aet, self.mawaetold, sup, supold, kiter)
+        factor *= app_frac
 
         qonly = np.where(sup + factor > crop_vks, crop_vks, sup + factor)
 
@@ -572,9 +584,10 @@ class ModflowAgmvr(object):
             mvr = mf6.get_value(self.mvr_value_addr)
             for maw in active_ix:
                 idx = self.maw_mvr_index[maw]
-                mvr[idx] = np.abs(pumping[maw]) * self.maw_irrigated_proportion[maw]
+                app_frac_proportion = (self.maw_application_fraction[maw] / np.sum(self.maw_application_fraction[maw])) / (1 / len(idx))
+                mvr[idx] = (np.abs(pumping[maw]) * self.maw_irrigated_proportion[maw]) * app_frac_proportion
                 self.applied_irrigation[self.maw_irrigated_cells[maw]] = \
-                    np.abs(pumping[maw]) * self.maw_irrigated_proportion[maw]
+                   (np.abs(pumping[maw]) * self.maw_irrigated_proportion[maw]) * app_frac_proportion
 
             mf6.set_value(self.mvr_value_addr, mvr)
 
@@ -629,6 +642,7 @@ class ModflowAgmvr(object):
         sup = qtomvr
         supold = self.idsupold
         factor = self._calculate_factor(crop_pet, crop_aet, self.idaetold, sup, supold, kiter)
+        factor *= app_frac
 
         qonly = np.where(sup + factor > crop_vks, crop_vks, sup + factor)
         factor = np.where(factor < 0, 0, factor)
@@ -646,7 +660,7 @@ class ModflowAgmvr(object):
             for seg in active_ix:
                 idx = self.sfr_mvr_index[seg]
                 app_frac_proportion = (self.sfr_application_fraction[seg] / np.sum(self.sfr_application_fraction[seg])) / (1 / len(idx))
-                diversions[idx] = dvflw[seg] * self.sfr_irrigated_proportion[seg]
+                diversions[idx] = (dvflw[seg] * self.sfr_irrigated_proportion[seg]) * app_frac_proportion
                 self.applied_irrigation[self.sfr_irrigated_cells[seg]] = \
                     (dvflw[seg] * self.sfr_irrigated_proportion[seg]) * app_frac_proportion
             mf6.set_value(self.mvr_value_addr, diversions)
