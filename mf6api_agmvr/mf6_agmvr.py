@@ -24,6 +24,40 @@ class ModflowAgmvr(object):
         self.gwf = sim.get_model(name)
         self.mvr_name = mvr_name
         self.mvr = self.gwf.get_package(self.mvr_name)
+        if not isinstance(self.mvr, flopy.mf6.ModflowGwfmvr):
+            # assume this is an Agmvr package!
+            # need to pop agmvr, replace with mvr package and re-write
+            # to file
+            perioddata = {}
+            for i, recarray in self.mvr.perioddata.data.items():
+                record = []
+                for rec in recarray:
+                    record.append(
+                        (
+                            rec["pname1"],
+                            rec["id1"],
+                            rec["pname2"],
+                            rec["id2"],
+                            "UPTO",
+                            rec["value"]
+                        )
+                    )
+                perioddata[i] = record
+
+            self.gwf.remove_package(self.mvr_name)
+            mvr = flopy.mf6.ModflowMvr(
+                self.gwf,
+                maxmvr=self.mvr.maxmvr.array,
+                maxpackages=self.mvr.maxpackages.array,
+                packages=self.mvr.packages.array,
+                perioddata=perioddata,
+                budget_filerecord=self.mvr.budget_filerecord.array,
+                budgetcsv_filerecord=self.mvr.budgetcsv_filerecord.array,
+                pname=self.mvr.package_name,
+            )
+
+            self.sim.write_simulation()
+            self.mvr_name = mvr.path[-1]
 
         if ag_type.lower() in ('specified', 'trigger', 'etdemand'):
             self.ag_type = ag_type.lower()
@@ -40,7 +74,7 @@ class ModflowAgmvr(object):
         self.uzf_name = None
 
         self.get_pkgs()
-        self.create_arrays()
+        # self.create_arrays()
 
     def get_pkgs(self):
         """
@@ -229,6 +263,8 @@ class ModflowAgmvr(object):
 
             irrigated_cells = []
             irrigated_proportion = []
+            irrigation_efficiency = np.ones((self.gwf.modelgrid.nnodes,))
+            application_fraction = np.ones((self.gwf.modelgrid.nnodes,))
             mvr_index = []
             for wlid in range(max_q.size):
                 icells = []
@@ -237,7 +273,9 @@ class ModflowAgmvr(object):
                 if len(idx) > 0:
                     icells = recarray[idx]["id2"]
                     iprop = recarray[idx]["value"] / np.sum(recarray[idx]["value"])
-
+                    if "irr_eff" in recarray.dtype.names:
+                        irrigation_efficiency[icells] = recarray[idx]["irr_eff"]
+                        application_fraction[icells] = recarray[idx]["app_frac"]
 
                 irrigated_cells.append(icells)
                 irrigated_proportion.append(iprop)
@@ -247,6 +285,8 @@ class ModflowAgmvr(object):
             self.well_maxq = max_q
             self.well_irrigated_cells = irrigated_cells
             self.well_irrigated_proportion = irrigated_proportion
+            self.well_irrigation_efficiency = irrigation_efficiency
+            self.well_application_fraction = application_fraction
             self.well_mvr_index = mvr_index
             self.sup = np.zeros(max_q.shape)
             self.supold = np.zeros(max_q.shape)
@@ -270,16 +310,29 @@ class ModflowAgmvr(object):
 
             irrigated_cells = []
             irrigated_proportion = []
+            irrigation_efficiency = []
+            application_fraction = []
             mvr_index = []
             for wlid in range(max_q.size):
                 icells = []
                 iprop = []
+                irreff = []
+                appfrac = []
                 idx = np.where(recarray["id1"] == wlid)[0]
                 if len(idx) > 0:
                     icells = recarray[idx]["id2"]
                     iprop = recarray[idx]["value"] / np.sum(
                         recarray[idx]["value"])
 
+                    if "irr_eff" in recarray.dtype.names:
+                        irreff = recarray[idx]["irr_eff"]
+                        appfrac = recarray[idx]["app_frac"]
+                    else:
+                        irreff = np.ones((len(icells),))
+                        appfrac = np.ones((len(icells),))
+
+                irrigation_efficiency.append(irreff)
+                application_fraction.append(appfrac)
                 irrigated_cells.append(icells)
                 irrigated_proportion.append(iprop)
                 mvr_index.append(idx)
@@ -288,6 +341,8 @@ class ModflowAgmvr(object):
             self.maw_maxq = max_q
             self.maw_irrigated_cells = irrigated_cells
             self.maw_irrigated_proportion = irrigated_proportion
+            self.maw_irrigation_efficiency = irrigation_efficiency
+            self.maw_application_fraction = application_fraction
             self.maw_mvr_index = mvr_index
             self.mawsup = np.zeros(max_q.shape)
             self.mawsupold = np.zeros(max_q.shape)
@@ -311,17 +366,30 @@ class ModflowAgmvr(object):
 
             irrigated_cells = []
             irrigated_proportion = []
+            irrigation_efficiency = []
+            application_fraction = []
             mvr_index = []
             for sfrid in range(max_q.size):
                 icells = []
                 iprop = []
-                idx = np.where(recarray["id1"] == sfrid)[0]
+                irreff = []
+                appfrac = []
+                idx = np.where((recarray["pname1"] == self.sfr_name) & (recarray["id1"] == sfrid))[0]
                 if len(idx) > 0:
                     icells = recarray[idx]["id2"]
                     iprop = recarray[idx]["value"] / np.sum(recarray[idx]["value"])
                     for mvr_rec in idx:
                         max_q[sfrid] += recarray[mvr_rec]["value"]
 
+                    if "irr_eff" in recarray.dtype.names:
+                        irreff = recarray[idx]["irr_eff"]
+                        appfrac = recarray[idx]["app_frac"]
+                    else:
+                        irreff = np.ones((len(icells),))
+                        appfrac = np.ones((len(icells),))
+
+                irrigation_efficiency.append(irreff)
+                application_fraction.append(appfrac)
                 irrigated_cells.append(icells)
                 irrigated_proportion.append(iprop)
                 mvr_index.append(idx)
@@ -330,10 +398,15 @@ class ModflowAgmvr(object):
             self.sfr_maxq = max_q
             self.sfr_irrigated_cells = irrigated_cells
             self.sfr_irrigated_proportion = irrigated_proportion
+            self.sfr_irrigation_efficiency = irrigation_efficiency
+            self.sfr_application_fraction = application_fraction
             self.sfr_mvr_index = mvr_index
             self.idsup = np.zeros(max_q.shape)
             self.idsupold = np.zeros(max_q.shape)
             self.idaetold = np.zeros(max_q.shape)
+
+            x = self.__dict__
+            print('break')
 
     def zero_mvr(self, mf6):
         """
@@ -528,6 +601,7 @@ class ModflowAgmvr(object):
 
         crop_vks = np.zeros(self.sfr_maxq.shape)
         crop_pet = np.zeros(self.sfr_maxq.shape)
+        app_frac = np.zeros(self.sfr_maxq.shape)
         crop_aet = np.zeros(self.sfr_maxq.shape)
         crop_gwet = np.zeros(self.sfr_maxq.shape)
         for ix, crop_nodes in enumerate(self.sfr_irrigated_cells):
@@ -536,6 +610,7 @@ class ModflowAgmvr(object):
                 crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
                 crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
                 crop_gwet[ix] = np.sum(gwet[crop_nodes])
+                app_frac[ix] = np.mean(self.sfr_application_fraction[ix])
 
         crop_aet += crop_gwet
         # crop_aet = np.where(crop_vks < 1e-30, crop_pet, crop_aet)
@@ -570,9 +645,10 @@ class ModflowAgmvr(object):
             diversions = mf6.get_value(self.mvr_value_addr)
             for seg in active_ix:
                 idx = self.sfr_mvr_index[seg]
+                app_frac_proportion = (self.sfr_application_fraction[seg] / np.sum(self.sfr_application_fraction[seg])) / (1 / len(idx))
                 diversions[idx] = dvflw[seg] * self.sfr_irrigated_proportion[seg]
                 self.applied_irrigation[self.sfr_irrigated_cells[seg]] = \
-                    dvflw[seg] * self.sfr_irrigated_proportion[seg]
+                    (dvflw[seg] * self.sfr_irrigated_proportion[seg]) * app_frac_proportion
             mf6.set_value(self.mvr_value_addr, diversions)
 
     def _calculate_factor(self, crop_pet, crop_aet, aetold, sup, supold, kiter, accel=1):
@@ -684,7 +760,6 @@ class ModflowAgmvr(object):
                         self.gw_demand_etdemand(mf6, kstp, delt, kiter)
 
                     has_converged = mf6.solve(sol_id)
-                    uzf2 = mf6.get_value(self.uzf_mvr_addr)
                     kiter += 1
                     if has_converged:
                         break
