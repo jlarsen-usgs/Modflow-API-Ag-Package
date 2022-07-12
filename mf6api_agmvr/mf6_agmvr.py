@@ -185,6 +185,98 @@ class ModflowAgmvr(object):
                 "WIDTH", self.name, self.sfr_name.upper()
             )
 
+    def _set_package_stress_period_data(self, mf6, kper, pkg):
+        """
+        General method to set stress period data from MVR
+        (MAXQ, Delivery cells, etc)
+
+        Parameters
+        ----------
+        mf6 : ModflowApi object
+        kper : int
+            zero based stress period number
+        pkg : str
+            package abbreviation (ex. well, maw, sfr)
+
+        Return
+        ------
+        tuple : shape of max_q for dimensionalizing sup, supold, and aetold
+        """
+        if pkg in ("well", "maw"):
+            addr = self.__dict__[f"{pkg}_addr"]
+            data = mf6.get_value(addr)
+            if pkg == "well":
+                max_q = np.abs(np.copy(data.T[0]))
+                data[:, 0] = 0
+            else:
+                max_q = np.abs(np.copy(data))
+                data[:] = 0
+
+            mf6.set_value(addr, data)
+        else:
+            max_addr = self.__dict__[f"{pkg}q_for_mvr_addr"]
+            qformvr = mf6.get_value(max_addr)
+            max_q = np.zeros(qformvr.shape)
+
+        mvr = mf6.get_value(self.mvr_value_addr)
+        pkg_name = self.__dict__[f"{pkg}_name"]
+        recarray = self.mvr.perioddata.data[kper]
+        irridx = np.where(recarray['pname1'] == pkg_name)[0]
+        if len(irridx) > 0:
+            if pkg_name in ("sfr", ):
+                mvr[irridx] = 0
+
+            irrids = sorted(np.unique(recarray[irridx]["id1"]))
+        else:
+            irrids = []
+
+        mf6.set_value(self.mvr_value_addr, mvr)
+
+        active = np.zeros(max_q.shape, dtype=int)
+        active[irrids] = 1
+
+        irrigated_cells = []
+        irrigated_proportion = []
+        irrigation_efficiency = []
+        application_fraction = []
+        mvr_index = []
+
+        for irrid in range(max_q.size):
+            icells = []
+            iprop = []
+            irreff = []
+            appfrac = []
+            idx = np.where((recarray["id1"] == irrid) & (recarray["pname1"] == pkg_name))[0]
+            if len(idx) > 0:
+                icells = recarray[idx]["id2"]
+                iprop = recarray[idx]["value"] / np.sum(recarray[idx]["value"])
+                if pkg in ("sfr",):
+                    for mvr_rec in idx:
+                        max_q[irrid] += recarray[mvr_rec]["value"]
+
+                if "irr_eff" in recarray.dtype.names:
+                    irreff = recarray[idx]["irr_eff"]
+                    appfrac = recarray[idx]["app_frac"]
+                else:
+                    irreff = np.ones((len(icells),))
+                    appfrac = np.ones((len(icells),))
+
+            irrigation_efficiency.append(irreff)
+            application_fraction.append(appfrac)
+            irrigated_cells.append(icells)
+            irrigated_proportion.append(iprop)
+            mvr_index.append(idx)
+
+        setattr(self, f"{pkg}_active", active)
+        setattr(self, f"{pkg}_maxq", max_q)
+        setattr(self, f"{pkg}_irrigated_cells", irrigated_cells)
+        setattr(self, f"{pkg}_irrigated_proportion", irrigated_proportion)
+        setattr(self, f"{pkg}_irrigation_efficiency", irrigation_efficiency)
+        setattr(self, f"{pkg}_application_fraction", application_fraction)
+        setattr(self, f"{pkg}_mvr_index", mvr_index)
+
+        return max_q.shape
+
     def set_stress_period_data(self, mf6, kper):
         """
         Method to set stress period data from MVR (MAXQ, Delivery cells, etc)
@@ -196,172 +288,22 @@ class ModflowAgmvr(object):
             zero based stress period number
         """
         if self.sim_wells:
-            well = mf6.get_value(self.well_addr)
-            max_q = np.abs(np.copy(well.T[0]))
-            # change max_q to zero and reset based on AG-Demand
-            well[:, 0] = 0
-            mf6.set_value(self.well_addr, well)
-            recarray = self.mvr.perioddata.data[kper]
-            wlidx = np.where(recarray['pname1'] == self.well_name)[0]
-            if len(wlidx) > 0:
-                wellids = sorted(np.unique(recarray[wlidx]["id1"]))
-            else:
-                wellids = []
-
-            active = np.zeros(max_q.shape, dtype=int)
-            active[wellids] = 1
-
-            irrigated_cells = []
-            irrigated_proportion = []
-            irrigation_efficiency = []
-            application_fraction = []
-            mvr_index = []
-            for wlid in range(max_q.size):
-                icells = []
-                iprop = []
-                irreff = []
-                appfrac = []
-                idx = np.where(recarray["id1"] == wlid)[0]
-                if len(idx) > 0:
-                    icells = recarray[idx]["id2"]
-                    iprop = recarray[idx]["value"] / np.sum(recarray[idx]["value"])
-
-                    if "irr_eff" in recarray.dtype.names:
-                        irreff = recarray[idx]["irr_eff"]
-                        appfrac = recarray[idx]["app_frac"]
-                    else:
-                        irreff = np.ones((len(icells),))
-                        appfrac = np.ones((len(icells),))
-
-                irrigation_efficiency.append(irreff)
-                application_fraction.append(appfrac)
-                irrigated_cells.append(icells)
-                irrigated_proportion.append(iprop)
-                mvr_index.append(idx)
-
-            self.well_active = active
-            self.well_maxq = max_q
-            self.well_irrigated_cells = irrigated_cells
-            self.well_irrigated_proportion = irrigated_proportion
-            self.well_irrigation_efficiency = irrigation_efficiency
-            self.well_application_fraction = application_fraction
-            self.well_mvr_index = mvr_index
-            self.sup = np.zeros(max_q.shape)
-            self.supold = np.zeros(max_q.shape)
-            self.aetold = np.zeros(max_q.shape)
+            mq_shape = self._set_package_stress_period_data(mf6, kper, 'well')
+            self.sup = np.zeros(mq_shape)
+            self.supold = np.zeros(mq_shape)
+            self.aetold = np.zeros(mq_shape)
 
         if self.sim_maw:
-            maw = mf6.get_value(self.maw_addr)
-            max_q = np.abs(maw)
-            # change max_q to zero and reset based on AG-Demand
-            maw[:] = 0
-            mf6.set_value(self.maw_addr, maw)
-            recarray = self.mvr.perioddata.data[kper]
-            wlidx = np.where(recarray['pname1'] == self.maw_name)[0]
-            if len(wlidx) > 0:
-                wellids = sorted(np.unique(recarray[wlidx]["id1"]))
-            else:
-                wellids = []
-
-            active = np.zeros(max_q.shape, dtype=int)
-            active[wellids] = 1
-
-            irrigated_cells = []
-            irrigated_proportion = []
-            irrigation_efficiency = []
-            application_fraction = []
-            mvr_index = []
-            for wlid in range(max_q.size):
-                icells = []
-                iprop = []
-                irreff = []
-                appfrac = []
-                idx = np.where(recarray["id1"] == wlid)[0]
-                if len(idx) > 0:
-                    icells = recarray[idx]["id2"]
-                    iprop = recarray[idx]["value"] / np.sum(
-                        recarray[idx]["value"])
-
-                    if "irr_eff" in recarray.dtype.names:
-                        irreff = recarray[idx]["irr_eff"]
-                        appfrac = recarray[idx]["app_frac"]
-                    else:
-                        irreff = np.ones((len(icells),))
-                        appfrac = np.ones((len(icells),))
-
-                irrigation_efficiency.append(irreff)
-                application_fraction.append(appfrac)
-                irrigated_cells.append(icells)
-                irrigated_proportion.append(iprop)
-                mvr_index.append(idx)
-
-            self.maw_active = active
-            self.maw_maxq = max_q
-            self.maw_irrigated_cells = irrigated_cells
-            self.maw_irrigated_proportion = irrigated_proportion
-            self.maw_irrigation_efficiency = irrigation_efficiency
-            self.maw_application_fraction = application_fraction
-            self.maw_mvr_index = mvr_index
-            self.mawsup = np.zeros(max_q.shape)
-            self.mawsupold = np.zeros(max_q.shape)
-            self.mawaetold = np.zeros(max_q.shape)
+            mq_shape = self._set_package_stress_period_data(mf6, kper, "maw")
+            self.mawsup = np.zeros(mq_shape)
+            self.mawsupold = np.zeros(mq_shape)
+            self.mawaetold = np.zeros(mq_shape)
 
         if self.sim_diversions:
-            qformvr = mf6.get_value(self.sfrq_for_mvr_addr)
-            max_q = np.zeros(qformvr.shape)
-            mvr = mf6.get_value(self.mvr_value_addr)
-            recarray = self.mvr.perioddata.data[kper]
-            sfridx = np.where(recarray["pname1"] == self.sfr_name)[0]
-            if len(sfridx) > 0:
-                mvr[sfridx] = 0
-                sfrids = sorted(np.unique(recarray[sfridx]["id1"]))
-            else:
-                sfrids = []
-
-            mf6.set_value(self.mvr_value_addr, mvr)
-            active = np.zeros(max_q.shape, dtype=int)
-            active[sfrids] = 1
-
-            irrigated_cells = []
-            irrigated_proportion = []
-            irrigation_efficiency = []
-            application_fraction = []
-            mvr_index = []
-            for sfrid in range(max_q.size):
-                icells = []
-                iprop = []
-                irreff = []
-                appfrac = []
-                idx = np.where((recarray["pname1"] == self.sfr_name) & (recarray["id1"] == sfrid))[0]
-                if len(idx) > 0:
-                    icells = recarray[idx]["id2"]
-                    iprop = recarray[idx]["value"] / np.sum(recarray[idx]["value"])
-                    for mvr_rec in idx:
-                        max_q[sfrid] += recarray[mvr_rec]["value"]
-
-                    if "irr_eff" in recarray.dtype.names:
-                        irreff = recarray[idx]["irr_eff"]
-                        appfrac = recarray[idx]["app_frac"]
-                    else:
-                        irreff = np.ones((len(icells),))
-                        appfrac = np.ones((len(icells),))
-
-                irrigation_efficiency.append(irreff)
-                application_fraction.append(appfrac)
-                irrigated_cells.append(icells)
-                irrigated_proportion.append(iprop)
-                mvr_index.append(idx)
-
-            self.sfr_active = active
-            self.sfr_maxq = max_q
-            self.sfr_irrigated_cells = irrigated_cells
-            self.sfr_irrigated_proportion = irrigated_proportion
-            self.sfr_irrigation_efficiency = irrigation_efficiency
-            self.sfr_application_fraction = application_fraction
-            self.sfr_mvr_index = mvr_index
-            self.idsup = np.zeros(max_q.shape)
-            self.idsupold = np.zeros(max_q.shape)
-            self.idaetold = np.zeros(max_q.shape)
+            mq_shape = self._set_package_stress_period_data(mf6, kper, "sfr")
+            self.idsup = np.zeros(mq_shape)
+            self.idsupold = np.zeros(mq_shape)
+            self.idaetold = np.zeros(mq_shape)
             self.evap_old = mf6.get_value(self.sfr_evap_addr)
 
     def zero_mvr(self, mf6):
