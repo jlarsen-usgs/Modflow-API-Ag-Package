@@ -74,7 +74,6 @@ class ModflowAgmvr(object):
         self.uzf_name = None
 
         self.get_pkgs()
-        # self.create_arrays()
 
     def get_pkgs(self):
         """
@@ -115,64 +114,6 @@ class ModflowAgmvr(object):
 
         self.uzf_name = uzf
         self.dis_name = self.gwf.dis.name[0].upper()
-
-    def create_arrays(self):
-        """
-        Method to dimensionalize arrays for AG calculations
-
-        """
-        # create well arrays
-        period_data = self.mvr.perioddata.array
-        if self.sim_wells:
-            mxwlnum = 0
-            for recarray in period_data:
-                wlidx = np.where(recarray['pname1'] == self.well_name)[0]
-                if len(wlidx) > 0:
-                    wlids = recarray[wlidx]["id1"]
-                    mxwls = np.max(wlids) + 1
-                    if mxwls > mxwlnum:
-                        mxwlnum = mxwls
-
-
-            self.well_mq = np.zeros((mxwlnum,), dtype=int)
-            self.well_active = np.zeros((mxwlnum,), dtype=int)
-            self.sup = np.zeros((mxwlnum,))
-            self.supold = np.zeros((mxwlnum,))
-            self.well_num = np.arange(mxwlnum, dtype=int)
-
-        if self.sim_maw:
-            mxmawnum = 0
-            for recarray in period_data:
-                mawidx = np.where(recarray["pname1"] == self.maw_name)[0]
-                if len(mawidx) > 0:
-                    mawids = recarray[mawidx]["id1"]
-                    mxmaw = np.max(mawids) + 1
-                    if mxmaw > mxmawnum:
-                        mxmawnum = mxmaw
-
-            self.maw_mq = np.zeros((mxmawnum,), dtype=int)
-            self.maw_active = np.zeros((mxmawnum,), dtype=int)
-            self.mawsup = np.zeros((mxmawnum,))
-            self.mawsupold = np.zeros((mxmawnum,))
-            self.maw_num = np.arange(mxmawnum, dtype=int)
-
-        # create diversion arrays
-        if self.sim_diversions:
-            mxdivnum = 0
-            for recarray in period_data:
-                dividx = np.where(recarray["pname1"] == self.sfr_name)[0]
-                if len(dividx) > 0:
-                    # this is zero based....
-                    divids = recarray[dividx]["id1"]
-                    mxdiv = np.max(divids) + 1
-                    if mxdiv > mxdivnum:
-                        mxdivnum = mxdiv
-
-            self.diversion_mq = np.zeros((mxdivnum,), dtype=int)
-            self.diversion_active = np.zeros((mxdivnum,), dtype=int)
-            self.idsup = np.zeros((mxdivnum,))
-            self.idsupold = np.zeros((mxdivnum,))
-            self.diversion_num = np.arange(mxdivnum, dtype=int)
 
     def create_addresses(self, mf6):
         """
@@ -233,6 +174,15 @@ class ModflowAgmvr(object):
             )
             self.sfrq_to_mvr_addr = mf6.get_var_address(
                 "QTOMVR", self.name, self.sfr_name.upper()
+            )
+            self.sfr_evap_addr = mf6.get_var_address(
+                "EVAP", self.name, self.sfr_name.upper()
+            )
+            self.sfr_length_addr = mf6.get_var_address(
+                "LENGTH", self.name, self.sfr_name.upper()
+            )
+            self.sfr_width_addr = mf6.get_var_address(
+                "WIDTH", self.name, self.sfr_name.upper()
             )
 
     def set_stress_period_data(self, mf6, kper):
@@ -412,6 +362,7 @@ class ModflowAgmvr(object):
             self.idsup = np.zeros(max_q.shape)
             self.idsupold = np.zeros(max_q.shape)
             self.idaetold = np.zeros(max_q.shape)
+            self.evap_old = mf6.get_value(self.sfr_evap_addr)
 
     def zero_mvr(self, mf6):
         """
@@ -435,7 +386,6 @@ class ModflowAgmvr(object):
         kiter : int
             iteration number
         """
-        # todo: apply efficiency factor here (well pumpage > mvr)
         pet = mf6.get_value(self.pet_addr)
         vks = mf6.get_value(self.vks_addr)
         area = mf6.get_value(self.area_addr)
@@ -658,13 +608,20 @@ class ModflowAgmvr(object):
 
         if len(active_ix) > 0:
             diversions = mf6.get_value(self.mvr_value_addr)
+            length = mf6.get_value(self.sfr_length_addr)
+            width = mf6.get_value(self.sfr_width_addr)
+            evap = self.evap_old.copy()
             for seg in active_ix:
                 idx = self.sfr_mvr_index[seg]
                 app_frac_proportion = (self.sfr_application_fraction[seg] / np.sum(self.sfr_application_fraction[seg])) / (1 / len(idx))
-                diversions[idx] = (dvflw[seg] * self.sfr_irrigated_proportion[seg]) * app_frac_proportion
+                div_requested = (dvflw[seg] * self.sfr_irrigated_proportion[seg]) * app_frac_proportion
+                div_inefficient = div_requested * self.sfr_irrigation_efficiency[seg]
+                diversions[idx] = div_inefficient
+                evap[seg] += np.sum(div_requested - div_inefficient) / (length[seg] * width[seg])
                 self.applied_irrigation[self.sfr_irrigated_cells[seg]] = \
                     (dvflw[seg] * self.sfr_irrigated_proportion[seg]) * app_frac_proportion
             mf6.set_value(self.mvr_value_addr, diversions)
+            mf6.set_value(self.sfr_evap_addr, evap)
 
     def _calculate_factor(self, crop_pet, crop_aet, aetold, sup, supold, kiter, accel=1):
         """
@@ -764,6 +721,7 @@ class ModflowAgmvr(object):
                     mf6.solve(sol_id)
 
                 self.applied_irrigation = np.zeros(self.uzf_shape)
+
                 while kiter < max_iter:
                     if self.sim_diversions:
                         self.sw_demand_etdemand(mf6, kstp, delt, kiter)
@@ -775,7 +733,6 @@ class ModflowAgmvr(object):
                         self.gw_demand_etdemand(mf6, kstp, delt, kiter)
 
                     has_converged = mf6.solve(sol_id)
-
                     kiter += 1
                     if has_converged:
                         break
