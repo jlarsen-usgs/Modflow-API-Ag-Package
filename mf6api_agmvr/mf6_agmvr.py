@@ -435,6 +435,7 @@ class ModflowAgmvr(object):
         kiter : int
             iteration number
         """
+        # todo: apply efficiency factor here (well pumpage > mvr)
         pet = mf6.get_value(self.pet_addr)
         vks = mf6.get_value(self.vks_addr)
         area = mf6.get_value(self.area_addr)
@@ -500,9 +501,9 @@ class ModflowAgmvr(object):
             for well in active_ix:
                 idx = self.well_mvr_index[well]
                 app_frac_proportion = (self.well_application_fraction[well] / np.sum(self.well_application_fraction[well])) / (1 / len(idx))
-                mvr[idx] = (np.abs(pumping[well]) * self.well_irrigated_proportion[well]) * app_frac_proportion
+                mvr[idx] = (np.abs(pumping[well]) * self.well_irrigated_proportion[well]) * app_frac_proportion * self.well_irrigation_efficiency[well]
                 self.applied_irrigation[self.well_irrigated_cells[well]] = \
-                    (np.abs(pumping[well]) * self.well_irrigated_proportion[well]) * app_frac_proportion
+                    (np.abs(pumping[well]) * self.well_irrigated_proportion[well]) * app_frac_proportion * self.well_irrigation_efficiency[well]
 
             mf6.set_value(self.mvr_value_addr, mvr)
 
@@ -585,9 +586,9 @@ class ModflowAgmvr(object):
             for maw in active_ix:
                 idx = self.maw_mvr_index[maw]
                 app_frac_proportion = (self.maw_application_fraction[maw] / np.sum(self.maw_application_fraction[maw])) / (1 / len(idx))
-                mvr[idx] = (np.abs(pumping[maw]) * self.maw_irrigated_proportion[maw]) * app_frac_proportion
+                mvr[idx] = (np.abs(pumping[maw]) * self.maw_irrigated_proportion[maw]) * app_frac_proportion * self.maw_irrigation_efficiency[maw]
                 self.applied_irrigation[self.maw_irrigated_cells[maw]] = \
-                   (np.abs(pumping[maw]) * self.maw_irrigated_proportion[maw]) * app_frac_proportion
+                   (np.abs(pumping[maw]) * self.maw_irrigated_proportion[maw]) * app_frac_proportion * self.maw_irrigation_efficiency[maw]
 
             mf6.set_value(self.mvr_value_addr, mvr)
 
@@ -774,6 +775,7 @@ class ModflowAgmvr(object):
                         self.gw_demand_etdemand(mf6, kstp, delt, kiter)
 
                     has_converged = mf6.solve(sol_id)
+
                     kiter += 1
                     if has_converged:
                         break
