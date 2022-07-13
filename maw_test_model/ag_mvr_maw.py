@@ -10,6 +10,7 @@ from scipy.stats import linregress
 sws = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(sws, "..", "mf6api_agmvr"))
 from mf6_agmvr import ModflowAgmvr
+mpl.use("TKagg")
 
 from math import log10, floor
 
@@ -51,8 +52,8 @@ def build_mf6(name, headtol=None, fluxtol=None):
         print_option="ALL",
         complexity="COMPLEX",
         no_ptcrecord=["ALL"],
-        outer_dvclose=headtol,
-        outer_maximum=fluxtol,
+        outer_dvclose=None,
+        outer_maximum=None,
         rcloserecord=[1e-10, "L2NORM_RCLOSE"],
         scaling_method="L2NORM",
         linear_acceleration="BICGSTAB",
@@ -68,7 +69,7 @@ def build_mf6(name, headtol=None, fluxtol=None):
         save_flows=True,
         print_input=True,
         print_flows=True,
-        newtonoptions="NEWTON UNDER_RELAXATION",
+        # newtonoptions="NEWTON UNDER_RELAXATION",
     )
 
     # define delc and delr to equal approximately 1 acre
@@ -190,7 +191,9 @@ def build_mf6(name, headtol=None, fluxtol=None):
     sim.write_simulation()
     model_ws = gwf.model_ws
     uzf_name = gwf.uzf.filename
+    maw_name = gwf.maw.filename
     mf6_dev_no_final_check(model_ws, uzf_name)
+    # mf6_dev_no_final_check(model_ws, maw_name)
     return sim, gwf
 
 

@@ -289,8 +289,8 @@ class ModflowAgmvr(object):
         """
         if self.sim_wells:
             mq_shape = self._set_package_stress_period_data(mf6, kper, 'well')
-            self.sup = np.zeros(mq_shape)
-            self.supold = np.zeros(mq_shape)
+            self.wellsup = np.zeros(mq_shape)
+            self.wellsupold = np.zeros(mq_shape)
             self.aetold = np.zeros(mq_shape)
 
         if self.sim_maw:
@@ -301,8 +301,8 @@ class ModflowAgmvr(object):
 
         if self.sim_diversions:
             mq_shape = self._set_package_stress_period_data(mf6, kper, "sfr")
-            self.idsup = np.zeros(mq_shape)
-            self.idsupold = np.zeros(mq_shape)
+            self.sfrsup = np.zeros(mq_shape)
+            self.sfrsupold = np.zeros(mq_shape)
             self.idaetold = np.zeros(mq_shape)
             self.evap_old = mf6.get_value(self.sfr_evap_addr)
 
@@ -313,6 +313,52 @@ class ModflowAgmvr(object):
         mvr = mf6.get_value(self.mvr_value_addr)
         mvr[:] = 0
         mf6.set_value(self.mvr_value_addr, mvr)
+
+
+    def _set_etdemand_variables(self, mf6, pkg):
+        """
+        General method to calculate and set common etdemand calculation
+        variables
+
+        Parameters
+        ----------
+        mf6 : ModflowApi object
+        pkg : str
+            package type abbr ("well", "maw", "sfr")
+
+
+        Returns
+        -------
+        """
+        pet = mf6.get_value(self.pet_addr)
+        vks = mf6.get_value(self.vks_addr)
+        area = mf6.get_value(self.area_addr)
+        aet = mf6.get_value(self.aet_addr)
+        gwet = mf6.get_value(self.gwet_addr)
+        maxq = getattr(self, f"{pkg}_maxq")
+        application_fraction = getattr(self, f"{pkg}_application_fraction")
+        irrigated_cells = getattr(self, f"{pkg}_irrigated_cells")
+
+        crop_vks = np.zeros(maxq.shape)
+        crop_pet = np.zeros(maxq.shape)
+        crop_aet = np.zeros(maxq.shape)
+        crop_gwet = np.zeros(maxq.shape)
+        app_frac = np.zeros(maxq.shape)
+        prev_applied = np.zeros(maxq.shape)
+        for ix, crop_nodes in enumerate(irrigated_cells):
+            if len(crop_nodes) > 0:
+                crop_vks[ix] = np.sum(vks[crop_nodes] * area[crop_nodes])
+                crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
+                crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
+                crop_gwet[ix] = np.sum(gwet[crop_nodes])
+                app_frac[ix] = np.mean(application_fraction[ix])
+                prev_applied[ix] = np.sum(self.applied_irrigation[crop_nodes])
+
+        crop_aet += crop_gwet
+        if pkg in ("well", "maw"):
+            crop_aet = np.where(crop_vks < 1e-30, crop_pet, crop_aet)
+
+        return crop_pet, crop_aet, crop_vks, app_frac, prev_applied
 
     def gw_demand_etdemand(self, mf6, kstp, delt=1, kiter=1):
         """
@@ -328,29 +374,7 @@ class ModflowAgmvr(object):
         kiter : int
             iteration number
         """
-        pet = mf6.get_value(self.pet_addr)
-        vks = mf6.get_value(self.vks_addr)
-        area = mf6.get_value(self.area_addr)
-        aet = mf6.get_value(self.aet_addr)
-        gwet = mf6.get_value(self.gwet_addr)
-
-        crop_vks = np.zeros(self.well_maxq.shape)
-        crop_pet = np.zeros(self.well_maxq.shape)
-        crop_aet = np.zeros(self.well_maxq.shape)
-        crop_gwet = np.zeros(self.well_maxq.shape)
-        app_frac = np.zeros(self.well_maxq.shape)
-        sfr_applied = np.zeros(self.well_maxq.shape)
-        for ix, crop_nodes in enumerate(self.well_irrigated_cells):
-            if len(crop_nodes) > 0:
-                crop_vks[ix] = np.sum(vks[crop_nodes] * area[crop_nodes])
-                crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
-                crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
-                crop_gwet[ix] = np.sum(gwet[crop_nodes])
-                app_frac[ix] = np.mean(self.well_application_fraction[ix])
-                sfr_applied[ix] = np.sum(self.applied_irrigation[crop_nodes])
-
-        crop_aet += crop_gwet
-        crop_aet = np.where(crop_vks < 1e-30, crop_pet, crop_aet)
+        crop_pet, crop_aet, crop_vks, app_frac, sfr_applied = self._set_etdemand_variables(mf6, "well")
 
         if delt < 1:
             crop_aet = crop_pet
@@ -360,17 +384,17 @@ class ModflowAgmvr(object):
             if kstp == 0:
                 supold = np.zeros(self.well_maxq.shape)
             else:
-                supold = self.supold
+                supold = self.wellsupold
         else:
-            sup = self.sup
-            supold = self.supold
+            sup = self.wellsup
+            supold = self.wellsupold
 
         factor = self._calculate_factor(crop_pet, crop_aet, self.aetold, sup, supold, kiter)
         factor *= app_frac
 
         qonly = np.where(sup + factor > crop_vks, crop_vks, sup + factor)
 
-        self.supold = sup
+        self.wellsupold = sup
         self.aetold = crop_aet
 
         if self.sim_diversions:
@@ -380,7 +404,7 @@ class ModflowAgmvr(object):
         pumping = np.where(qonly > self.well_maxq, -1 * self.well_maxq, -1 * qonly)
         pumping = np.where(np.abs(pumping) <= 1e-10, 0, pumping)
 
-        self.sup = np.abs(pumping)
+        self.wellsup = np.abs(pumping)
 
         active_ix = np.where(self.well_active)[0]
 
@@ -413,29 +437,7 @@ class ModflowAgmvr(object):
         kiter : int
             iteration number
         """
-        pet = mf6.get_value(self.pet_addr)
-        vks = mf6.get_value(self.vks_addr)
-        area = mf6.get_value(self.area_addr)
-        aet = mf6.get_value(self.aet_addr)
-        gwet = mf6.get_value(self.gwet_addr)
-
-        crop_vks = np.zeros(self.maw_maxq.shape)
-        crop_pet = np.zeros(self.maw_maxq.shape)
-        crop_aet = np.zeros(self.maw_maxq.shape)
-        crop_gwet = np.zeros(self.maw_maxq.shape)
-        app_frac = np.zeros(self.maw_maxq.shape)
-        sfr_applied = np.zeros(self.maw_maxq.shape)
-        for ix, crop_nodes in enumerate(self.maw_irrigated_cells):
-            if len(crop_nodes) > 0:
-                crop_vks[ix] = np.sum(vks[crop_nodes] * area[crop_nodes])
-                crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
-                crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
-                crop_gwet[ix] = np.sum(gwet[crop_nodes])
-                app_frac[ix] = np.mean(self.maw_application_fraction[ix])
-                sfr_applied[ix] = np.sum(self.applied_irrigation[crop_nodes])
-
-        crop_aet += crop_gwet
-        crop_aet = np.where(crop_vks < 1e-30, crop_pet, crop_aet)
+        crop_pet, crop_aet, crop_vks, app_frac, sfr_applied = self._set_etdemand_variables(mf6, "maw")
 
         if delt < 1:
             crop_aet = crop_pet
@@ -465,7 +467,7 @@ class ModflowAgmvr(object):
         pumping = np.where(qonly > self.maw_maxq, -1 * self.maw_maxq, -1 * qonly)
         pumping = np.where(np.abs(pumping) <= 1e-10, 0, pumping)
 
-        self.sup = np.abs(pumping)
+        self.mawsup = np.abs(pumping)
 
         active_ix = np.where(self.maw_active)[0]
 
@@ -499,49 +501,29 @@ class ModflowAgmvr(object):
             iteration number
         """
         qtomvr = mf6.get_value(self.sfrq_to_mvr_addr)
-        pet = mf6.get_value(self.pet_addr)
-        vks = mf6.get_value(self.vks_addr)
-        area = mf6.get_value(self.area_addr)
-        aet = mf6.get_value(self.aet_addr)
-        gwet = mf6.get_value(self.gwet_addr)
-
-        crop_vks = np.zeros(self.sfr_maxq.shape)
-        crop_pet = np.zeros(self.sfr_maxq.shape)
-        app_frac = np.zeros(self.sfr_maxq.shape)
-        crop_aet = np.zeros(self.sfr_maxq.shape)
-        crop_gwet = np.zeros(self.sfr_maxq.shape)
-        for ix, crop_nodes in enumerate(self.sfr_irrigated_cells):
-            if len(crop_nodes) > 0:
-                crop_vks[ix] = np.sum(vks[crop_nodes] * area[crop_nodes])
-                crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
-                crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
-                crop_gwet[ix] = np.sum(gwet[crop_nodes])
-                app_frac[ix] = np.mean(self.sfr_application_fraction[ix])
-
-        crop_aet += crop_gwet
-        # crop_aet = np.where(crop_vks < 1e-30, crop_pet, crop_aet)
+        crop_pet, crop_aet, crop_vks, app_frac, prev_applied = self._set_etdemand_variables(mf6, "sfr")
 
         if delt < 1:
             crop_aet = crop_pet
 
         if kiter == 0:
-            self.idsupold = np.zeros(self.sfr_maxq.shape)
-            self.idsup = np.zeros(self.sfr_maxq.shape)
+            self.sfrsupold = np.zeros(self.sfr_maxq.shape)
+            self.sfrsup = np.zeros(self.sfr_maxq.shape)
             qtomvr[:] = 0
             self.idaetold[:] = crop_aet[:]
             if kstp == 0:
                 self.idaetold[:] = 0
 
         sup = qtomvr
-        supold = self.idsupold
+        supold = self.sfrsupold
         factor = self._calculate_factor(crop_pet, crop_aet, self.idaetold, sup, supold, kiter)
         factor *= app_frac
 
         qonly = np.where(sup + factor > crop_vks, crop_vks, sup + factor)
         factor = np.where(factor < 0, 0, factor)
 
-        self.idsupold[:] = qtomvr[:]
-        self.idsup += factor
+        self.sfrsupold[:] = qtomvr[:]
+        self.sfrsup += factor
         self.idaetold = crop_aet
 
         dvflw = np.where(qonly >= self.sfr_maxq, self.sfr_maxq, qonly)
@@ -592,14 +574,23 @@ class ModflowAgmvr(object):
         dq = sup - supold
 
         if kiter > 0:
-            factor = np.where(np.abs(det) > 1e-05,
+            # original nwt equation logic commented out. I don't think
+            # that we should continuously apply et_diff if det is small
+            # instead there should be zero change, this prevents runaway
+            # pumping from the equation...
+            # factor = np.where(np.abs(det) > 1e-05,
+            #                   dq * et_diff / det,
+            #                   factor)
+            factor = np.where(np.abs(det) > 1e-6,
                               dq * et_diff / det,
-                              factor)
+                              0)
 
         factor = np.where(factor > et_diff * accel,
                           et_diff * accel,
                           factor)
-        factor = np.where(factor < et_diff, et_diff, factor)
+        # original equation logic commented out. I believe this to be one
+        # of the culprits for causing runaway pumping values!
+        # factor = np.where(factor < et_diff, et_diff, factor)
         factor = np.where(factor < 1e-05, 1e-05, factor)
         return factor
 
