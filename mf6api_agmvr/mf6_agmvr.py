@@ -291,7 +291,7 @@ class ModflowAgmvr(object):
             mq_shape = self._set_package_stress_period_data(mf6, kper, 'well')
             self.wellsup = np.zeros(mq_shape)
             self.wellsupold = np.zeros(mq_shape)
-            self.aetold = np.zeros(mq_shape)
+            self.wellaetold = np.zeros(mq_shape)
 
         if self.sim_maw:
             mq_shape = self._set_package_stress_period_data(mf6, kper, "maw")
@@ -313,7 +313,6 @@ class ModflowAgmvr(object):
         mvr = mf6.get_value(self.mvr_value_addr)
         mvr[:] = 0
         mf6.set_value(self.mvr_value_addr, mvr)
-
 
     def _set_etdemand_variables(self, mf6, pkg):
         """
@@ -360,9 +359,9 @@ class ModflowAgmvr(object):
 
         return crop_pet, crop_aet, crop_vks, app_frac, prev_applied
 
-    def gw_demand_etdemand(self, mf6, kstp, delt=1, kiter=1):
+    def _gw_demand_etdemand(self, mf6, kstp, delt, kiter, pkg):
         """
-        Method to determine groundwater use demand
+        Generalized method to determine groundwater use demand
 
         Parameters
         ----------
@@ -374,54 +373,85 @@ class ModflowAgmvr(object):
         kiter : int
             iteration number
         """
-        crop_pet, crop_aet, crop_vks, app_frac, sfr_applied = self._set_etdemand_variables(mf6, "well")
+        crop_pet, crop_aet, crop_vks, app_frac, sfr_applied = self._set_etdemand_variables(mf6, pkg)
+
+        maxq = getattr(self, f"{pkg}_maxq")
+        pkg_sup = getattr(self, f"{pkg}sup")
+        pkg_supold = getattr(self, f"{pkg}supold")
+        pkg_aetold = getattr(self, f"{pkg}aetold")
+        pkg_active = getattr(self, f"{pkg}_active")
+        pkg_addr = getattr(self, f"{pkg}_addr")
+        pkg_mvr_index = getattr(self, f"{pkg}_mvr_index")
+        application_fraction = getattr(self, f"{pkg}_application_fraction")
+        irrigated_proportion = getattr(self, f"{pkg}_irrigated_proportion")
+        irrigation_efficiency = getattr(self, f"{pkg}_irrigation_efficiency")
+        irrigated_cells = getattr(self, f"{pkg}_irrigated_cells")
 
         if delt < 1:
             crop_aet = crop_pet
 
         if kiter == 0:
-            sup = np.zeros(self.well_maxq.shape)
+            sup = np.zeros(maxq.shape)
             if kstp == 0:
-                supold = np.zeros(self.well_maxq.shape)
+                supold = np.zeros(maxq.shape)
             else:
-                supold = self.wellsupold
+                supold = pkg_supold
         else:
-            sup = self.wellsup
-            supold = self.wellsupold
+            sup = pkg_sup
+            supold = pkg_supold
 
-        factor = self._calculate_factor(crop_pet, crop_aet, self.aetold, sup, supold, kiter)
+        factor = self._calculate_factor(crop_pet, crop_aet, pkg_aetold, sup, supold, kiter)
         factor *= app_frac
 
         qonly = np.where(sup + factor > crop_vks, crop_vks, sup + factor)
 
-        self.wellsupold = sup
-        self.aetold = crop_aet
+        setattr(self, f"{pkg}supold", sup)
+        setattr(self, f"{pkg}aetold", crop_aet)
 
         if self.sim_diversions:
             qonly = qonly - sfr_applied
             qonly = np.where(qonly < 0, 0, qonly)
 
-        pumping = np.where(qonly > self.well_maxq, -1 * self.well_maxq, -1 * qonly)
+        pumping = np.where(qonly > maxq, -1 * maxq, -1 * qonly)
         pumping = np.where(np.abs(pumping) <= 1e-10, 0, pumping)
 
-        self.wellsup = np.abs(pumping)
+        setattr(self, f"{pkg}sup", np.abs(pumping))
 
-        active_ix = np.where(self.well_active)[0]
+        active_ix = np.where(pkg_active)[0]
 
         if len(active_ix) > 0:
-            wells = mf6.get_value(self.well_addr)
-            wells[active_ix, 0] = pumping[active_ix]
-            mf6.set_value(self.well_addr, wells)
+            wells = mf6.get_value(pkg_addr)
+            if pkg in ("well",):
+                wells[active_ix, 0] = pumping[active_ix]
+            else:
+                wells[active_ix] = pumping[active_ix]
+            mf6.set_value(pkg_addr, wells)
 
             mvr = mf6.get_value(self.mvr_value_addr)
             for well in active_ix:
-                idx = self.well_mvr_index[well]
-                app_frac_proportion = (self.well_application_fraction[well] / np.sum(self.well_application_fraction[well])) / (1 / len(idx))
-                mvr[idx] = (np.abs(pumping[well]) * self.well_irrigated_proportion[well]) * app_frac_proportion * self.well_irrigation_efficiency[well]
-                self.applied_irrigation[self.well_irrigated_cells[well]] = \
-                    (np.abs(pumping[well]) * self.well_irrigated_proportion[well]) * app_frac_proportion * self.well_irrigation_efficiency[well]
+                idx = pkg_mvr_index[well]
+                app_frac_proportion = (application_fraction[well] / np.sum(application_fraction[well])) / (1 / len(idx))
+                mvr[idx] = (np.abs(pumping[well]) * irrigated_proportion[well]) * app_frac_proportion * irrigation_efficiency[well]
+                self.applied_irrigation[irrigated_cells[well]] = \
+                    (np.abs(pumping[well]) * irrigated_proportion[well]) * app_frac_proportion * irrigation_efficiency[well]
 
             mf6.set_value(self.mvr_value_addr, mvr)
+
+    def well_demand_etdemand(self, mf6, kstp, delt=1, kiter=1):
+        """
+        Method to determine groundwater use demand for well pkg irrigation
+
+        Parameters
+        ----------
+        mf6 : ModflowApi object
+        kstp : int
+            modflow6 time step
+        delt : float
+            length of time step
+        kiter : int
+            iteration number
+        """
+        self._gw_demand_etdemand(mf6, kstp, delt, kiter, "well")
 
     def maw_demand_etdemand(self, mf6, kstp, delt=1, kiter=1):
         """
@@ -437,54 +467,7 @@ class ModflowAgmvr(object):
         kiter : int
             iteration number
         """
-        crop_pet, crop_aet, crop_vks, app_frac, sfr_applied = self._set_etdemand_variables(mf6, "maw")
-
-        if delt < 1:
-            crop_aet = crop_pet
-
-        if kiter == 0:
-            sup = np.zeros(self.maw_maxq.shape)
-            if kstp == 0:
-                supold = np.zeros(self.maw_maxq.shape)
-            else:
-                supold = self.mawsupold
-        else:
-            sup = self.mawsup
-            supold = self.mawsupold
-
-        factor = self._calculate_factor(crop_pet, crop_aet, self.mawaetold, sup, supold, kiter)
-        factor *= app_frac
-
-        qonly = np.where(sup + factor > crop_vks, crop_vks, sup + factor)
-
-        self.mawsupold = sup
-        self.mawaetold = crop_aet
-
-        if self.sim_diversions:
-            qonly = qonly - sfr_applied
-            qonly = np.where(qonly < 0, 0, qonly)
-
-        pumping = np.where(qonly > self.maw_maxq, -1 * self.maw_maxq, -1 * qonly)
-        pumping = np.where(np.abs(pumping) <= 1e-10, 0, pumping)
-
-        self.mawsup = np.abs(pumping)
-
-        active_ix = np.where(self.maw_active)[0]
-
-        if len(active_ix) > 0:
-            maws = mf6.get_value(self.maw_addr)
-            maws[active_ix] = pumping[active_ix]
-            mf6.set_value(self.maw_addr, maws)
-
-            mvr = mf6.get_value(self.mvr_value_addr)
-            for maw in active_ix:
-                idx = self.maw_mvr_index[maw]
-                app_frac_proportion = (self.maw_application_fraction[maw] / np.sum(self.maw_application_fraction[maw])) / (1 / len(idx))
-                mvr[idx] = (np.abs(pumping[maw]) * self.maw_irrigated_proportion[maw]) * app_frac_proportion * self.maw_irrigation_efficiency[maw]
-                self.applied_irrigation[self.maw_irrigated_cells[maw]] = \
-                   (np.abs(pumping[maw]) * self.maw_irrigated_proportion[maw]) * app_frac_proportion * self.maw_irrigation_efficiency[maw]
-
-            mf6.set_value(self.mvr_value_addr, mvr)
+        self._gw_demand_etdemand(mf6, kstp, delt, kiter, "maw")
 
     def sw_demand_etdemand(self, mf6, kstp, delt=1, kiter=1):
         """
@@ -574,7 +557,7 @@ class ModflowAgmvr(object):
         dq = sup - supold
 
         if kiter > 0:
-            # original nwt equation logic commented out. I don't think
+            # original equation logic commented out. I don't think
             # that we should continuously apply et_diff if det is small
             # instead there should be zero change, this prevents runaway
             # pumping from the equation...
@@ -583,7 +566,7 @@ class ModflowAgmvr(object):
             #                   factor)
             factor = np.where(np.abs(det) > 1e-6,
                               dq * et_diff / det,
-                              0)
+                              1e-05)
 
         factor = np.where(factor > et_diff * accel,
                           et_diff * accel,
@@ -663,7 +646,7 @@ class ModflowAgmvr(object):
                         self.maw_demand_etdemand(mf6, kstp, delt, kiter)
 
                     if self.sim_wells:
-                        self.gw_demand_etdemand(mf6, kstp, delt, kiter)
+                        self.well_demand_etdemand(mf6, kstp, delt, kiter)
 
                     has_converged = mf6.solve(sol_id)
                     kiter += 1
