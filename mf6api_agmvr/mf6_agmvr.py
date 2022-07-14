@@ -24,6 +24,10 @@ class ModflowAgmvr(object):
         self.gwf = sim.get_model(name)
         self.mvr_name = mvr_name
         self.mvr = self.gwf.get_package(self.mvr_name)
+        if self.mvr is None:
+            raise AssertionError(
+                "MVR or AGMVR package does not exist for this model"
+            )
         if not isinstance(self.mvr, flopy.mf6.ModflowGwfmvr):
             # assume this is an Agmvr package!
             # need to pop agmvr, replace with mvr package and re-write
@@ -67,11 +71,14 @@ class ModflowAgmvr(object):
         self.sim_wells = False
         self.sim_maw = False
         self.sim_diversions = False
+        self.sim_lak = False
 
         self.well_name = None
         self.maw_name = None
         self.sfr_name = None
+        self.lak_name = None
         self.uzf_name = None
+        self.dis_name = None
 
         self.get_pkgs()
 
@@ -86,6 +93,7 @@ class ModflowAgmvr(object):
         sfr = None
         uzf = None
         maw = None
+        lak = None
         for ix, name in enumerate(pkg_names.array):
             name = name[-1]
             pkg = self.gwf.get_package(name)
@@ -98,6 +106,9 @@ class ModflowAgmvr(object):
             elif isinstance(pkg, flopy.mf6.ModflowGwfsfr):
                 sfr = name
                 self.sim_diversions = True
+            elif isinstance(pkg, flopy.mf6.ModflowGwflak):
+                lak = name
+                self.sim_lak = True
             elif isinstance(pkg, flopy.mf6.ModflowGwfuzf):
                 uzf = name
             else:
@@ -109,6 +120,9 @@ class ModflowAgmvr(object):
             self.maw_name = maw
         if self.sim_diversions:
             self.sfr_name = sfr
+        if self.sim_lak:
+            self.lak_name = lak
+
         if uzf is None:
             raise AssertionError("UZF must be active to simulate AG")
 
@@ -184,6 +198,22 @@ class ModflowAgmvr(object):
             self.sfr_width_addr = mf6.get_var_address(
                 "WIDTH", self.name, self.sfr_name.upper()
             )
+        if self.sim_lak:
+            self.lak_addr = mf6.get_var_address(
+                "OUTRATE", self.name, self.lak_name.upper()
+            )
+            self.lakq_for_mvr_addr = mf6.get_var_address(
+                "QFORMVR", self.name, self.lak_name.upper()
+            )
+            self.lakq_to_mvr_addr = mf6.get_var_address(
+                "QTOMVR", self.name, self.lak_name.upper()
+            )
+            self.lak_sarea_addr = mf6.get_var_address(
+                "SAREA", self.name, self.lak_name.upper()
+            )
+            self.lak_evap_addr = mf6.get_var_address(
+                "EVAPORATION", self.name, self.lak_name.upper()
+            )
 
     def _set_package_stress_period_data(self, mf6, kper, pkg):
         """
@@ -216,14 +246,14 @@ class ModflowAgmvr(object):
         else:
             max_addr = self.__dict__[f"{pkg}q_for_mvr_addr"]
             qformvr = mf6.get_value(max_addr)
-            max_q = np.zeros(qformvr.shape)
+            max_q = np.zeros(np.abs(qformvr.shape))
 
         mvr = mf6.get_value(self.mvr_value_addr)
         pkg_name = self.__dict__[f"{pkg}_name"]
         recarray = self.mvr.perioddata.data[kper]
         irridx = np.where(recarray['pname1'] == pkg_name)[0]
         if len(irridx) > 0:
-            if pkg_name in ("sfr", ):
+            if pkg_name in ("sfr", "lak"):
                 mvr[irridx] = 0
 
             irrids = sorted(np.unique(recarray[irridx]["id1"]))
@@ -250,7 +280,7 @@ class ModflowAgmvr(object):
             if len(idx) > 0:
                 icells = recarray[idx]["id2"]
                 iprop = recarray[idx]["value"] / np.sum(recarray[idx]["value"])
-                if pkg in ("sfr",):
+                if pkg in ("sfr", "lak"):
                     for mvr_rec in idx:
                         max_q[irrid] += recarray[mvr_rec]["value"]
 
@@ -274,8 +304,9 @@ class ModflowAgmvr(object):
         setattr(self, f"{pkg}_irrigation_efficiency", irrigation_efficiency)
         setattr(self, f"{pkg}_application_fraction", application_fraction)
         setattr(self, f"{pkg}_mvr_index", mvr_index)
-
-        return max_q.shape
+        setattr(self, f"{pkg}sup", np.zeros(max_q.shape))
+        setattr(self, f"{pkg}supold", np.zeros(max_q.shape))
+        setattr(self, f"{pkg}aetold", np.zeros(max_q.shape))
 
     def set_stress_period_data(self, mf6, kper):
         """
@@ -288,23 +319,20 @@ class ModflowAgmvr(object):
             zero based stress period number
         """
         if self.sim_wells:
-            mq_shape = self._set_package_stress_period_data(mf6, kper, 'well')
-            self.wellsup = np.zeros(mq_shape)
-            self.wellsupold = np.zeros(mq_shape)
-            self.wellaetold = np.zeros(mq_shape)
+            self._set_package_stress_period_data(mf6, kper, 'well')
 
         if self.sim_maw:
-            mq_shape = self._set_package_stress_period_data(mf6, kper, "maw")
-            self.mawsup = np.zeros(mq_shape)
-            self.mawsupold = np.zeros(mq_shape)
-            self.mawaetold = np.zeros(mq_shape)
+            self._set_package_stress_period_data(mf6, kper, "maw")
 
         if self.sim_diversions:
-            mq_shape = self._set_package_stress_period_data(mf6, kper, "sfr")
-            self.sfrsup = np.zeros(mq_shape)
-            self.sfrsupold = np.zeros(mq_shape)
-            self.idaetold = np.zeros(mq_shape)
-            self.evap_old = mf6.get_value(self.sfr_evap_addr)
+            self._set_package_stress_period_data(mf6, kper, "sfr")
+            self.sfr_evap_old = mf6.get_value(self.sfr_evap_addr)
+
+        if self.sim_lak:
+            self._set_package_stress_period_data(mf6, kper, "lak")
+            self.lak_evap_old = mf6.get_value(self.lak_evap_addr)
+
+            print('break')
 
     def zero_mvr(self, mf6):
         """
@@ -373,7 +401,7 @@ class ModflowAgmvr(object):
         kiter : int
             iteration number
         """
-        crop_pet, crop_aet, crop_vks, app_frac, sfr_applied = self._set_etdemand_variables(mf6, pkg)
+        crop_pet, crop_aet, crop_vks, app_frac, prev_applied = self._set_etdemand_variables(mf6, pkg)
 
         maxq = getattr(self, f"{pkg}_maxq")
         pkg_sup = getattr(self, f"{pkg}sup")
@@ -409,7 +437,7 @@ class ModflowAgmvr(object):
         setattr(self, f"{pkg}aetold", crop_aet)
 
         if self.sim_diversions:
-            qonly = qonly - sfr_applied
+            qonly = qonly - prev_applied
             qonly = np.where(qonly < 0, 0, qonly)
 
         pumping = np.where(qonly > maxq, -1 * maxq, -1 * qonly)
@@ -469,7 +497,7 @@ class ModflowAgmvr(object):
         """
         self._gw_demand_etdemand(mf6, kstp, delt, kiter, "maw")
 
-    def sw_demand_etdemand(self, mf6, kstp, delt=1, kiter=1):
+    def _sw_demand_etdemand(self, mf6, kstp, delt, kiter, pkg):
         """
         Method to determine surface-water demand
 
@@ -482,53 +510,110 @@ class ModflowAgmvr(object):
             length of time step
         kiter : int
             iteration number
+        pkg : str
+            package name ("sfr" or "lak")
         """
-        qtomvr = mf6.get_value(self.sfrq_to_mvr_addr)
-        crop_pet, crop_aet, crop_vks, app_frac, prev_applied = self._set_etdemand_variables(mf6, "sfr")
+        crop_pet, crop_aet, crop_vks, app_frac, prev_applied = self._set_etdemand_variables(mf6, pkg)
+
+        pkgq_to_mvr_addr = getattr(self, f"{pkg}q_to_mvr_addr")
+        maxq = getattr(self, f"{pkg}_maxq")
+        qtomvr = mf6.get_value(pkgq_to_mvr_addr)
+        pkg_active = getattr(self, f"{pkg}_active")
+        pkg_mvr_index = getattr(self, f"{pkg}_mvr_index")
+        pkg_evap_addr = getattr(self, f"{pkg}_evap_addr")
+        application_fraction = getattr(self, f"{pkg}_application_fraction")
+        irrigated_proportion = getattr(self, f"{pkg}_irrigated_proportion")
+        irrigation_efficiency = getattr(self, f"{pkg}_irrigation_efficiency")
+        irrigated_cells = getattr(self, f"{pkg}_irrigated_cells")
+        evap = getattr(self, f"{pkg}_evap_old").copy()
+
+        if pkg == "sfr":
+            length = mf6.get_value(self.sfr_length_addr)
+            width = mf6.get_value(self.sfr_width_addr)
+            sarea = length * width
+        else:
+            sarea = mf6.get_value(self.lak_sarea_addr)
 
         if delt < 1:
             crop_aet = crop_pet
 
         if kiter == 0:
-            self.sfrsupold = np.zeros(self.sfr_maxq.shape)
-            self.sfrsup = np.zeros(self.sfr_maxq.shape)
+            setattr(self, f"{pkg}sup", np.zeros(maxq.shape))
+            setattr(self, f"{pkg}supold", np.zeros(maxq.shape))
+            setattr(self, f"{pkg}aetold", crop_aet)
             qtomvr[:] = 0
-            self.idaetold[:] = crop_aet[:]
             if kstp == 0:
-                self.idaetold[:] = 0
+                setattr(self, f"{pkg}aetold", np.zeros(crop_aet.shape))
 
-        sup = qtomvr
-        supold = self.sfrsupold
-        factor = self._calculate_factor(crop_pet, crop_aet, self.idaetold, sup, supold, kiter)
+        pkg_sup = qtomvr
+        pkg_supold = getattr(self, f"{pkg}supold")
+        pkg_aetold = getattr(self, f"{pkg}aetold")
+        factor = self._calculate_factor(crop_pet, crop_aet, pkg_aetold, pkg_sup, pkg_supold, kiter)
         factor *= app_frac
 
-        qonly = np.where(sup + factor > crop_vks, crop_vks, sup + factor)
+        qonly = np.where(pkg_sup + factor > crop_vks, crop_vks, pkg_sup + factor)
         factor = np.where(factor < 0, 0, factor)
 
-        self.sfrsupold[:] = qtomvr[:]
-        self.sfrsup += factor
-        self.idaetold = crop_aet
+        if self.sim_lak and pkg == "sfr":
+            only = qonly - prev_applied
+            qonly = np.where(qonly < 0, 0, qonly)
 
-        dvflw = np.where(qonly >= self.sfr_maxq, self.sfr_maxq, qonly)
+        pkg_supold[:] = qtomvr[:]
+        pkg_sup += factor
+        pkg_aetold = crop_aet
 
-        active_ix = np.where(self.sfr_active)[0]
+        setattr(self, f"{pkg}supold", pkg_supold)
+        setattr(self, f"{pkg}sup", pkg_sup)
+        setattr(self, f"{pkg}aetold", pkg_aetold)
+
+        dvflw = np.where(qonly >= maxq, maxq, qonly)
+        active_ix = np.where(pkg_active)[0]
 
         if len(active_ix) > 0:
             diversions = mf6.get_value(self.mvr_value_addr)
-            length = mf6.get_value(self.sfr_length_addr)
-            width = mf6.get_value(self.sfr_width_addr)
-            evap = self.evap_old.copy()
-            for seg in active_ix:
-                idx = self.sfr_mvr_index[seg]
-                app_frac_proportion = (self.sfr_application_fraction[seg] / np.sum(self.sfr_application_fraction[seg])) / (1 / len(idx))
-                div_requested = (dvflw[seg] * self.sfr_irrigated_proportion[seg]) * app_frac_proportion
-                div_inefficient = div_requested * self.sfr_irrigation_efficiency[seg]
+            for provider in active_ix:
+                idx = pkg_mvr_index[provider]
+                app_frac_proportion = (application_fraction[provider] / np.sum(application_fraction[provider])) / (1 / len(idx))
+                div_requested = (dvflw[provider] * irrigated_proportion[provider]) * app_frac_proportion
+                div_inefficient = div_requested * irrigation_efficiency[provider]
                 diversions[idx] = div_inefficient
-                evap[seg] += np.sum(div_requested - div_inefficient) / (length[seg] * width[seg])
-                self.applied_irrigation[self.sfr_irrigated_cells[seg]] = \
-                    (dvflw[seg] * self.sfr_irrigated_proportion[seg]) * app_frac_proportion
+                evap[provider] += np.sum(div_requested - div_inefficient) / sarea[provider]
+                self.applied_irrigation[irrigated_cells[provider]] = \
+                    (dvflw[provider] * irrigated_proportion[provider]) * app_frac_proportion
             mf6.set_value(self.mvr_value_addr, diversions)
-            mf6.set_value(self.sfr_evap_addr, evap)
+            mf6.set_value(pkg_evap_addr, evap)
+
+    def sfr_demand_etdemand(self, mf6, kstp, delt=1, kiter=1):
+        """
+        Method to determine surface-water demand from SFR
+
+        Parameters
+        ----------
+        mf6 : ModflowApi object
+        kstp : int
+            modflow6 time step
+        delt : float
+            length of time step
+        kiter : int
+            iteration number
+        """
+        self._sw_demand_etdemand(mf6, kstp, delt, kiter, "sfr")
+
+    def lak_demand_etdemand(self, mf6, kstp, delt=1, kiter=1):
+        """
+        Method to determine surface-water demand from LAK
+
+        Parameters
+        ----------
+        mf6 : ModflowApi object
+        kstp : int
+            modflow6 time step
+        delt : float
+            length of time step
+        kiter : int
+            iteration number
+        """
+        self._sw_demand_etdemand(mf6, kstp, delt, kiter, "lak")
 
     def _calculate_factor(self, crop_pet, crop_aet, aetold, sup, supold, kiter, accel=1):
         """
@@ -639,8 +724,11 @@ class ModflowAgmvr(object):
                 self.applied_irrigation = np.zeros(self.uzf_shape)
 
                 while kiter < max_iter:
+                    if self.sim_lak:
+                        self.lak_demand_etdemand(mf6, kstp, delt, kiter)
+
                     if self.sim_diversions:
-                        self.sw_demand_etdemand(mf6, kstp, delt, kiter)
+                        self.sfr_demand_etdemand(mf6, kstp, delt, kiter)
 
                     if self.sim_maw:
                         self.maw_demand_etdemand(mf6, kstp, delt, kiter)
