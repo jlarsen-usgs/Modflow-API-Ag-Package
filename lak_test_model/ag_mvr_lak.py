@@ -10,6 +10,7 @@ from scipy.stats import linregress
 sws = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(sws, "..", "mf6api_agmvr"))
 from mf6_agmvr import ModflowAgmvr
+from get_mvr_budget import MvrBudget
 mpl.use("TKagg")
 
 from math import log10, floor
@@ -256,18 +257,20 @@ def run_mf6_exe(fpsim):
 
 
 def compare_model_output(nwt, mf6, model):
+    mf6_lst = os.path.join(mf6, f"{model}.lst")
 
-    mf6_cbc = os.path.join(mf6, f"{model}.cbc")
+    mf6_div = MvrBudget(mf6_lst).inc
+    mf6_div = mf6_div.groupby(by=["provider", "pid", "totim"], as_index=False)[
+        ["qa", "qp"]].sum()
+    mf6_div1 = mf6_div[mf6_div.pid == 0]
+    mf6_div2 = mf6_div[mf6_div.pid == 1]
+
+    lak_divs = (mf6_div1, mf6_div2)
+
     nwt_cbc = os.path.join(nwt, "etdemand_well.cbc")
-
-
     nwt_cbc = flopy.utils.CellBudgetFile(nwt_cbc)
-    mf6_cbc = flopy.utils.CellBudgetFile(mf6_cbc)
-
     nwt_pump = nwt_cbc.get_data(text="AG WE")
-    mf6_pump = mf6_cbc.get_data(text="MAW")
 
-    mf6_total = []
     nwt_total = []
     with styles.USGSPlot():
         mpl.rcParams["ytick.labelsize"] = 9
@@ -278,27 +281,23 @@ def compare_model_output(nwt, mf6, model):
         mf6_c = ["skyblue", "darkblue"]
         for wl in (13, 55):
             nwt_well = []
-            mf6_well = []
             for ix, recarray in enumerate(nwt_pump):
                 idx = np.where(recarray["node"] == wl)[0]
                 nwt_well.append(recarray[idx]['q'])
                 nwt_total.append(recarray[idx]['q'][0])
-                idx = np.where(mf6_pump[ix]["node"] == wl)[0]
-                mf6_well.append(mf6_pump[ix][idx]["q"])
-                mf6_total.append(mf6_pump[ix][idx]["q"][0])
 
             ax.plot(range(1, len(nwt_well) + 1), np.abs(nwt_well), color=nwt_c[n - 1], label=f"nwt well {n} irrigation", lw=2)
-            ax.plot(range(1, len(mf6_well) + 1), np.abs(mf6_well), color=mf6_c[n - 1], label=f"mf6 MAW {n} irrigation", lw=2.5, ls="--")
+            ax.plot(lak_divs[n - 1].totim.values, lak_divs[n - 1].qp.values, color=mf6_c[n - 1], label=f"mf6 LAK {n} irrigation", lw=2.5, ls="--")
+
+            print("MF6: ", np.sum(np.abs(lak_divs[n - 1].qp.values)) * 0.000810714)
+            print("NWT: ", np.sum(np.abs(nwt_well)) * 0.000810714)
             n += 1
 
-            print("MF6: ", np.sum(np.abs(mf6_well)) * 0.000810714)
-            print("NWT: ", np.sum(np.abs(nwt_well)) * 0.000810714)
-
-        r2 = linregress(np.abs(nwt_total), np.abs(mf6_total))[2] ** 2
-        err = np.sum(np.abs(mf6_total) - np.abs(nwt_total))
+        r2 = linregress(np.abs(nwt_total), np.abs(mf6_div.qp.values))[2] ** 2
+        err = np.sum(np.abs(mf6_div.qp.values) - np.abs(nwt_total))
 
         styles.heading(ax=ax,
-                       heading="Comparison of MF6 API AG MAW and MF-NWT AG well pumping")
+                       heading="Comparison of MF6 API AG LAK diversions and MF-NWT AG well pumping")
         styles.xlabel(ax=ax, label="Days", fontsize=10)
         styles.ylabel(ax=ax, label="Applied irrigation, in " + r"$m^{3}$",
                       fontsize=10)
@@ -311,9 +310,12 @@ def compare_model_output(nwt, mf6, model):
 
 
 def inspect_model_output(model_ws, name):
-    mf6_cbc = os.path.join(model_ws, f"{name}.cbc")
-    mf6_cbc = flopy.utils.CellBudgetFile(mf6_cbc)
-    mf6_pump = mf6_cbc.get_data(text="MAW")
+    mf6_lst = os.path.join(model_ws, f"{name}.lst")
+
+    mf6_div = MvrBudget(mf6_lst).inc
+    mf6_div = mf6_div.groupby(by=["provider", "pid", "totim"], as_index=False)[["qa", "qp"]].sum()
+    mf6_div1 = mf6_div[mf6_div.pid == 0]
+    mf6_div2 = mf6_div[mf6_div.pid == 1]
 
     with styles.USGSPlot():
         mpl.rcParams["ytick.labelsize"] = 9
@@ -322,19 +324,15 @@ def inspect_model_output(model_ws, name):
         n = 1
         nwt_c = ["k", "yellow"]
         mf6_c = ["skyblue", "darkblue"]
-        for wl in (13, 55):
-            mf6_well = []
-            for ix, recarray in enumerate(mf6_pump):
-                idx = np.where(recarray["node"] == wl)[0]
-                mf6_well.append(recarray[idx]['q'][0])
+        for mf6_diversion in (mf6_div1, mf6_div2):
 
-            ax.plot(range(1, len(mf6_well) + 1), np.abs(mf6_well),
-                    color=mf6_c[n - 1], label=f"mf6 MAW {n} irrigation",
+            ax.plot(mf6_diversion.totim.values, mf6_diversion.qp.values,
+                    color=mf6_c[n - 1], label=f"mf6 LAK {n} irrigation",
                     lw=2.5, ls="--")
             n += 1
 
         styles.heading(ax=ax,
-                       heading="MF6 API AG multi-aquifer well pumping")
+                       heading="MF6 API AG lake diversions")
         styles.xlabel(ax=ax, label="Days", fontsize=10)
         styles.ylabel(ax=ax, label="Applied irrigation, in " + r"$m^{3}$",
                       fontsize=10)

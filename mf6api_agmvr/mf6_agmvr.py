@@ -332,8 +332,6 @@ class ModflowAgmvr(object):
             self._set_package_stress_period_data(mf6, kper, "lak")
             self.lak_evap_old = mf6.get_value(self.lak_evap_addr)
 
-            print('break')
-
     def zero_mvr(self, mf6):
         """
         Method to zero out MVR values before initial solve
