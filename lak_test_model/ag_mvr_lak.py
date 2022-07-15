@@ -123,14 +123,9 @@ def build_mf6(name, headtol=None, fluxtol=None):
                 110
             )
 
-            # spd.append(rec)
-            # spd.append(rec2)
             spd.append(rec1)
             spd.append(rec2)
             spd.append(rec3)
-        # if per == 0:
-        #     spd.append((2, "status", "constant"))
-        #     spd.append((2, "stage", 105))
 
         period_data[per] = spd
 
