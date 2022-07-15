@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from scipy.stats import linregress
 sws = os.path.abspath(os.path.dirname(__file__))
-sys.path.append(os.path.join(sws, "..", "mf6api_agmvr"))
+sys.path.append(os.path.join(sws, "..", "..", "mf6api_agmvr"))
 from mf6_agmvr import ModflowAgmvr
 
 mpl.use("TKagg")
@@ -24,7 +24,7 @@ def round_to_n(x, n):
 
 
 def build_mf6(name, headtol=None, fluxtol=None):
-    sim_ws = os.path.join(sws, "..", "data", "mf6_lak_etdemand_test_problem")
+    sim_ws = os.path.join(sws, "..", "..", "data", "mf6_lak_etdemand_test_problem")
     sim = flopy.mf6.MFSimulation(name, sim_ws=sim_ws)
 
     perlen = (31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
@@ -144,7 +144,7 @@ def build_mf6(name, headtol=None, fluxtol=None):
     )
 
     # build a UZF package
-    cimis_data = os.path.join("..", "data", "davis_monthly_ppt_eto.txt")
+    cimis_data = os.path.join("..", "..", "data", "davis_monthly_ppt_eto.txt")
     df = pd.read_csv(cimis_data)
 
     nuzfcells = 100
@@ -309,17 +309,16 @@ if __name__ == "__main__":
     # set dll path
     load_existing = False
     run_model = True
-    dll = os.path.join("..", "modflow-bmi", "libmf6.dll")
-    mf6_ws = os.path.join(sws, "..", "data", "mf6_lak_etdemand_test_problem")
-    nwt_ws = os.path.join(sws, "..", "data", "nwt_etdemand_test_problems")
+    dll = os.path.join("..", "..", "modflow-bmi", "libmf6.dll")
+    mf6_ws = os.path.join(sws, "..", "..", "data", "mf6_lak_etdemand_test_problem")
+    nwt_ws = os.path.join(sws, "..", "..", "data", "nwt_etdemand_test_problems")
     model_name = "etdemand_lak"
     if run_model:
         if not load_existing:
             sim, gwf = build_mf6(model_name)
         else:
-            sim = flopy.mf6.MFSimulation.load(
-                sim_ws=os.path.join(sws, "..", "data", "mf6_lak_etdemand_test_problem")
-            )
+            sim = flopy.mf6.MFSimulation.load(sim_ws=mf6_ws)
+            
         mfag = ModflowAgmvr(sim, ag_type="etdemand", mvr_name="mvr")
         mfag.run_model(dll)
 
