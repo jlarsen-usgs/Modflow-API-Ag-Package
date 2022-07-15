@@ -6,7 +6,6 @@ import numpy as np
 import flopy
 sys.path.append(os.path.join("..", "mf6api_agmvr"))
 from mf6_agmvr import ModflowAgmvr
-from get_mvr_budget import MvrBudget
 import common
 
 
@@ -198,20 +197,18 @@ def test_etdemand_sfr():
 
     nwt_div1 = os.path.join(common.nwt_output_path(), f"{name}.diversion11.txt")
     nwt_div2 = os.path.join(common.nwt_output_path(), f"{name}.diversion12.txt")
-    mf6_lst = os.path.join(sim_ws, f"{name}.lst")
-
     nwt_div1 = pd.read_csv(nwt_div1, delim_whitespace=True)
     nwt_div2 = pd.read_csv(nwt_div2, delim_whitespace=True)
 
-    mf6_div = MvrBudget(mf6_lst).inc
-    mf6_div = mf6_div.groupby(by=["provider", "pid", "totim"], as_index=False)[
-        ["qa", "qp"]].sum()
-    mf6_div1 = mf6_div[mf6_div.pid == 2]
-    mf6_div2 = mf6_div[mf6_div.pid == 4]
+    mf6_ag_out = os.path.join(sim_ws, f"{name}_ag.out")
+    mf6_ag_out = ModflowAgmvr.load_output(mf6_ag_out)
+    mf6_ag_out = mf6_ag_out.groupby(by=["pkg", "pid", "kstp"], as_index=False)[["q_from_provider", "q_to_receiver"]].sum()
+    mf6_div1 = mf6_ag_out[mf6_ag_out.pid == 2]
+    mf6_div2 = mf6_ag_out[mf6_ag_out.pid == 4]
 
     nwt_total = nwt_div1["SW-DIVERSION"].values + nwt_div2[
         "SW-DIVERSION"].values
-    mf6_total = mf6_div1.qp.values + mf6_div2.qp.values
+    mf6_total = mf6_div1.q_from_provider.values + mf6_div2.q_from_provider.values
 
     err = np.sum(mf6_total - nwt_total)
     if np.abs(err) > 0.1:

@@ -7,7 +7,6 @@ import sys
 import os
 sys.path.append(os.path.join("..", "mf6api_agmvr"))
 from mf6_agmvr import ModflowAgmvr
-from get_mvr_budget import MvrBudget
 import common
 
 
@@ -214,10 +213,9 @@ def test_etdemand_lak():
     nwt_cbc = flopy.utils.CellBudgetFile(nwt_cbc)
     nwt_pump = nwt_cbc.get_data(text="AG WE")
 
-    mf6_lst = os.path.join(sim_ws, f"{name}.lst")
-    mf6_div = MvrBudget(mf6_lst).inc
-    mf6_div = mf6_div.groupby(by=["provider", "pid", "totim"], as_index=False)[
-        ["qa", "qp"]].sum()
+    mf6_ag_out = os.path.join(model_ws, f"{name}_ag.out")
+    mf6_ag_out = ModflowAgmvr.load_output(mf6_ag_out)
+    mf6_ag_out = mf6_ag_out.groupby(by=["pkg", "pid", "kstp"], as_index=False)[["q_from_provider", "q_to_receiver"]].sum()
 
     nwt_total = []
     for wl in (13, 55):
@@ -225,7 +223,7 @@ def test_etdemand_lak():
             idx = np.where(recarray["node"] == wl)[0]
             nwt_total.append(recarray[idx]['q'][0])
 
-    mf6_total = mf6_div.qp.values
+    mf6_total = mf6_ag_out.q_from_provider.values
 
     err = np.sum(np.abs(mf6_total) - np.abs(nwt_total))
     if np.abs(err) > 1.2:

@@ -167,22 +167,21 @@ def test_etdemand_well():
     mfag.run_model(common.dll_loc())
 
     # compare output to mfnwt output for same problem
+    mf6_ag_out = os.path.join(model_ws, f"{name}_ag.out")
+    mf6_ag_out = ModflowAgmvr.load_output(mf6_ag_out)
+    mf6_ag_out = mf6_ag_out.groupby(by=["pkg", "pid", "kstp"], as_index=False)[["q_from_provider", "q_to_receiver"]].sum()
+
     nwt_cbc = os.path.join(common.nwt_output_path(), f"{name}.cbc")
-    mf6_cbc = os.path.join(sim_ws, f"{name}.cbc")
     nwt_cbc = flopy.utils.CellBudgetFile(nwt_cbc)
-    mf6_cbc = flopy.utils.CellBudgetFile(mf6_cbc)
 
     nwt_pump = nwt_cbc.get_data(text="AG WE")
-    mf6_pump = mf6_cbc.get_data(text="WEL-TO-MVR")
 
-    mf6_total = []
+    mf6_total = mf6_ag_out.q_from_provider.values
     nwt_total = []
     for wl in (13, 55):
         for ix, recarray in enumerate(nwt_pump):
             idx = np.where(recarray["node"] == wl)[0]
             nwt_total.append(recarray[idx]['q'][0])
-            idx = np.where(mf6_pump[ix]["node"] == wl)[0]
-            mf6_total.append(mf6_pump[ix][idx]["q"][0])
 
     err = np.sum(np.abs(mf6_total) - np.abs(nwt_total))
     if np.abs(err) > 0.1:

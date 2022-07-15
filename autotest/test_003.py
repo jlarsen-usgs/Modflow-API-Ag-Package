@@ -7,7 +7,6 @@ import sys
 import os
 sys.path.append(os.path.join("..", "mf6api_agmvr"))
 from mf6_agmvr import ModflowAgmvr
-from get_mvr_budget import MvrBudget
 import common
 
 
@@ -222,8 +221,14 @@ def test_conjunctive_sfr_wel():
     nwt_div1 = os.path.join(common.nwt_output_path(), f"{name}.diversion11.txt")
     nwt_div2 = os.path.join(common.nwt_output_path(), f"{name}.diversion12.txt")
     nwt_cbc = os.path.join(common.nwt_output_path(), f"{name}.cbc")
-    mf6_lst = os.path.join(sim_ws, f"{name}.lst")
-    mf6_cbc = os.path.join(sim_ws, f"{name}.cbc")
+
+    mf6_ag_out = os.path.join(sim_ws, f"{name}_ag.out")
+    mf6_ag_out = ModflowAgmvr.load_output(mf6_ag_out)
+    mf6_ag_out = mf6_ag_out.groupby(by=["pkg", "pid", "kstp"], as_index=False)[["q_from_provider", "q_to_receiver"]].sum()
+    mf6_div1 = mf6_ag_out[mf6_ag_out.pid == 2]
+    mf6_div2 = mf6_ag_out[mf6_ag_out.pid == 4]
+    mf6_well = mf6_ag_out[mf6_ag_out.pid == 0]
+    mf6_well2 = mf6_ag_out[mf6_ag_out.pid == 1]
 
     nwt_div1 = pd.read_csv(nwt_div1, delim_whitespace=True)
     nwt_div2 = pd.read_csv(nwt_div2, delim_whitespace=True)
@@ -231,31 +236,16 @@ def test_conjunctive_sfr_wel():
     nwt_cbc = flopy.utils.CellBudgetFile(nwt_cbc)
     nwt_pump = nwt_cbc.get_data(text="AG WE")
 
-    mf6_cbc = flopy.utils.CellBudgetFile(mf6_cbc)
-    mf6_pump = mf6_cbc.get_data(text="WEL-TO-MVR")
-
-    mf6_well = []
-    mf6_well2 = []
     nwt_well = []
     nwt_well2 = []
-    for ix, recarray in enumerate(mf6_pump):
-        idx = np.where(recarray["node"] == 13)[0]
-        mf6_well.append(recarray[idx]["q"][0])
-        idx = np.where(recarray["node"] == 55)[0]
-        mf6_well2.append(recarray[idx]["q"][0])
+    for ix, recarray in enumerate(nwt_pump):
         idx = np.where(nwt_pump[ix]["node"] == 13)[0]
         nwt_well.append(nwt_pump[ix][idx]["q"][0])
         idx = np.where(nwt_pump[ix]["node"] == 55)[0]
         nwt_well2.append(nwt_pump[ix][idx]["q"][0])
 
-    mf6_div = MvrBudget(mf6_lst).inc
-    mf6_div = mf6_div.groupby(by=["provider", "pid", "totim"], as_index=False)[
-        ["qa", "qp"]].sum()
-    mf6_div1 = mf6_div[mf6_div.pid == 2]
-    mf6_div2 = mf6_div[mf6_div.pid == 4]
-
-    total_ag1 = mf6_div1.qp.values + np.abs(mf6_well)
-    total_ag2 = mf6_div2.qp.values + np.abs(mf6_well2)
+    total_ag1 = mf6_div1.q_from_provider.values + mf6_well.q_from_provider.values
+    total_ag2 = mf6_div2.q_from_provider.values + mf6_well2.q_from_provider.values
     nwt_total1 = nwt_div1["SW-DIVERSION"].values + np.abs(nwt_well)
     nwt_total2 = nwt_div2["SW-DIVERSION"].values + np.abs(nwt_well2)
 
@@ -267,7 +257,7 @@ def test_conjunctive_sfr_wel():
             "supplemental pumping calculation out of acceptable tolerance"
         )
 
-    if np.abs(err1) > 0.1:
+    if np.abs(err2) > 0.1:
         raise AssertionError(
             "supplemental pumping calculation out of acceptable tolerance"
         )
