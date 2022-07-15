@@ -18,6 +18,7 @@ class ModflowAgmvr(object):
     mvr_name : str
         short name for the Modflow6 MVR package. Ex. "mvr_0"
     """
+
     def __init__(self, sim, ag_type, mvr_name):
         self.sim = sim
         name = list(sim.model_names)[0]
@@ -44,7 +45,7 @@ class ModflowAgmvr(object):
                             rec["pname2"],
                             rec["id2"],
                             "UPTO",
-                            rec["value"]
+                            rec["value"],
                         )
                     )
                 perioddata[i] = record
@@ -64,7 +65,7 @@ class ModflowAgmvr(object):
             self.sim.write_simulation()
             self.mvr_name = mvr.path[-1]
 
-        if ag_type.lower() in ('specified', 'trigger', 'etdemand'):
+        if ag_type.lower() in ("specified", "trigger", "etdemand"):
             self.ag_type = ag_type.lower()
 
         self.totim = np.add.accumulate(self.gwf.modeltime.perlen)
@@ -80,7 +81,9 @@ class ModflowAgmvr(object):
         self.lak_name = None
         self.uzf_name = None
         self.dis_name = None
-        self.output_filename = os.path.join(self.gwf.model_ws, f"{self.name.lower()}_ag.out")
+        self.output_filename = os.path.join(
+            self.gwf.model_ws, f"{self.name.lower()}_ag.out"
+        )
 
         self.get_pkgs()
 
@@ -144,6 +147,15 @@ class ModflowAgmvr(object):
         mf6 : ModflowApi object
 
         """
+        solutiongroup = self.sim.name_file.solutiongroup.data
+        sln_grp = 1
+        for sln_grp, recarray in solutiongroup.items():
+            if self.name.lower() in recarray["slnmnames"]:
+                sln_grp += 1
+                break
+
+        self.maxiter_addr = mf6.get_var_address("MXITER", f"SLN_{sln_grp}")
+
         self.area_addr = mf6.get_var_address(
             "UZFAREA", self.name, self.uzf_name.upper()
         )
@@ -257,7 +269,7 @@ class ModflowAgmvr(object):
         mvr = mf6.get_value(self.mvr_value_addr)
         pkg_name = self.__dict__[f"{pkg}_name"]
         recarray = self.mvr.perioddata.data[kper]
-        irridx = np.where(recarray['pname1'] == pkg_name)[0]
+        irridx = np.where(recarray["pname1"] == pkg_name)[0]
         if len(irridx) > 0:
             if pkg_name in ("sfr", "lak"):
                 mvr[irridx] = 0
@@ -282,7 +294,9 @@ class ModflowAgmvr(object):
             iprop = []
             irreff = []
             appfrac = []
-            idx = np.where((recarray["id1"] == irrid) & (recarray["pname1"] == pkg_name))[0]
+            idx = np.where(
+                (recarray["id1"] == irrid) & (recarray["pname1"] == pkg_name)
+            )[0]
             if len(idx) > 0:
                 icells = recarray[idx]["id2"]
                 iprop = recarray[idx]["value"] / np.sum(recarray[idx]["value"])
@@ -325,7 +339,7 @@ class ModflowAgmvr(object):
             zero based stress period number
         """
         if self.sim_wells:
-            self._set_package_stress_period_data(mf6, kper, 'well')
+            self._set_package_stress_period_data(mf6, kper, "well")
 
         if self.sim_maw:
             self._set_package_stress_period_data(mf6, kper, "maw")
@@ -405,7 +419,13 @@ class ModflowAgmvr(object):
         kiter : int
             iteration number
         """
-        crop_pet, crop_aet, crop_vks, app_frac, prev_applied = self._set_etdemand_variables(mf6, pkg)
+        (
+            crop_pet,
+            crop_aet,
+            crop_vks,
+            app_frac,
+            prev_applied,
+        ) = self._set_etdemand_variables(mf6, pkg)
 
         maxq = getattr(self, f"{pkg}_maxq")
         pkg_sup = getattr(self, f"{pkg}sup")
@@ -434,7 +454,9 @@ class ModflowAgmvr(object):
             sup = pkg_sup
             supold = pkg_supold
 
-        factor = self._calculate_factor(crop_pet, crop_aet, pkg_aetold, sup, supold, kiter)
+        factor = self._calculate_factor(
+            crop_pet, crop_aet, pkg_aetold, sup, supold, kiter
+        )
         factor *= app_frac
 
         qonly = np.where(sup + factor > crop_vks, crop_vks, sup + factor)
@@ -464,19 +486,37 @@ class ModflowAgmvr(object):
             mvr = mf6.get_value(self.mvr_value_addr)
             for well in active_ix:
                 idx = pkg_mvr_index[well]
-                app_frac_proportion = (application_fraction[well] / np.sum(application_fraction[well])) / (1 / len(idx))
-                mvr[idx] = (np.abs(pumping[well]) * irrigated_proportion[well]) * app_frac_proportion * irrigation_efficiency[well]
-                self.applied_irrigation[irrigated_cells[well]] = \
-                    (np.abs(pumping[well]) * irrigated_proportion[well]) * app_frac_proportion * irrigation_efficiency[well]
+                app_frac_proportion = (
+                    application_fraction[well]
+                    / np.sum(application_fraction[well])
+                ) / (1 / len(idx))
+                mvr[idx] = (
+                    (np.abs(pumping[well]) * irrigated_proportion[well])
+                    * app_frac_proportion
+                    * irrigation_efficiency[well]
+                )
+                self.applied_irrigation[irrigated_cells[well]] = (
+                    (np.abs(pumping[well]) * irrigated_proportion[well])
+                    * app_frac_proportion
+                    * irrigation_efficiency[well]
+                )
 
             mf6.set_value(self.mvr_value_addr, mvr)
 
             # store output...
-            # kstp, pkg, pid, pet, aet, etdemand, q_from_provider, q_to_receiver
             stp_output = []
             for well in active_ix:
                 idx = pkg_mvr_index[well]
-                rec = (kstp + 1, pkg_name, well + 1, crop_pet[well], crop_aet[well], sup[well] + factor[well], np.abs(pumping[well]), np.sum(mvr[idx]))
+                rec = (
+                    kstp + 1,
+                    pkg_name,
+                    well + 1,
+                    crop_pet[well],
+                    crop_aet[well],
+                    sup[well] + factor[well],
+                    np.abs(pumping[well]),
+                    np.sum(mvr[idx]),
+                )
                 stp_output.append(rec)
 
             pkg_output[kstp] = stp_output
@@ -530,7 +570,13 @@ class ModflowAgmvr(object):
         pkg : str
             package name ("sfr" or "lak")
         """
-        crop_pet, crop_aet, crop_vks, app_frac, prev_applied = self._set_etdemand_variables(mf6, pkg)
+        (
+            crop_pet,
+            crop_aet,
+            crop_vks,
+            app_frac,
+            prev_applied,
+        ) = self._set_etdemand_variables(mf6, pkg)
 
         pkgq_to_mvr_addr = getattr(self, f"{pkg}q_to_mvr_addr")
         maxq = getattr(self, f"{pkg}_maxq")
@@ -567,10 +613,14 @@ class ModflowAgmvr(object):
         pkg_sup = qtomvr
         pkg_supold = getattr(self, f"{pkg}supold")
         pkg_aetold = getattr(self, f"{pkg}aetold")
-        factor = self._calculate_factor(crop_pet, crop_aet, pkg_aetold, pkg_sup, pkg_supold, kiter)
+        factor = self._calculate_factor(
+            crop_pet, crop_aet, pkg_aetold, pkg_sup, pkg_supold, kiter
+        )
         factor *= app_frac
 
-        qonly = np.where(pkg_sup + factor > crop_vks, crop_vks, pkg_sup + factor)
+        qonly = np.where(
+            pkg_sup + factor > crop_vks, crop_vks, pkg_sup + factor
+        )
         factor = np.where(factor < 0, 0, factor)
 
         if self.sim_lak and pkg == "sfr":
@@ -592,21 +642,38 @@ class ModflowAgmvr(object):
         tot_div_requested = np.zeros(maxq.shape)
         for provider in active_ix:
             idx = pkg_mvr_index[provider]
-            app_frac_proportion = (application_fraction[provider] / np.sum(application_fraction[provider])) / (1 / len(idx))
-            div_requested = (dvflw[provider] * irrigated_proportion[provider]) * app_frac_proportion
+            app_frac_proportion = (
+                application_fraction[provider]
+                / np.sum(application_fraction[provider])
+            ) / (1 / len(idx))
+            div_requested = (
+                dvflw[provider] * irrigated_proportion[provider]
+            ) * app_frac_proportion
             tot_div_requested[provider] = np.sum(div_requested)
             div_inefficient = div_requested * irrigation_efficiency[provider]
             diversions[idx] = div_inefficient
-            evap[provider] += np.sum(div_requested - div_inefficient) / sarea[provider]
-            self.applied_irrigation[irrigated_cells[provider]] = \
-                (dvflw[provider] * irrigated_proportion[provider]) * app_frac_proportion
+            evap[provider] += (
+                np.sum(div_requested - div_inefficient) / sarea[provider]
+            )
+            self.applied_irrigation[irrigated_cells[provider]] = (
+                dvflw[provider] * irrigated_proportion[provider]
+            ) * app_frac_proportion
         mf6.set_value(self.mvr_value_addr, diversions)
         mf6.set_value(pkg_evap_addr, evap)
 
         stp_output = []
         for provider in active_ix:
             idx = pkg_mvr_index[provider]
-            rec = (kstp + 1, pkg_name, provider + 1, crop_pet[provider], crop_aet[provider], pkg_sup[provider], tot_div_requested[provider], np.sum(diversions[idx]))
+            rec = (
+                kstp + 1,
+                pkg_name,
+                provider + 1,
+                crop_pet[provider],
+                crop_aet[provider],
+                pkg_sup[provider],
+                tot_div_requested[provider],
+                np.sum(diversions[idx]),
+            )
             stp_output.append(rec)
 
         pkg_output[kstp] = stp_output
@@ -644,7 +711,9 @@ class ModflowAgmvr(object):
         """
         self._sw_demand_etdemand(mf6, kstp, delt, kiter, "lak")
 
-    def _calculate_factor(self, crop_pet, crop_aet, aetold, sup, supold, kiter, accel=1):
+    def _calculate_factor(
+        self, crop_pet, crop_aet, aetold, sup, supold, kiter, accel=1
+    ):
         """
         Method to calculate unmet demand based on PET and AET difference for
         crops
@@ -678,13 +747,9 @@ class ModflowAgmvr(object):
             # factor = np.where(np.abs(det) > 1e-05,
             #                   dq * et_diff / det,
             #                   factor)
-            factor = np.where(np.abs(det) > 1e-6,
-                              dq * et_diff / det,
-                              1e-05)
+            factor = np.where(np.abs(det) > 1e-6, dq * et_diff / det, 1e-05)
 
-        factor = np.where(factor > et_diff * accel,
-                          et_diff * accel,
-                          factor)
+        factor = np.where(factor > et_diff * accel, et_diff * accel, factor)
         # original equation logic commented out. I believe this to be one
         # of the culprits for causing runaway pumping values!
         # factor = np.where(factor < et_diff, et_diff, factor)
@@ -696,7 +761,16 @@ class ModflowAgmvr(object):
         Method for writing AG output to file
         """
         with open(self.output_filename, "w") as foo:
-            header = ["kstp", "pkg", "pid", "pet", "aet", "etdemand", "q_from_provider", "q_to_receiver"]
+            header = [
+                "kstp",
+                "pkg",
+                "pid",
+                "pet",
+                "aet",
+                "etdemand",
+                "q_from_provider",
+                "q_to_receiver",
+            ]
             hdr_str = "{:>8} {:>10} {:>8} {:>15} {:>15} {:>15} {:>15} {:>15}\n"
             foo.write(hdr_str.format(*header))
             if self.sim_wells:
@@ -751,7 +825,7 @@ class ModflowAgmvr(object):
         """
         mf6 = ModflowApi(
             dll,
-            working_directory=self.sim.simulation_data.mfpath.get_sim_path()
+            working_directory=self.sim.simulation_data.mfpath.get_sim_path(),
         )
 
         mf6.initialize()
@@ -764,7 +838,7 @@ class ModflowAgmvr(object):
         input_vars = mf6.get_input_var_names()
         output_vars = mf6.get_output_var_names()
 
-        max_iter = mf6.get_value(mf6.get_var_address("MXITER", "SLN_1"))
+        max_iter = mf6.get_value(self.maxiter_addr)
 
         with open("input_vars.txt", "w") as foo:
             for i in input_vars:
@@ -782,7 +856,7 @@ class ModflowAgmvr(object):
             mf6.prepare_time_step(dt)
             kiter = 0
 
-            if current_time in self.totim or current_time == 0.:
+            if current_time in self.totim or current_time == 0.0:
                 if current_time == 0:
                     pass
                 else:
