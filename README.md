@@ -15,11 +15,11 @@ from mf6_agmvr import ModflowAgmvr
 ```
 
 ## Software requirements
-Python >= 3.7
-flopy >= 3.3.5 (`pip install flopy`)
-modflowapi (`pip install modflowapi`)
-numpy
-pandas
+Python >= 3.7  
+flopy >= 3.3.5 (`pip install flopy`)  
+modflowapi (`pip install modflowapi`)  
+numpy  
+pandas  
 
 ## Authors
 Joshua D. Larsen
