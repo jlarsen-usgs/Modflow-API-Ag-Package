@@ -318,7 +318,7 @@ if __name__ == "__main__":
             sim, gwf = build_mf6(model_name)
         else:
             sim = flopy.mf6.MFSimulation.load(sim_ws=mf6_ws)
-            
+
         mfag = ModflowAgmvr(sim, ag_type="etdemand", mvr_name="mvr")
         mfag.run_model(dll)
 
