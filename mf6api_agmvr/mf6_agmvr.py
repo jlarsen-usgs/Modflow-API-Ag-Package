@@ -472,7 +472,7 @@ class ModflowAgmvr(object):
             mf6.set_value(self.mvr_value_addr, mvr)
 
             # store output...
-            # kstp, pkg, pid, pet, aet, etdemand, q_from_provider, q_to_reciever
+            # kstp, pkg, pid, pet, aet, etdemand, q_from_provider, q_to_receiver
             stp_output = []
             for well in active_ix:
                 idx = pkg_mvr_index[well]
@@ -696,7 +696,7 @@ class ModflowAgmvr(object):
         Method for writing AG output to file
         """
         with open(self.output_filename, "w") as foo:
-            header = ["kstp", "pkg", "pid", "pet", "aet", "etdemand", "q_from_provider", "q_to_reciever"]
+            header = ["kstp", "pkg", "pid", "pet", "aet", "etdemand", "q_from_provider", "q_to_receiver"]
             hdr_str = "{:>8} {:>10} {:>8} {:>15} {:>15} {:>15} {:>15} {:>15}\n"
             foo.write(hdr_str.format(*header))
             if self.sim_wells:
@@ -736,8 +736,9 @@ class ModflowAgmvr(object):
         import pandas as pd
 
         df = pd.read_csv(filename, delim_whitespace=True)
+        df["pid"] -= 1
+        df["kstp"] -= 1
         return df
-
 
     def run_model(self, dll):
         """

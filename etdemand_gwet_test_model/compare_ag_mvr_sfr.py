@@ -240,22 +240,21 @@ def mf6_dev_no_final_check(model_ws, fname):
 def compare_model_output(nwt, mf6, model):
     nwt_div1 = os.path.join(nwt, f"{model}.diversion11.txt")
     nwt_div2 = os.path.join(nwt, f"{model}.diversion12.txt")
-    mf6_lst = os.path.join(mf6, f"{model}.lst")
+    mf6_ag_out = os.path.join(mf6, f"{model}_ag.out")
+    mf6_ag_out = ModflowAgmvr.load_output(mf6_ag_out)
+
+    mf6_ag_out = mf6_ag_out.groupby(by=["pkg", "pid", "kstp"], as_index=False)[["q_from_provider", "q_to_receiver"]].sum()
+    mf6_div1 = mf6_ag_out[mf6_ag_out.pid == 2]
+    mf6_div2 = mf6_ag_out[mf6_ag_out.pid == 4]
 
     nwt_div1 = pd.read_csv(nwt_div1, delim_whitespace=True)
     nwt_div2 = pd.read_csv(nwt_div2, delim_whitespace=True)
 
-    mf6_div = MvrBudget(mf6_lst).inc
-    mf6_div = mf6_div.groupby(by=["provider", "pid", "totim"], as_index=False)[["qa", "qp"]].sum()
-    mf6_div1 = mf6_div[mf6_div.pid == 2]
-    mf6_div2 = mf6_div[mf6_div.pid == 4]
-
     nwt_total = nwt_div1["SW-DIVERSION"].values + nwt_div2["SW-DIVERSION"].values
-    mf6_total = mf6_div1.qp.values + mf6_div2.qp.values
+    mf6_total = mf6_div1.q_from_provider.values + mf6_div2.q_from_provider.values
 
     r2 = linregress(mf6_total, np.abs(nwt_total))[2] ** 2
     err = np.sum(mf6_total - nwt_total)
-    perr = err / np.sum(nwt_total)
 
     with styles.USGSPlot():
         mpl.rcParams["ytick.labelsize"] = 9
@@ -263,8 +262,8 @@ def compare_model_output(nwt, mf6, model):
         fig, ax = plt.subplots(figsize=(8, 8))
         ax.plot(range(1, len(nwt_div1) + 1), nwt_div1["SW-DIVERSION"], "k", label=f"nwt diversion, 1", lw=2)
         ax.plot(range(1, len(nwt_div2) + 1), nwt_div2["SW-DIVERSION"], "dimgray", label=f"nwt diversion, 2", lw=2)
-        ax.plot(range(1, len(mf6_div1) + 1), mf6_div1.qp, color="skyblue",  label=f"mf6 diversion 1", ls="--", lw=2.5, zorder=3)
-        ax.plot(range(1, len(mf6_div2) + 1), mf6_div2.qp, color="darkblue", label=f"mf6 diversion 2", ls="--", lw=2.5, zorder=3)
+        ax.plot(range(1, len(mf6_div1) + 1), mf6_div1.q_from_provider, color="skyblue",  label=f"mf6 diversion 1", ls="--", lw=2.5, zorder=3)
+        ax.plot(range(1, len(mf6_div2) + 1), mf6_div2.q_from_provider, color="darkblue", label=f"mf6 diversion 2", ls="--", lw=2.5, zorder=3)
         styles.heading(ax=ax, heading="Comparison of MF6 API AG and MF-NWT AG diversions")
         styles.xlabel(ax=ax, label="Days", fontsize=10)
         styles.ylabel(ax=ax, label="Applied irrigation, in " + r"$m^{3}$", fontsize=10)
@@ -274,9 +273,9 @@ def compare_model_output(nwt, mf6, model):
         styles.add_text(ax=ax, text=f"dif. = {err :.2f} " + r"$m^{3}$", x=0.03,
                         y=0.75, fontsize=10)
 
-        print("MF6: ", np.sum(mf6_div1.qp) * 0.000810714)
+        print("MF6: ", np.sum(mf6_div1.q_from_provider) * 0.000810714)
         print("NWT: ", np.sum(nwt_div1["SW-DIVERSION"]) * 0.000810714)
-        print("MF6: ", np.sum(mf6_div2.qp) * 0.000810714)
+        print("MF6: ", np.sum(mf6_div2.q_from_provider) * 0.000810714)
         print("NWT: ", np.sum(nwt_div2["SW-DIVERSION"]) * 0.000810714)
 
         plt.show()

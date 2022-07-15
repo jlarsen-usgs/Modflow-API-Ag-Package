@@ -1,4 +1,4 @@
-    kstp        pkg      pid             pet             aet        etdemand q_from_provider   q_to_reciever
+    kstp        pkg      pid             pet             aet        etdemand q_from_provider   q_to_receiver
        1      sfr_0        3        8.482281        8.482281        0.000010        0.000010        0.000010
        1      sfr_0        5        8.482281        8.482281        0.000010        0.000010        0.000010
        2      sfr_0        3        8.482281        8.482281        0.000010        0.000010        0.000010

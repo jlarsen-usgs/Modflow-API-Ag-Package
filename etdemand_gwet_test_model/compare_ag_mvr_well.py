@@ -208,21 +208,18 @@ def run_mf6_exe(fpsim):
 
 
 def compare_model_output(nwt, mf6, model):
-    nwt_well1 = os.path.join(nwt, f"{model}.well1.txt")
-    nwt_well2 = os.path.join(nwt, f"{model}.well2.txt")
-    mf6_cbc = os.path.join(mf6, f"{model}.cbc")
     nwt_cbc = os.path.join(nwt, f"{model}.cbc")
+    mf6_ag_out = os.path.join(mf6, f"{model}_ag.out")
+    mf6_ag_out = ModflowAgmvr.load_output(mf6_ag_out)
+    mf6_ag_out = mf6_ag_out.groupby(by=["pkg", "pid", "kstp"], as_index=False)[["q_from_provider", "q_to_receiver"]].sum()
+    mf6_wells = (mf6_ag_out[mf6_ag_out.pid == 0].q_from_provider.values,
+                 mf6_ag_out[mf6_ag_out.pid == 1].q_from_provider.values)
 
-    nwt_well1 = pd.read_csv(nwt_well1, delim_whitespace=True)
-    nwt_well2 = pd.read_csv(nwt_well2, delim_whitespace=True)
     nwt_cbc = flopy.utils.CellBudgetFile(nwt_cbc)
-    mf6_cbc = flopy.utils.CellBudgetFile(mf6_cbc)
 
     nwt_pump = nwt_cbc.get_data(text="AG WE")
-    mf6_pump = mf6_cbc.get_data(text="WEL-TO-MVR")
-    mf6_pump2 = mf6_cbc.get_data(text="WEL")
 
-    mf6_total = []
+    mf6_total = mf6_ag_out.q_from_provider.values
     nwt_total = []
     with styles.USGSPlot():
         mpl.rcParams["ytick.labelsize"] = 9
@@ -233,15 +230,12 @@ def compare_model_output(nwt, mf6, model):
         mf6_c = ["skyblue", "darkblue"]
         for wl in (13, 55):
             nwt_well = []
-            mf6_well = []
             for ix, recarray in enumerate(nwt_pump):
                 idx = np.where(recarray["node"] == wl)[0]
                 nwt_well.append(recarray[idx]['q'])
                 nwt_total.append(recarray[idx]['q'][0])
-                idx = np.where(mf6_pump[ix]["node"] == wl)[0]
-                mf6_well.append(mf6_pump[ix][idx]["q"])
-                mf6_total.append(mf6_pump[ix][idx]["q"][0])
 
+            mf6_well = mf6_wells[n - 1]
             ax.plot(range(1, len(nwt_well) + 1), np.abs(nwt_well), color=nwt_c[n - 1], label=f"nwt well {n} irrigation", lw=2)
             ax.plot(range(1, len(mf6_well) + 1), np.abs(mf6_well), color=mf6_c[n - 1], label=f"mf6 well {n} irrigation", lw=2.5, ls="--")
             n += 1

@@ -265,8 +265,15 @@ def compare_model_output(nwt, mf6, model, gwf):
     nwt_div1 = os.path.join(nwt, f"{model}.diversion11.txt")
     nwt_div2 = os.path.join(nwt, f"{model}.diversion12.txt")
     nwt_cbc = os.path.join(nwt, f"{model}.cbc")
-    mf6_lst = os.path.join(mf6, f"{model}.lst")
-    mf6_cbc = os.path.join(mf6, f"{model}.cbc")
+
+    mf6_ag_out = os.path.join(mf6, f"{model}_ag.out")
+    mf6_ag_out = ModflowAgmvr.load_output(mf6_ag_out)
+
+    mf6_ag_out = mf6_ag_out.groupby(by=["pkg", "pid", "kstp"], as_index=False)[["q_from_provider", "q_to_receiver"]].sum()
+    mf6_div1 = mf6_ag_out[mf6_ag_out.pid == 2]
+    mf6_div2 = mf6_ag_out[mf6_ag_out.pid == 4]
+    mf6_well = mf6_ag_out[mf6_ag_out.pid == 0]
+    mf6_well2 = mf6_ag_out[mf6_ag_out.pid == 1]
 
     nwt_div1 = pd.read_csv(nwt_div1, delim_whitespace=True)
     nwt_div2 = pd.read_csv(nwt_div2, delim_whitespace=True)
@@ -274,30 +281,16 @@ def compare_model_output(nwt, mf6, model, gwf):
     nwt_cbc = flopy.utils.CellBudgetFile(nwt_cbc)
     nwt_pump = nwt_cbc.get_data(text="AG WE")
 
-    mf6_cbc = flopy.utils.CellBudgetFile(mf6_cbc)
-    mf6_pump = mf6_cbc.get_data(text="WEL-TO-MVR")
-
-    mf6_well = []
-    mf6_well2 = []
     nwt_well = []
     nwt_well2 = []
-    for ix, recarray in enumerate(mf6_pump):
-        idx = np.where(recarray["node"] == 13)[0]
-        mf6_well.append(recarray[idx]["q"][0])
-        idx = np.where(recarray["node"] == 55)[0]
-        mf6_well2.append(recarray[idx]["q"][0])
+    for ix, recarray in enumerate(nwt_pump):
         idx = np.where(nwt_pump[ix]["node"] == 13)[0]
         nwt_well.append(nwt_pump[ix][idx]["q"][0])
         idx = np.where(nwt_pump[ix]["node"] == 55)[0]
         nwt_well2.append(nwt_pump[ix][idx]["q"][0])
 
-    mf6_div = MvrBudget(mf6_lst).inc
-    mf6_div = mf6_div.groupby(by=["provider", "pid", "totim"], as_index=False)[["qa", "qp"]].sum()
-    mf6_div1 = mf6_div[mf6_div.pid == 2]
-    mf6_div2 = mf6_div[mf6_div.pid == 4]
-
-    total_ag1 = mf6_div1.qp.values + np.abs(mf6_well)
-    total_ag2 = mf6_div2.qp.values + np.abs(mf6_well2)
+    total_ag1 = mf6_div1.q_from_provider.values + np.abs(mf6_well.q_from_provider.values)
+    total_ag2 = mf6_div2.q_from_provider.values + np.abs(mf6_well2.q_from_provider.values)
     nwt_total1 = nwt_div1["SW-DIVERSION"].values + np.abs(nwt_well)
     nwt_total2 = nwt_div2["SW-DIVERSION"].values + np.abs(nwt_well2)
 
@@ -318,7 +311,7 @@ def compare_model_output(nwt, mf6, model, gwf):
         fig, ax = plt.subplots(figsize=(8, 8))
         ax.plot(range(1, len(nwt_div1) + 1), nwt_div1["SW-DIVERSION"], color="k", label=f"nwt diversion", lw=2, zorder=3)
         ax.plot(range(1, len(nwt_total1) + 1), nwt_total1, color="dimgray", label="nwt total applied irrigation", zorder=2)
-        ax.plot(range(1, len(mf6_div1) + 1), mf6_div1.qp, color="skyblue", label=f"mf6 diversion", ls="--", lw=2.5, zorder=5)
+        ax.plot(range(1, len(mf6_div1) + 1), mf6_div1.q_from_provider.values, color="skyblue", label=f"mf6 diversion", ls="--", lw=2.5, zorder=5)
         ax.plot(range(1, len(total_ag1) + 1), total_ag1, color="darkblue", label="total applied irrigation", ls="--", lw=2.5, zorder=4)
         styles.heading(ax=ax,
                        heading="Comparison of MF6 API AG and MF-NWT AG conjuctive use farm 1")
@@ -332,9 +325,9 @@ def compare_model_output(nwt, mf6, model, gwf):
         styles.add_text(ax=ax, text=f"dif. = {err1 :.2f} " + r"$m^{3}$", x=0.03,
                         y=0.75, fontsize=10)
 
-        print("MF6: ", np.sum(mf6_div1.qp) * 0.000810714)
+        print("MF6: ", np.sum(mf6_div1.q_from_provider) * 0.000810714)
         print("NWT: ", np.sum(nwt_div1["SW-DIVERSION"]) * 0.000810714)
-        print("MF6: ", np.sum(mf6_div2.qp) * 0.000810714)
+        print("MF6: ", np.sum(mf6_div2.q_from_provider) * 0.000810714)
         print("NWT: ", np.sum(nwt_div2["SW-DIVERSION"]) * 0.000810714)
 
         plt.show()
@@ -348,7 +341,7 @@ def compare_model_output(nwt, mf6, model, gwf):
                 color="k", label=f"nwt diversion", lw=2, zorder=3)
         ax.plot(range(1, len(nwt_total2) + 1), nwt_total2, color="dimgray",
                 label="nwt total applied irrigation", zorder=2)
-        ax.plot(range(1, len(mf6_div2) + 1), mf6_div2.qp, color="skyblue",
+        ax.plot(range(1, len(mf6_div2) + 1), mf6_div2.q_from_provider, color="skyblue",
                 label=f"mf6 diversion", ls="--", lw=2.5, zorder=5)
         ax.plot(range(1, len(total_ag2) + 1), total_ag2, color="darkblue",
                 label="total applied irrigation", ls="--", lw=2.5, zorder=4)
