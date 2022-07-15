@@ -814,31 +814,19 @@ class ModflowAgmvr(object):
         df["kstp"] -= 1
         return df
 
-    def run_model(self, dll):
+    def _save_variable_addresses(self, mf6):
         """
-        Method to run MODFLOW6 with the MF6 API AG package
+        Method that allows developers to dump out BMI variable addresses
+        to a text file. Do not call directly, use the develop=True kwarg
+        on run_moel() to dump variable addresses
 
         Parameters
         ----------
-        dll : str
-            path to modflow API ".dll" or ".so"
+        mf6 : ModflowApi object
+
         """
-        mf6 = ModflowApi(
-            dll,
-            working_directory=self.sim.simulation_data.mfpath.get_sim_path(),
-        )
-
-        mf6.initialize()
-
-        self.create_addresses(mf6)
-        prev_time = 0
-        current_time = mf6.get_current_time()
-        end_time = mf6.get_end_time()
-
         input_vars = mf6.get_input_var_names()
         output_vars = mf6.get_output_var_names()
-
-        max_iter = mf6.get_value(self.maxiter_addr)
 
         with open("input_vars.txt", "w") as foo:
             for i in input_vars:
@@ -847,6 +835,38 @@ class ModflowAgmvr(object):
         with open("output_vars.txt", "w") as foo:
             for i in output_vars:
                 foo.write(f"{i}\n")
+
+    def run_model(self, dll, **kwargs):
+        """
+        Method to run MODFLOW6 with the MF6 API AG package
+
+        Parameters
+        ----------
+        dll : str
+            path to modflow API ".dll" or ".so"
+        **kwargs : keyword arguments
+            "develop" : bool
+                flag to print out BMI input and output variable addresses for
+                developer information about model data available through the
+                BMI for a given model
+        """
+        develop = kwargs.pop("develop", False)
+
+        mf6 = ModflowApi(
+            dll,
+            working_directory=self.sim.simulation_data.mfpath.get_sim_path(),
+        )
+
+        mf6.initialize()
+
+        if develop:
+            self._save_variable_addresses(mf6)
+
+        self.create_addresses(mf6)
+        prev_time = 0
+        current_time = mf6.get_current_time()
+        end_time = mf6.get_end_time()
+        max_iter = mf6.get_value(self.maxiter_addr)
 
         kper = 0
         kstp = 0
