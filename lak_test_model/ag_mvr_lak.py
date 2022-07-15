@@ -254,11 +254,12 @@ def run_mf6_exe(fpsim):
 def compare_model_output(nwt, mf6, model):
     mf6_lst = os.path.join(mf6, f"{model}.lst")
 
-    mf6_div = MvrBudget(mf6_lst).inc
-    mf6_div = mf6_div.groupby(by=["provider", "pid", "totim"], as_index=False)[
-        ["qa", "qp"]].sum()
-    mf6_div1 = mf6_div[mf6_div.pid == 0]
-    mf6_div2 = mf6_div[mf6_div.pid == 1]
+    mf6_ag_out = os.path.join(mf6, f"{model}_ag.out")
+    mf6_ag_out = ModflowAgmvr.load_output(mf6_ag_out)
+
+    mf6_ag_out = mf6_ag_out.groupby(by=["pkg", "pid", "kstp"], as_index=False)[["q_from_provider", "q_to_receiver"]].sum()
+    mf6_div1 = mf6_ag_out[mf6_ag_out.pid == 0]
+    mf6_div2 = mf6_ag_out[mf6_ag_out.pid == 1]
 
     lak_divs = (mf6_div1, mf6_div2)
 
@@ -282,14 +283,14 @@ def compare_model_output(nwt, mf6, model):
                 nwt_total.append(recarray[idx]['q'][0])
 
             ax.plot(range(1, len(nwt_well) + 1), np.abs(nwt_well), color=nwt_c[n - 1], label=f"nwt well {n} irrigation", lw=2)
-            ax.plot(lak_divs[n - 1].totim.values, lak_divs[n - 1].qp.values, color=mf6_c[n - 1], label=f"mf6 LAK {n} irrigation", lw=2.5, ls="--")
+            ax.plot(lak_divs[n - 1].kstp.values + 1, lak_divs[n - 1].q_from_provider.values, color=mf6_c[n - 1], label=f"mf6 LAK {n} irrigation", lw=2.5, ls="--")
 
-            print("MF6: ", np.sum(np.abs(lak_divs[n - 1].qp.values)) * 0.000810714)
+            print("MF6: ", np.sum(np.abs(lak_divs[n - 1].q_from_provider.values)) * 0.000810714)
             print("NWT: ", np.sum(np.abs(nwt_well)) * 0.000810714)
             n += 1
 
-        r2 = linregress(np.abs(nwt_total), np.abs(mf6_div.qp.values))[2] ** 2
-        err = np.sum(np.abs(mf6_div.qp.values) - np.abs(nwt_total))
+        r2 = linregress(np.abs(nwt_total), np.abs(mf6_ag_out.q_from_provider.values))[2] ** 2
+        err = np.sum(np.abs(mf6_ag_out.q_from_provider.values) - np.abs(nwt_total))
 
         styles.heading(ax=ax,
                        heading="Comparison of MF6 API AG LAK diversions and MF-NWT AG well pumping")
@@ -301,38 +302,6 @@ def compare_model_output(nwt, mf6, model):
                         y=0.78, fontsize=10)
         styles.add_text(ax=ax, text=f"dif. = {err :.2f} " + r"$m^{3}$", x=0.03,
                         y=0.75, fontsize=10)
-        plt.show()
-
-
-def inspect_model_output(model_ws, name):
-    mf6_lst = os.path.join(model_ws, f"{name}.lst")
-
-    mf6_div = MvrBudget(mf6_lst).inc
-    mf6_div = mf6_div.groupby(by=["provider", "pid", "totim"], as_index=False)[["qa", "qp"]].sum()
-    mf6_div1 = mf6_div[mf6_div.pid == 0]
-    mf6_div2 = mf6_div[mf6_div.pid == 1]
-
-    with styles.USGSPlot():
-        mpl.rcParams["ytick.labelsize"] = 9
-        mpl.rcParams["xtick.labelsize"] = 9
-        fig, ax = plt.subplots(figsize=(8, 8))
-        n = 1
-        nwt_c = ["k", "yellow"]
-        mf6_c = ["skyblue", "darkblue"]
-        for mf6_diversion in (mf6_div1, mf6_div2):
-
-            ax.plot(mf6_diversion.totim.values, mf6_diversion.qp.values,
-                    color=mf6_c[n - 1], label=f"mf6 LAK {n} irrigation",
-                    lw=2.5, ls="--")
-            n += 1
-
-        styles.heading(ax=ax,
-                       heading="MF6 API AG lake diversions")
-        styles.xlabel(ax=ax, label="Days", fontsize=10)
-        styles.ylabel(ax=ax, label="Applied irrigation, in " + r"$m^{3}$",
-                      fontsize=10)
-        styles.graph_legend(ax=ax, loc=2, fancybox=True, shadow=True,
-                            frameon=True, fontsize=10)
         plt.show()
 
 
@@ -354,5 +323,4 @@ if __name__ == "__main__":
         mfag = ModflowAgmvr(sim, ag_type="etdemand", mvr_name="mvr")
         mfag.run_model(dll)
 
-    inspect_model_output(mf6_ws, model_name)
     compare_model_output(nwt_ws, mf6_ws, model_name)

@@ -218,18 +218,18 @@ def run_mf6_exe(fpsim):
 
 
 def compare_model_output(nwt, mf6, model):
-
-    mf6_cbc = os.path.join(mf6, f"{model}.cbc")
     nwt_cbc = os.path.join(nwt, "etdemand_well.cbc")
-
-
     nwt_cbc = flopy.utils.CellBudgetFile(nwt_cbc)
-    mf6_cbc = flopy.utils.CellBudgetFile(mf6_cbc)
-
     nwt_pump = nwt_cbc.get_data(text="AG WE")
-    mf6_pump = mf6_cbc.get_data(text="MAW")
 
-    mf6_total = []
+    mf6_ag_out = os.path.join(mf6, f"{model}_ag.out")
+    mf6_ag_out = ModflowAgmvr.load_output(mf6_ag_out)
+
+    mf6_ag_out = mf6_ag_out.groupby(by=["pkg", "pid", "kstp"], as_index=False)[["q_from_provider", "q_to_receiver"]].sum()
+    mf6_wells = (mf6_ag_out[mf6_ag_out.pid == 0].q_from_provider.values,
+                 mf6_ag_out[mf6_ag_out.pid == 1].q_from_provider.values)
+
+    mf6_total = mf6_ag_out.q_from_provider.values
     nwt_total = []
     with styles.USGSPlot():
         mpl.rcParams["ytick.labelsize"] = 9
@@ -240,15 +240,12 @@ def compare_model_output(nwt, mf6, model):
         mf6_c = ["skyblue", "darkblue"]
         for wl in (13, 55):
             nwt_well = []
-            mf6_well = []
             for ix, recarray in enumerate(nwt_pump):
                 idx = np.where(recarray["node"] == wl)[0]
                 nwt_well.append(recarray[idx]['q'])
                 nwt_total.append(recarray[idx]['q'][0])
-                idx = np.where(mf6_pump[ix]["node"] == wl)[0]
-                mf6_well.append(mf6_pump[ix][idx]["q"])
-                mf6_total.append(mf6_pump[ix][idx]["q"][0])
 
+            mf6_well = mf6_wells[n - 1]
             ax.plot(range(1, len(nwt_well) + 1), np.abs(nwt_well), color=nwt_c[n - 1], label=f"nwt well {n} irrigation", lw=2)
             ax.plot(range(1, len(mf6_well) + 1), np.abs(mf6_well), color=mf6_c[n - 1], label=f"mf6 MAW {n} irrigation", lw=2.5, ls="--")
             n += 1
@@ -272,39 +269,6 @@ def compare_model_output(nwt, mf6, model):
         plt.show()
 
 
-def inspect_model_output(model_ws, name):
-    mf6_cbc = os.path.join(model_ws, f"{name}.cbc")
-    mf6_cbc = flopy.utils.CellBudgetFile(mf6_cbc)
-    mf6_pump = mf6_cbc.get_data(text="MAW")
-
-    with styles.USGSPlot():
-        mpl.rcParams["ytick.labelsize"] = 9
-        mpl.rcParams["xtick.labelsize"] = 9
-        fig, ax = plt.subplots(figsize=(8, 8))
-        n = 1
-        nwt_c = ["k", "yellow"]
-        mf6_c = ["skyblue", "darkblue"]
-        for wl in (13, 55):
-            mf6_well = []
-            for ix, recarray in enumerate(mf6_pump):
-                idx = np.where(recarray["node"] == wl)[0]
-                mf6_well.append(recarray[idx]['q'][0])
-
-            ax.plot(range(1, len(mf6_well) + 1), np.abs(mf6_well),
-                    color=mf6_c[n - 1], label=f"mf6 MAW {n} irrigation",
-                    lw=2.5, ls="--")
-            n += 1
-
-        styles.heading(ax=ax,
-                       heading="MF6 API AG multi-aquifer well pumping")
-        styles.xlabel(ax=ax, label="Days", fontsize=10)
-        styles.ylabel(ax=ax, label="Applied irrigation, in " + r"$m^{3}$",
-                      fontsize=10)
-        styles.graph_legend(ax=ax, loc=2, fancybox=True, shadow=True,
-                            frameon=True, fontsize=10)
-        plt.show()
-
-
 if __name__ == "__main__":
     # set dll path
     load_existing = False
@@ -323,6 +287,4 @@ if __name__ == "__main__":
         mfag = ModflowAgmvr(sim, ag_type="etdemand", mvr_name="mvr")
         mfag.run_model(dll)
 
-    #
-    inspect_model_output(mf6_ws, model_name)
     compare_model_output(nwt_ws, mf6_ws, model_name)
