@@ -10,7 +10,7 @@ from scipy.stats import linregress
 sws = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(sws, "..", "mf6api_agmvr"))
 from mf6_agmvr import ModflowAgmvr
-from get_mvr_budget import MvrBudget
+
 mpl.use("TKagg")
 
 from math import log10, floor
