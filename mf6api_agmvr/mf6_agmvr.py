@@ -1,6 +1,7 @@
 from modflowapi import ModflowApi
 import numpy as np
 import flopy
+import os
 
 
 class ModflowAgmvr(object):
@@ -79,6 +80,7 @@ class ModflowAgmvr(object):
         self.lak_name = None
         self.uzf_name = None
         self.dis_name = None
+        self.output_filename = os.path.join(self.gwf.model_ws, f"{self.name.lower()}_ag.out")
 
         self.get_pkgs()
 
@@ -116,12 +118,16 @@ class ModflowAgmvr(object):
 
         if self.sim_wells:
             self.well_name = well
+            self.well_output = {}
         if self.sim_maw:
             self.maw_name = maw
+            self.maw_output = {}
         if self.sim_diversions:
             self.sfr_name = sfr
+            self.sfr_output = {}
         if self.sim_lak:
             self.lak_name = lak
+            self.lak_output = {}
 
         if uzf is None:
             raise AssertionError("UZF must be active to simulate AG")
@@ -412,6 +418,8 @@ class ModflowAgmvr(object):
         irrigated_proportion = getattr(self, f"{pkg}_irrigated_proportion")
         irrigation_efficiency = getattr(self, f"{pkg}_irrigation_efficiency")
         irrigated_cells = getattr(self, f"{pkg}_irrigated_cells")
+        pkg_output = getattr(self, f"{pkg}_output")
+        pkg_name = getattr(self, f"{pkg}_name")
 
         if delt < 1:
             crop_aet = crop_pet
@@ -462,6 +470,17 @@ class ModflowAgmvr(object):
                     (np.abs(pumping[well]) * irrigated_proportion[well]) * app_frac_proportion * irrigation_efficiency[well]
 
             mf6.set_value(self.mvr_value_addr, mvr)
+
+            # store output...
+            # kstp, pkg, pid, pet, aet, etdemand, q_from_provider, q_to_reciever
+            stp_output = []
+            for well in active_ix:
+                idx = pkg_mvr_index[well]
+                rec = (kstp + 1, pkg_name, well + 1, crop_pet[well], crop_aet[well], sup[well] + factor[well], np.abs(pumping[well]), np.sum(mvr[idx]))
+                stp_output.append(rec)
+
+            pkg_output[kstp] = stp_output
+            setattr(self, f"{pkg}_output", pkg_output)
 
     def well_demand_etdemand(self, mf6, kstp, delt=1, kiter=1):
         """
@@ -524,6 +543,8 @@ class ModflowAgmvr(object):
         irrigation_efficiency = getattr(self, f"{pkg}_irrigation_efficiency")
         irrigated_cells = getattr(self, f"{pkg}_irrigated_cells")
         evap = getattr(self, f"{pkg}_evap_old").copy()
+        pkg_output = getattr(self, f"{pkg}_output")
+        pkg_name = getattr(self, f"{pkg}_name")
 
         if pkg == "sfr":
             length = mf6.get_value(self.sfr_length_addr)
@@ -567,19 +588,29 @@ class ModflowAgmvr(object):
         dvflw = np.where(qonly >= maxq, maxq, qonly)
         active_ix = np.where(pkg_active)[0]
 
-        if len(active_ix) > 0:
-            diversions = mf6.get_value(self.mvr_value_addr)
-            for provider in active_ix:
-                idx = pkg_mvr_index[provider]
-                app_frac_proportion = (application_fraction[provider] / np.sum(application_fraction[provider])) / (1 / len(idx))
-                div_requested = (dvflw[provider] * irrigated_proportion[provider]) * app_frac_proportion
-                div_inefficient = div_requested * irrigation_efficiency[provider]
-                diversions[idx] = div_inefficient
-                evap[provider] += np.sum(div_requested - div_inefficient) / sarea[provider]
-                self.applied_irrigation[irrigated_cells[provider]] = \
-                    (dvflw[provider] * irrigated_proportion[provider]) * app_frac_proportion
-            mf6.set_value(self.mvr_value_addr, diversions)
-            mf6.set_value(pkg_evap_addr, evap)
+        diversions = mf6.get_value(self.mvr_value_addr)
+        tot_div_requested = np.zeros(maxq.shape)
+        for provider in active_ix:
+            idx = pkg_mvr_index[provider]
+            app_frac_proportion = (application_fraction[provider] / np.sum(application_fraction[provider])) / (1 / len(idx))
+            div_requested = (dvflw[provider] * irrigated_proportion[provider]) * app_frac_proportion
+            tot_div_requested[provider] = np.sum(div_requested)
+            div_inefficient = div_requested * irrigation_efficiency[provider]
+            diversions[idx] = div_inefficient
+            evap[provider] += np.sum(div_requested - div_inefficient) / sarea[provider]
+            self.applied_irrigation[irrigated_cells[provider]] = \
+                (dvflw[provider] * irrigated_proportion[provider]) * app_frac_proportion
+        mf6.set_value(self.mvr_value_addr, diversions)
+        mf6.set_value(pkg_evap_addr, evap)
+
+        stp_output = []
+        for provider in active_ix:
+            idx = pkg_mvr_index[provider]
+            rec = (kstp + 1, pkg_name, provider + 1, crop_pet[provider], crop_aet[provider], pkg_sup[provider], tot_div_requested[provider], np.sum(diversions[idx]))
+            stp_output.append(rec)
+
+        pkg_output[kstp] = stp_output
+        setattr(self, f"{pkg}_output", pkg_output)
 
     def sfr_demand_etdemand(self, mf6, kstp, delt=1, kiter=1):
         """
@@ -659,6 +690,54 @@ class ModflowAgmvr(object):
         # factor = np.where(factor < et_diff, et_diff, factor)
         factor = np.where(factor < 1e-05, 1e-05, factor)
         return factor
+
+    def _write_output(self):
+        """
+        Method for writing AG output to file
+        """
+        with open(self.output_filename, "w") as foo:
+            header = ["kstp", "pkg", "pid", "pet", "aet", "etdemand", "q_from_provider", "q_to_reciever"]
+            hdr_str = "{:>8} {:>10} {:>8} {:>15} {:>15} {:>15} {:>15} {:>15}\n"
+            foo.write(hdr_str.format(*header))
+            if self.sim_wells:
+                self.__write_pkg_output(foo, "well")
+            if self.sim_maw:
+                self.__write_pkg_output(foo, "maw")
+            if self.sim_diversions:
+                self.__write_pkg_output(foo, "sfr")
+            if self.sim_lak:
+                self.__write_pkg_output(foo, "lak")
+
+    def __write_pkg_output(self, fobj, pkg):
+        """
+        Generalized method to write all package outputs
+
+        Parameters
+        ----------
+        fobj : FileObject
+        pkg : str
+            package string ("well", "sfr", "maw", "lak")
+        """
+        fmt_str = "{:>8} {:>10} {:8d} {:15f} {:15f} {:15f} {:15f} {:15f}\n"
+        for _, output in getattr(self, f"{pkg}_output").items():
+            for rec in output:
+                fobj.write(fmt_str.format(*rec))
+
+    @classmethod
+    def load_output(cls, filename):
+        """
+        Method to load Agmvr output into a pandas dataframe
+
+        Parameters:
+        ----------
+        filename : str
+            Agmvr output file path
+        """
+        import pandas as pd
+
+        df = pd.read_csv(filename, delim_whitespace=True)
+        return df
+
 
     def run_model(self, dll):
         """
@@ -755,4 +834,5 @@ class ModflowAgmvr(object):
         except:
             raise RuntimeError()
 
+        self._write_output()
         return success

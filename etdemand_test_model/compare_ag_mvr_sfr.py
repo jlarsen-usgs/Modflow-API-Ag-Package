@@ -299,4 +299,5 @@ if __name__ == "__main__":
         mfag.run_model(dll)
     else:
         gwf = None
+
     compare_model_output(nwt_ws, mf6_ws, "etdemand_div")
