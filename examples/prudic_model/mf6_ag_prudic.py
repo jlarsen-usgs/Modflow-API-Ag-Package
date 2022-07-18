@@ -1,5 +1,4 @@
 import os
-import sys
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
@@ -145,8 +144,8 @@ def build_model(name, sim_ws):
 
     # create uzf package
     nuzfcells = 116
-    ntrailwaves = 100
-    nwavesets = 4
+    ntrailwaves = 15
+    nwavesets = 100
     package_data = []
     cnt = 0
     cid = 0
@@ -353,7 +352,6 @@ def build_model(name, sim_ws):
 
 
 if __name__ == "__main__":
-    print(os.curdir)
     sim_ws = os.path.join("..", "..", "data", "mf6_prudic_ag")
     name = "prudic_ag"
     sim, gwf = build_model(name, sim_ws)
