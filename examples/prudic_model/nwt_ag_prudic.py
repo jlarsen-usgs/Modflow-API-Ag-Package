@@ -13,7 +13,7 @@ def build_model(name, model_ws):
     data_pth = os.path.join(".", "arrays")
 
     # build NWT solver
-    ml = flopy.modflow.ModflowNwt(
+    nwt = flopy.modflow.ModflowNwt(
         ml,
         headtol=1e-04,
         fluxtol=1.0,
@@ -49,7 +49,7 @@ def build_model(name, model_ws):
     nper = 49
     itmuni, lenuni = 4, 1
     top = np.loadtxt(os.path.join(data_pth, "top.txt"), dtype=float)
-    botm = np.loadtxt(os.path.join(data_pth, "botm.txt"), dtype=float)
+    botm = np.loadtxt(os.path.join(data_pth, "bottom.txt"), dtype=float)
     perlen, nstp, tsmult, steady = list(), list(), list(), list()
     for per in range(nper):
         if per == 0:
@@ -145,7 +145,7 @@ def build_model(name, model_ws):
         ipakcb=102,
         ntrail2=ntrail,
         nsets=nsets,
-        surdep=surfdep,
+        surfdep=surfdep,
         iuzfbnd=uzfbnd,
         irunbnd=irunbnd,
         vks=4.6e-05,
@@ -161,7 +161,9 @@ def build_model(name, model_ws):
     )
 
     # build SFR package
-    reach_data = pd.read_csv(os.path.join(data_pth, "reach_data.txt"))
+    reach_data = pd.read_csv(
+        os.path.join(data_pth, "reach_data.txt"), delim_whitespace=True
+    )
     nstrm = len(reach_data)
     nss = len(reach_data.seg.unique())
     const = 86400
@@ -169,7 +171,12 @@ def build_model(name, model_ws):
 
     reach_data = reach_data.to_list()
     # todo: segment_data SFR
+    print('break')
+    # todo: AG package
 
-    # todo: AG package 
+if __name__ == "__main__":
+    model_ws = os.path.join("..", "..", "data", "nwt_prudic_ag")
+    name = "prudic_ag"
+    build_model(name, model_ws)
 
 
