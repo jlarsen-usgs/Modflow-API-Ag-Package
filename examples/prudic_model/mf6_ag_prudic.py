@@ -152,6 +152,7 @@ def build_model(name, sim_ws):
     id = idomain.ravel()
     finf = np.loadtxt(os.path.join(data_pth, "finf.txt"), dtype=float) * 1e-10
     finf = finf.ravel()
+    pet = np.loadtxt(os.path.join(data_pth, "pet.txt"), dtype=float)
     for i in range(nrow):
         for j in range(ncol):
             vks = 4.6e-05
@@ -165,17 +166,17 @@ def build_model(name, sim_ws):
             cnt += 1
 
     period_data = {}
-    for i in range(nper):
+    for per in range(nper):
         spd = []
         cnt = 0
         for i in range(nrow * ncol):
             if id[i] == 0:
                 continue
-            rec = (cnt, finf[i], 1e-08, 0.5, 0.2, -1.1, -75, 1.0)
+            rec = (cnt, finf[i], pet[per], 0.5, 0.2, -1.1, -75, 1.0)
             spd.append(rec)
             cnt += 1
 
-        period_data[i] = spd
+        period_data[per] = spd
 
     uzf = flopy.mf6.ModflowGwfuzf(
         gwf,

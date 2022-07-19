@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import flopy
+import pandas as pd
 
 
 def build_model(name, model_ws):
@@ -122,11 +123,12 @@ def build_model(name, model_ws):
     # build UZF package
     irunbnd = np.loadtxt(os.path.join(data_pth, "irunbnd.txt"), dtype=int)
     finf = np.loadtxt(os.path.join(data_pth, "finf.txt"), dtype=float)
+    pet = np.loadtxt(os.path.join(data_pth, "pet.txt"), dtype=float)
+    pet = {i: x for i, x in enumerate(pet)}
     ntrail = 15
     nsets = 100
     surfdep = 1.0
     uzfbnd = np.where(ibound != 0, 1, 0)
-    # todo: create a PET array
 
     options = flopy.utils.OptionBlock("", flopy.modflow.ModflowUzf1)
     options.specifythti = True
@@ -153,8 +155,21 @@ def build_model(name, model_ws):
         thtr=0.2,
         thti=0.2,
         finf={i: finf for i in range(nper)},
-        pet=None,
+        pet=pet,
         extdp=0.5,
         extwc=0.2,
-
     )
+
+    # build SFR package
+    reach_data = pd.read_csv(os.path.join(data_pth, "reach_data.txt"))
+    nstrm = len(reach_data)
+    nss = len(reach_data.seg.unique())
+    const = 86400
+    dleak = 1e-06
+
+    reach_data = reach_data.to_list()
+    # todo: segment_data SFR
+
+    # todo: AG package 
+
+
