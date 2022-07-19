@@ -164,13 +164,42 @@ def build_model(name, model_ws):
     reach_data = pd.read_csv(
         os.path.join(data_pth, "reach_data.txt"), delim_whitespace=True
     )
+    reach_data.k -= 1
+    reach_data.i -= 1
+    reach_data.j -= 1
+
     nstrm = len(reach_data)
     nss = len(reach_data.seg.unique())
     const = 86400
     dleak = 1e-06
+    isfropt = 2
+    reachinput = True
+    nstrail = 15
+    isuzn = 1
+    nsfrsets = 30
 
-    reach_data = reach_data.to_list()
+    reach_data = reach_data.values.tolist()
+    recarray = flopy.modflow.ModflowSfr2.get_empty_reach_data(len(reach_data))
+    for ix, rec in enumerate(reach_data):
+        node = ml.modelgrid.get_node((rec[0], rec[1], rec[2]))[0]
+        new_rec = (node, rec[0], rec[1], rec[2], rec[3], rec[4], rec[5], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        recarray[ix] = new_rec
+    reach_data = recarray
     # todo: segment_data SFR
+
+    seg_data = flopy.modflow.ModflowSfr2.get_empty_segment_data(nss)
+    records =[
+        (0, 1, 1, 0, 0, 25.0, 0, 0, 0, 0.03, 0, 0, 0, 0, 0, 0.00003, 3.0, 1093.048, 12, 0, 0, 0, 0, 0, 0.00003, 3.0, 1077.408, 12, 0, 0, 0, 0, 0),
+        (1, 1, 5, 0, 0, 0.00, 0, 0, 0, 0.03, 0, 0, 0, 0, 0, 0.00003, 3.0, 1071.934, 12, 0, 0, 0, 0, 0, 0.00003, 3.0, 1052.359, 12, 0, 0, 0, 0, 0),
+        (2, 1, 4, 0, 0, 0.00, 0, 0, 0, 0.03, 0, 0, 0, 0, 0, 0.00003, 3.0, 1073.636, 10, 0, 0, 0, 0, 0, 0.00003, 3.0, 1060.545, 10, 0, 0, 0, 0, 0),
+        (3, 1, 4, 0, 0, 10.0, 0, 0, 0, 0.03, 0, 0, 0, 0, 0, 0.00003, 3.0, 1077.727, 10, 0, 0, 0, 0, 0, 0.00003, 3.0, 1063.182, 10, 0, 0, 0, 0, 0),
+        (4, 1, 5, 0, 0, 0.00, 0, 0, 0, 0.03, 0, 0, 0, 0, 0, 0.00003, 3.0, 1058.000, 15, 0, 0, 0, 0, 0, 0.00003, 3.0, 1046.250, 15, 0, 0, 0, 0, 0),
+        (5, 1, 7, 0, 0, 0.00, 0, 0, 0, 0.03, 0, 0, 0, 0, 0, 0.00003, 3.0, 1042.727, 12, 0, 0, 0, 0, 0, 0.00003, 3.0, 1025.909, 12, 0, 0, 0, 0, 0),
+        (6, 1, 7, 0, 0, 150., 0, 0, 0, 0.03, 0, 0, 0, 0, 0, 0.00003, 3.0, 1037.581, 55, 0, 0, 0, 0, 0, 0.00003, 3.0, 1027.419, 55, 0, 0, 0, 0, 0),
+        (7, 1, 0, 0, 0, 0.00, 0, 0, 0, 0.03, 0, 0, 0, 0, 0, 0.00003, 3.0, 1021.875, 40, 0, 0, 0, 0, 0, 0.00003, 3.0, 991.8750, 40, 0, 0, 0, 0, 0),
+        (8, 1, 0, 1, 0, 100., 0, 0, 0, 0.03, 0, 0, 0, 0, 0, 0.00003, 3.0, 1051.000, 4., 0, 0, 0, 0, 0, 0.00003, 3.0, 1050.000, 4., 0, 0, 0, 0, 0)
+    ]
+
     print('break')
     # todo: AG package
 

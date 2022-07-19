@@ -1,4 +1,4 @@
-    k    i    j  seg  rch   elev
+    k    i    j  seg  rch   rlen
     1    1    1    1    1   4500. 
     1    2    2    1    2   7000.      
     1    3    3    1    3   6000.      
