@@ -3,6 +3,10 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import flopy
+import sys
+sws = os.path.abspath(os.path.dirname(__file__))
+sys.path.append(os.path.join(sws, "..", "..", "mf6api_agmvr"))
+from mf6_agmvr import ModflowAgmvr
 
 
 def build_model(name, sim_ws):
@@ -160,7 +164,7 @@ def build_model(name, sim_ws):
                 cid += 1
                 continue
 
-            rec = (cnt, (0, i, j), 1, 0, 1.0, vks, 0.2, 0.2, 0.38, 7.5)
+            rec = (cnt, (0, i, j), 1, 0, 1.0, vks, 0.2, 0.38, 0.2, 7.5)
             package_data.append(rec)
             cid += 1
             cnt += 1
@@ -276,7 +280,7 @@ def build_model(name, sim_ws):
     period_data = {}
     for per in range(nper):
         sfr_spd = [
-            [0, "inflow", 25.0],
+            [0, "inflow", 35.0],
             [15, "inflow", 10.0],
             [27, "inflow", 150.0],
             [3, "diversion", 0, 10.0],
@@ -298,9 +302,10 @@ def build_model(name, sim_ws):
     sfr = flopy.mf6.ModflowGwfsfr(
         gwf,
         nreaches=len(sfr_pakdata),
-        connection_data=sfr_conn,
+        packagedata=sfr_pakdata,
+        connectiondata=sfr_conn,
         diversions=sfr_div,
-        period_data=period_data,
+        perioddata=period_data,
         unit_conversion=None,
         save_flows=True,
         mover=True
@@ -324,7 +329,7 @@ def build_model(name, sim_ws):
     period_data = {}
     # total SFR diversion amt is 100
     div_p_cell = 100 / 6
-    sfr_reach = 22
+    sfr_reach = 8
     uzfcells = (37, 38, 47, 48, 55, 56)
     for per in range(nper):
         spd = []
@@ -353,6 +358,11 @@ def build_model(name, sim_ws):
 
 
 if __name__ == "__main__":
+    dll = os.path.join("..", "..", "bin", "libmf6.dll")
     sim_ws = os.path.join("..", "..", "data", "mf6_prudic_ag")
     name = "prudic_ag"
     sim, gwf = build_model(name, sim_ws)
+
+    mfag = ModflowAgmvr(sim, ag_type="etdemand", mvr_name="mvr")
+    mfag.run_model(dll, develop=True)
+

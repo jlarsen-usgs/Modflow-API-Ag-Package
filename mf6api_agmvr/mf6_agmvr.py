@@ -191,11 +191,17 @@ class ModflowAgmvr(object):
         self.applied_irrigation = np.zeros(self.uzf_shape)
 
         if self.sim_wells:
+            self.wellq_for_mvr_addr = mf6.get_var_address(
+                "QFORMVR", self.name, self.well_name.upper()
+            )
             self.well_addr = mf6.get_var_address(
                 "BOUND", self.name, self.well_name.upper()
             )
 
         if self.sim_maw:
+            self.mawq_for_mvr_addr = mf6.get_var_address(
+                "QFORMVR", self.name, self.maw_name.upper()
+            )
             self.maw_addr = mf6.get_var_address(
                 "RATE", self.name, self.maw_name.upper()
             )
@@ -504,6 +510,8 @@ class ModflowAgmvr(object):
             mf6.set_value(self.mvr_value_addr, mvr)
 
             # store output...
+            # todo: need to figure out a way to adjust output by available q
+            #   potentially update output from pumping after solve....
             stp_output = []
             for well in active_ix:
                 idx = pkg_mvr_index[well]
@@ -579,8 +587,10 @@ class ModflowAgmvr(object):
         ) = self._set_etdemand_variables(mf6, pkg)
 
         pkgq_to_mvr_addr = getattr(self, f"{pkg}q_to_mvr_addr")
+        pkgq_for_mvr_addr = getattr(self, f"{pkg}q_for_mvr_addr")
         maxq = getattr(self, f"{pkg}_maxq")
         qtomvr = mf6.get_value(pkgq_to_mvr_addr)
+        qformvr = mf6.get_value(pkgq_for_mvr_addr)
         pkg_active = getattr(self, f"{pkg}_active")
         pkg_mvr_index = getattr(self, f"{pkg}_mvr_index")
         pkg_evap_addr = getattr(self, f"{pkg}_evap_addr")
@@ -636,6 +646,7 @@ class ModflowAgmvr(object):
         setattr(self, f"{pkg}aetold", pkg_aetold)
 
         dvflw = np.where(qonly >= maxq, maxq, qonly)
+        dvflw = np.where(dvflw > qformvr, qformvr, dvflw)
         active_ix = np.where(pkg_active)[0]
 
         diversions = mf6.get_value(self.mvr_value_addr)
@@ -868,7 +879,7 @@ class ModflowAgmvr(object):
         end_time = mf6.get_end_time()
         max_iter = mf6.get_value(self.maxiter_addr)
 
-        kper = 0
+        kperold = 0
         kstp = 0
         while current_time < end_time:
             delt = current_time - prev_time
@@ -876,11 +887,12 @@ class ModflowAgmvr(object):
             mf6.prepare_time_step(dt)
             kiter = 0
 
-            if current_time in self.totim or current_time == 0.0:
+            kper = mf6.get_value(mf6.get_var_address("KPER", "TDIS"))[0] - 1
+            if kper != kperold or current_time == 0.0:
                 if current_time == 0:
                     pass
                 else:
-                    kper += 1
+                    kperold += 1
 
                 self.set_stress_period_data(mf6, kper)
 

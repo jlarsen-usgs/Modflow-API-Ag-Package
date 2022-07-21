@@ -7,8 +7,10 @@ import pandas as pd
 
 
 def build_model(name, model_ws):
+    exe_name = os.path.join("..", "..", "bin", "mfnwt")
+
     ml = flopy.modflow.Modflow(
-        name, version="mfnwt", exe_name="mfnwt", model_ws=model_ws
+        name, version="mfnwt", exe_name=exe_name, model_ws=model_ws
     )
     data_pth = os.path.join(".", "arrays")
 
@@ -122,7 +124,7 @@ def build_model(name, model_ws):
 
     # build UZF package
     irunbnd = np.loadtxt(os.path.join(data_pth, "irunbnd.txt"), dtype=int)
-    finf = np.loadtxt(os.path.join(data_pth, "finf.txt"), dtype=float)
+    finf = np.loadtxt(os.path.join(data_pth, "finf.txt"), dtype=float) * 1e-10
     pet = np.loadtxt(os.path.join(data_pth, "pet.txt"), dtype=float)
     pet = {i: x for i, x in enumerate(pet)}
     ntrail = 15
@@ -226,7 +228,8 @@ def build_model(name, model_ws):
              "SUPPLEMENTAL_WELL 6 1 " \
              "IRRIGATION_WELL 6 1 " \
              "maxwells 6 " \
-             "timeseries_diversion"
+             "timeseries_diversion " \
+             "WELLCBC 102"
 
     options = flopy.utils.OptionBlock(optstr.lower(), flopy.modflow.ModflowAg)
 
@@ -294,16 +297,28 @@ def build_model(name, model_ws):
         supwell=supwell
     )
 
+    stress_period_data = {}
+    for kper, nts in enumerate(nstp):
+        for ts in range(nts):
+            stress_period_data[(kper, ts)] = ["save head", "save budget"]
+
+    oc = flopy.modflow.ModflowOc(
+        ml,
+        stress_period_data=stress_period_data
+    )
+
     ml.write_input()
     nam = os.path.join(model_ws, f"{name}.nam")
 
     with open(nam, "a") as foo:
         foo.write(f"DATA             107  {name}.diversion9.txt")
 
+    return ml
+
 
 if __name__ == "__main__":
     model_ws = os.path.join("..", "..", "data", "nwt_prudic_ag")
     name = "prudic_ag"
-    build_model(name, model_ws)
+    ml = build_model(name, model_ws)
 
-
+    ml.run_model()
