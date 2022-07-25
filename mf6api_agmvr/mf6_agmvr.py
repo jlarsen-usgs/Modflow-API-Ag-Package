@@ -274,17 +274,25 @@ class ModflowAgmvr(object):
 
         mvr = mf6.get_value(self.mvr_value_addr)
         pkg_name = self.__dict__[f"{pkg}_name"]
-        recarray = self.mvr.perioddata.data[kper]
-        irridx = np.where(recarray["pname1"] == pkg_name)[0]
-        if len(irridx) > 0:
-            if pkg_name in ("sfr", "lak"):
-                mvr[irridx] = 0
+        if kper in self.mvr.perioddata.data:
+            recarray = self.mvr.perioddata.data[kper]
+            irridx = np.where(recarray["pname1"] == pkg_name)[0]
+            if len(irridx) > 0:
+                if pkg_name in ("sfr", "lak"):
+                    mvr[irridx] = 0
 
-            irrids = sorted(np.unique(recarray[irridx]["id1"]))
+                irrids = sorted(np.unique(recarray[irridx]["id1"]))
+            else:
+                irrids = []
+
+            mf6.set_value(self.mvr_value_addr, mvr)
         else:
             irrids = []
-
-        mf6.set_value(self.mvr_value_addr, mvr)
+            recarray = np.recarray((0,), dtype=[("id1", int),
+                                                ("pname1", object),
+                                                ("id2", int),
+                                                ("pname2", object),
+                                                ("value", float)])
 
         active = np.zeros(max_q.shape, dtype=int)
         active[irrids] = 1
@@ -405,7 +413,7 @@ class ModflowAgmvr(object):
                 app_frac[ix] = np.mean(application_fraction[ix])
                 prev_applied[ix] = np.sum(self.applied_irrigation[crop_nodes])
 
-        crop_aet += crop_gwet
+        crop_aet = np.where(np.isnan(crop_gwet), crop_aet, crop_aet + crop_gwet)
         if pkg in ("well", "maw"):
             crop_aet = np.where(crop_vks < 1e-30, crop_pet, crop_aet)
 
@@ -513,10 +521,13 @@ class ModflowAgmvr(object):
             # todo: need to figure out a way to adjust output by available q
             #   potentially update output from pumping after solve....
             stp_output = []
+            # kkstp = mf6.get_value(mf6.get_var_address("KSTP", "TDIS"))[0]
+            # kper = mf6.get_value(mf6.get_var_address("KPER", "TDIS"))[0]
             for well in active_ix:
                 idx = pkg_mvr_index[well]
                 rec = (
-                    kstp + 1,
+                    kstp,
+                    0,
                     pkg_name,
                     well + 1,
                     crop_pet[well],
@@ -673,10 +684,13 @@ class ModflowAgmvr(object):
         mf6.set_value(pkg_evap_addr, evap)
 
         stp_output = []
+        # kkstp = mf6.get_value(mf6.get_var_address("KSTP", "TDIS"))[0]
+        # kper = mf6.get_value(mf6.get_var_address("KPER", "TDIS"))[0]
         for provider in active_ix:
             idx = pkg_mvr_index[provider]
             rec = (
-                kstp + 1,
+                kstp,
+                0,
                 pkg_name,
                 provider + 1,
                 crop_pet[provider],
@@ -774,6 +788,7 @@ class ModflowAgmvr(object):
         with open(self.output_filename, "w") as foo:
             header = [
                 "kstp",
+                "kper",
                 "pkg",
                 "pid",
                 "pet",
@@ -782,7 +797,7 @@ class ModflowAgmvr(object):
                 "q_from_provider",
                 "q_to_receiver",
             ]
-            hdr_str = "{:>8} {:>10} {:>8} {:>15} {:>15} {:>15} {:>15} {:>15}\n"
+            hdr_str = "{:>8} {:>8} {:>10} {:>8} {:>15} {:>15} {:>15} {:>15} {:>15}\n"
             foo.write(hdr_str.format(*header))
             if self.sim_wells:
                 self.__write_pkg_output(foo, "well")
@@ -803,7 +818,7 @@ class ModflowAgmvr(object):
         pkg : str
             package string ("well", "sfr", "maw", "lak")
         """
-        fmt_str = "{:>8} {:>10} {:8d} {:15f} {:15f} {:15f} {:15f} {:15f}\n"
+        fmt_str = "{:>8} {:>8} {:>10} {:8d} {:15f} {:15f} {:15f} {:15f} {:15f}\n"
         for _, output in getattr(self, f"{pkg}_output").items():
             for rec in output:
                 fobj.write(fmt_str.format(*rec))
