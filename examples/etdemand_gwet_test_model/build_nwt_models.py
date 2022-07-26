@@ -5,6 +5,7 @@ import pandas as pd
 from math import log10, floor
 
 sws = os.path.abspath(os.path.dirname(__file__))
+exe_name = os.path.join(sws, "..", "..", "bin", "mfnwt")
 
 
 def round_to_n(x, n):
@@ -20,7 +21,7 @@ def build_nwt_test_models(name):
     ml = flopy.modflow.Modflow(
         name,
         version="mfnwt",
-        exe_name="mfnwt",
+        exe_name=exe_name,
         model_ws=model_ws
     )
 

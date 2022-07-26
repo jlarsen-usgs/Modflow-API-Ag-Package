@@ -5,9 +5,11 @@ import matplotlib.pyplot as plt
 import flopy
 import pandas as pd
 
+sws = os.path.abspath(os.path.dirname(__file__))
+exe_name = os.path.join(sws, "..", "..", "bin", "mfnwt")
+
 
 def build_model(name, model_ws):
-    exe_name = os.path.join("..", "..", "bin", "mfnwt")
 
     ml = flopy.modflow.Modflow(
         name, version="mfnwt", exe_name=exe_name, model_ws=model_ws
