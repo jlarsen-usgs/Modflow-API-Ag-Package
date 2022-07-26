@@ -60,8 +60,9 @@ jobs:
       shell: bash -l {0}
       run: |  
         pip install modflowapi
+        cd data
         pip install https://github.com/modflowpy/flopy/zipball/develop
-        
+        cd ..
     
     - name: Setup symbolic link to gfortran on Linux
       if: runner.os == 'Linux'
