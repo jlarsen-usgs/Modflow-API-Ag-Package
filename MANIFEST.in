@@ -1,2 +1,2 @@
 include bin/*
-include dfn/*
+include mf6api_agmvr/dfn/*
