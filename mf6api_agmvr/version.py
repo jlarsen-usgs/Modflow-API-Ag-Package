@@ -2,7 +2,7 @@
 major = 1
 minor = 0
 micro = 0
-__version__ = f"{major}{minor}{micro}"
+__version__ = f"{major}.{minor}.{micro}"
 
 __pakname__ = "mf6api_agmvr"
 
