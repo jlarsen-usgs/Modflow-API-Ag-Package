@@ -4,8 +4,7 @@ import sys
 import pandas as pd
 import numpy as np
 import flopy
-sys.path.append(os.path.join("..", "mf6api_agmvr"))
-from mf6_agmvr import ModflowAgmvr
+from mf6api_agmvr import ModflowAgmvr
 import common
 
 

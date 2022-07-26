@@ -4,9 +4,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import flopy
 import sys
-sws = os.path.abspath(os.path.dirname(__file__))
-sys.path.append(os.path.join(sws, "..", "..", "mf6api_agmvr"))
-from mf6_agmvr import ModflowAgmvr
+from mf6api_agmvr import ModflowAgmvr
 
 
 def build_model(name, sim_ws):

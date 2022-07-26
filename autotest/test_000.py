@@ -5,8 +5,7 @@ import shutil
 
 
 def test_import_agmvr():
-    sys.path.append(os.path.join("..", "mf6api_agmvr"))
-    from mf6_agmvr import ModflowAgmvr
+    from mf6api_agmvr import ModflowAgmvr
 
 
 def test_setup():
