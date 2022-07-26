@@ -59,8 +59,9 @@ jobs:
     - name: Install flopy and ModflowApi
       shell: bash -l {0}
       run: |  
-        pip install https://github.com/modflowpy/flopy/zipball/develop
         pip install modflowapi
+        pip install https://github.com/modflowpy/flopy/zipball/develop
+        
     
     - name: Setup symbolic link to gfortran on Linux
       if: runner.os == 'Linux'
