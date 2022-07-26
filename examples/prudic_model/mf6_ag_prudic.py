@@ -361,11 +361,10 @@ def build_model(name, sim_ws):
 
 
 if __name__ == "__main__":
-    dll = os.path.join("..", "..", "bin", "libmf6.dll")
     sim_ws = os.path.join("..", "..", "data", "mf6_prudic_ag")
     name = "prudic_ag"
     sim, gwf = build_model(name, sim_ws)
 
     mfag = ModflowAgmvr(sim, ag_type="etdemand", mvr_name="mvr")
-    mfag.run_model(dll, develop=True)
+    mfag.run_model(develop=True)
 

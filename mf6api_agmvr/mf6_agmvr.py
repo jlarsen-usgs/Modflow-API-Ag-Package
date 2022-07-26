@@ -862,7 +862,7 @@ class ModflowAgmvr(object):
             for i in output_vars:
                 foo.write(f"{i}\n")
 
-    def run_model(self, dll, **kwargs):
+    def run_model(self, dll=None, **kwargs):
         """
         Method to run MODFLOW6 with the MF6 API AG package
 
@@ -877,6 +877,10 @@ class ModflowAgmvr(object):
                 BMI for a given model
         """
         develop = kwargs.pop("develop", False)
+
+        if dll is None:
+            sws = os.path.abspath(os.path.dirname(__file__))
+            dll = os.path.join(sws, "..", "bin", "libmf6.dll")
 
         mf6 = ModflowApi(
             dll,

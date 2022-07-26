@@ -364,7 +364,7 @@ def compare_model_output(nwt, mf6, model):
 if __name__ == "__main__":
     load_existing = False
     run_model = True
-    dll = os.path.join("..", "..", "modflow-bmi", "libmf6.dll")
+    dll = os.path.join("..", "..", "bin", "libmf6.dll")
     mf6_ws = os.path.join(sws, "..", "..", "data", "mf6_agmvr_test_problems")
     nwt_ws = os.path.join(sws, "..", "..", "data", "nwt_etdemand_gwet_test_problems")
     if run_model:
