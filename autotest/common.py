@@ -30,3 +30,7 @@ def dll_loc():
 
 def nwt_output_path():
     return os.path.join("..", "data", "nwt_etdemand_test_problems")
+
+
+def nwt_prudic_output_path():
+    return os.path.join("..", "data", "nwt_prudic_ag")

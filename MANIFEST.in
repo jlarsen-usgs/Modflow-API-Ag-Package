@@ -1,2 +1,3 @@
 include bin/*
 include mf6api_agmvr/dfn/*
+include examples/*
