@@ -19,7 +19,7 @@ class ModflowAgmvr(object):
         short name for the Modflow6 MVR package. Ex. "mvr_0"
     """
 
-    def __init__(self, sim, ag_type, mvr_name):
+    def __init__(self, sim, ag_type="etdemand", mvr_name="mvr"):
         self.sim = sim
         name = list(sim.model_names)[0]
         self.name = name.upper()
@@ -155,6 +155,10 @@ class ModflowAgmvr(object):
                 break
 
         self.maxiter_addr = mf6.get_var_address("MXITER", f"SLN_{sln_grp}")
+        self.head_addr = mf6.get_var_address("X", self.name)
+        self.botm_addr = mf6.get_var_address(
+            "BOT", self.name, self.dis_name.upper()
+        )
 
         self.area_addr = mf6.get_var_address(
             "UZFAREA", self.name, self.uzf_name.upper()
@@ -196,6 +200,10 @@ class ModflowAgmvr(object):
             )
             self.well_addr = mf6.get_var_address(
                 "BOUND", self.name, self.well_name.upper()
+            )
+
+            self.well_nodelist = mf6.get_var_address(
+                "NODELIST", self.name, self.well_name.upper()
             )
 
         if self.sim_maw:
@@ -397,6 +405,13 @@ class ModflowAgmvr(object):
         maxq = getattr(self, f"{pkg}_maxq")
         application_fraction = getattr(self, f"{pkg}_application_fraction")
         irrigated_cells = getattr(self, f"{pkg}_irrigated_cells")
+        nodelist = None
+        gw_avail = None
+        if pkg == "well":
+            nodelist = mf6.get_value(self.well_nodelist)
+            head = mf6.get_value(self.head_addr)
+            botm = mf6.get_value(self.botm_addr)
+            gw_avail = np.zeros(maxq.shape)
 
         crop_vks = np.zeros(maxq.shape)
         crop_pet = np.zeros(maxq.shape)
@@ -412,12 +427,15 @@ class ModflowAgmvr(object):
                 crop_gwet[ix] = np.sum(gwet[crop_nodes])
                 app_frac[ix] = np.mean(application_fraction[ix])
                 prev_applied[ix] = np.sum(self.applied_irrigation[crop_nodes])
+                if pkg == "well":
+                    node = nodelist[ix]
+                    gw_avail[ix] = (head[node] - botm[node]) * area[node]
 
         crop_aet = np.where(np.isnan(crop_gwet), crop_aet, crop_aet + crop_gwet)
         if pkg in ("well", "maw"):
             crop_aet = np.where(crop_vks < 1e-30, crop_pet, crop_aet)
 
-        return crop_pet, crop_aet, crop_vks, app_frac, prev_applied
+        return crop_pet, crop_aet, crop_vks, app_frac, prev_applied, gw_avail
 
     def _gw_demand_etdemand(self, mf6, kstp, delt, kiter, pkg):
         """
@@ -439,6 +457,7 @@ class ModflowAgmvr(object):
             crop_vks,
             app_frac,
             prev_applied,
+            gw_avail
         ) = self._set_etdemand_variables(mf6, pkg)
 
         maxq = getattr(self, f"{pkg}_maxq")
@@ -483,6 +502,9 @@ class ModflowAgmvr(object):
             qonly = np.where(qonly < 0, 0, qonly)
 
         pumping = np.where(qonly > maxq, -1 * maxq, -1 * qonly)
+        if gw_avail is not None:
+            # adjustment for well demand based on gw availability
+            pumping = np.where(np.abs(pumping) > gw_avail, -1 * gw_avail, pumping)
         pumping = np.where(np.abs(pumping) <= 1e-10, 0, pumping)
 
         setattr(self, f"{pkg}sup", np.abs(pumping))
@@ -518,16 +540,15 @@ class ModflowAgmvr(object):
             mf6.set_value(self.mvr_value_addr, mvr)
 
             # store output...
-            # todo: need to figure out a way to adjust output by available q
-            #   potentially update output from pumping after solve....
             stp_output = []
-            # kkstp = mf6.get_value(mf6.get_var_address("KSTP", "TDIS"))[0]
-            # kper = mf6.get_value(mf6.get_var_address("KPER", "TDIS"))[0]
+            kkstp = mf6.get_value(mf6.get_var_address("KSTP", "TDIS"))[0]
+            kper = mf6.get_value(mf6.get_var_address("KPER", "TDIS"))[0]
             for well in active_ix:
                 idx = pkg_mvr_index[well]
                 rec = (
                     kstp,
-                    0,
+                    kper,
+                    kkstp,
                     pkg_name,
                     well + 1,
                     crop_pet[well],
@@ -595,6 +616,7 @@ class ModflowAgmvr(object):
             crop_vks,
             app_frac,
             prev_applied,
+            gw_avail
         ) = self._set_etdemand_variables(mf6, pkg)
 
         pkgq_to_mvr_addr = getattr(self, f"{pkg}q_to_mvr_addr")
@@ -684,13 +706,14 @@ class ModflowAgmvr(object):
         mf6.set_value(pkg_evap_addr, evap)
 
         stp_output = []
-        # kkstp = mf6.get_value(mf6.get_var_address("KSTP", "TDIS"))[0]
-        # kper = mf6.get_value(mf6.get_var_address("KPER", "TDIS"))[0]
+        kkstp = mf6.get_value(mf6.get_var_address("KSTP", "TDIS"))[0]
+        kper = mf6.get_value(mf6.get_var_address("KPER", "TDIS"))[0]
         for provider in active_ix:
             idx = pkg_mvr_index[provider]
             rec = (
                 kstp,
-                0,
+                kper,
+                kkstp,
                 pkg_name,
                 provider + 1,
                 crop_pet[provider],
@@ -789,6 +812,7 @@ class ModflowAgmvr(object):
             header = [
                 "kstp",
                 "kper",
+                "stp",
                 "pkg",
                 "pid",
                 "pet",
@@ -797,7 +821,7 @@ class ModflowAgmvr(object):
                 "q_from_provider",
                 "q_to_receiver",
             ]
-            hdr_str = "{:>8} {:>8} {:>10} {:>8} {:>15} {:>15} {:>15} {:>15} {:>15}\n"
+            hdr_str = "{:>8} {:>8} {:>8} {:>10} {:>8} {:>15} {:>15} {:>15} {:>15} {:>15}\n"
             foo.write(hdr_str.format(*header))
             if self.sim_wells:
                 self.__write_pkg_output(foo, "well")
@@ -818,7 +842,7 @@ class ModflowAgmvr(object):
         pkg : str
             package string ("well", "sfr", "maw", "lak")
         """
-        fmt_str = "{:>8} {:>8} {:>10} {:8d} {:15f} {:15f} {:15f} {:15f} {:15f}\n"
+        fmt_str = "{:>8} {:>8} {:>8} {:>10} {:8d} {:15f} {:15f} {:15f} {:15f} {:15f}\n"
         for _, output in getattr(self, f"{pkg}_output").items():
             for rec in output:
                 fobj.write(fmt_str.format(*rec))
