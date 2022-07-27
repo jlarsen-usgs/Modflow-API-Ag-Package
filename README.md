@@ -4,14 +4,17 @@
 This repository contains the ModflowAgmvr class that interfaces with the modflowapi to simulate
 irrigated agriculture with Modflow6. 
 
+## Installing ModflowAgmr
+```
+pip install https://github.com/jlarsen-usgs/modflowapi_Agmvr/zipball/master
+```
+
 ## Importing ModflowAgmvr
 From the base of this repository: 
 
 ```python
-import sys
-sys.path.append("mf6api_agmvr")
-
 from mf6_agmvr import ModflowAgmvr
+
 ```
 
 ## Software requirements
