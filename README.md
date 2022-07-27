@@ -6,7 +6,7 @@ irrigated agriculture with Modflow6.
 
 ## Installing ModflowAgmr
 ```
-pip install https://github.com/jlarsen-usgs/modflowapi_Agmvr/zipball/main
+pip install https://github.com/jlarsen-usgs/modflowapi_Agmvr/archive/refs/heads/main.zip
 ```
 
 ## Importing ModflowAgmvr
