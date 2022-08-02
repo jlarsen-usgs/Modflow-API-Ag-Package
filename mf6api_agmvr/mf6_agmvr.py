@@ -903,8 +903,15 @@ class ModflowAgmvr(object):
         develop = kwargs.pop("develop", False)
 
         if dll is None:
+            import platform
+            if platform.system().lower() == "linux":
+                dll_name = "libmf6.so"
+            elif platform.system().lower() == "darwin":
+                dll_name = "libmf6.dylib"
+            else:
+                dll_name = "libmf6.dll"
             sws = os.path.abspath(os.path.dirname(__file__))
-            dll = os.path.join(sws, "..", "bin", "libmf6.dll")
+            dll = os.path.join(sws, "..", "bin", dll_name)
 
         mf6 = ModflowApi(
             dll,
