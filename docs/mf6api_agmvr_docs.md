@@ -41,8 +41,8 @@ unsupported package type.
 The AGMVR Package is based on the calculation of irrigation demand and is 
 limited by the available water that can be moved from a provider to receiver 
 nodes. Irrigation demand is calculated by minimizing the difference between 
-potential crop evapotranspiration ( $ET_o K_c$ ) and actual crop evapotranspiration 
-($ET_a$). The total volume of water demanded and consumed by a given crop under 
-efficient conditions ($Q_ET$) is calculated using:
+potential crop evapotranspiration $\left( ET_o K_c \right)$ and actual crop evapotranspiration 
+( $ET_a$ ). The total volume of water demanded and consumed by a given crop under 
+efficient conditions ( $Q_ET$ ) is calculated using:
 
 
