@@ -140,3 +140,53 @@ will be specified for any stress period
 
 maxpackages — integer value specifying the maximum number of unique packages that 
 are included in this agricultural water mover package
+
+#### Block: PACKAGES
+pname — the name of the package that may be included in a subsequent stress 
+period block. The package name is assigned in the name file for the groundwater 
+flow model. Package names are optionally provided in the name file. If they are 
+not provided by the user, then packages are assigned a default value, which is 
+the package acronym followed by a hyphen and the package number. For example, 
+the first WELL Package is named WEL-1.
+
+#### Block: PERIOD
+iper — integer value specifying the stress period number for which the data 
+specified in the PERIOD block apply. IPER must be less than or equal to NPER in 
+the TDIS package and greater than zero. The IPER value assigned to a stress 
+period block must be greater than the IPER value assigned for the previous 
+PERIOD block.
+
+pname1 — package name for the provider. The package PNAME1 must be designated 
+to provide water through the MVR Package by specifying the keyword “MOVER” in 
+the package’s OPTIONS block. 
+
+id1 — is the identifier for the provider. For the standard boundary packages, 
+the provider identifier is the number of the boundary as it is listed in the 
+package input file. (Note that the order of these boundaries may change by 
+stress period, which must be accounted for in the Mover Package.) The first 
+well has an identifier of one, the second is two, and so forth. For the 
+advanced packages, the identifier is the reach number (SFR Package) or well 
+number (MAW Package). For the Lake Package, ID1 is the lake outlet number.
+
+pname2 — package name for the receiver. Note: The UZF package is the only 
+package supported at this time.
+
+id2 — is the identifier for the receiver. For the UZF package this is the UZF 
+variable IUZNO.
+
+value — is the maximum value of water to move from a provider to a receiver 
+node. This is specified as a volumetric flow rate.
+
+eff_fact — is the irrigation efficiency factor. This factor can range from 0 
+to 1, where 1 represents 100% efficiency in irrigation, which translates to no 
+irrigation losses.
+
+app_fact — is the application efficiency factor. Values greater than 1 can be 
+used to simulate the application of irrigation water beyond the crop’s 
+requirement based on the ET deficit (e.g., flush irrigation). Values less than 
+1 can be used to simulate deficit irrigation.   
+
+### Example Input File
+<p align=""center">
+<img src=""https://raw.githubusercontent.com/jlarsen-usgs/mf6api_agmvr/main/docs/agmvr.png" alt="input file"/>
+</p>
