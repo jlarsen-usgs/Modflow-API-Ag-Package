@@ -65,3 +65,10 @@ where i is the outer iteration counter for a given MODFLOW timestep and $Q_c$
 is the calculated volumetric water demand with adjustment for application 
 efficiency. The amount of water available to be moved from a provider to 
 receiver nodes $\left( Q_A \right)$ is then calculated as:
+
+$$\[ Q_A =
+    \begin{cases}
+      Q_{c,i+1} & \quad Q_{p} > Q_{c,i+1}
+      Q{p} & \quad Q{p} \leq  Q_{c,i+1}
+    \end{cases}
+\]$$
