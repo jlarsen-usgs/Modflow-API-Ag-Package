@@ -66,9 +66,32 @@ is the calculated volumetric water demand with adjustment for application
 efficiency. The amount of water available to be moved from a provider to 
 receiver nodes $\left( Q_A \right)$ is then calculated as:
 
-$$\[ Q_A =
+$$Q_A =
     \begin{cases}
       Q_{c,i+1} & \quad Q_{p} > Q_{c,i+1}\\
       Q{p} & \quad Q{p} \leq  Q_{c,i+1}
     \end{cases}
-\]$$
+$$
+
+where Q_p is the amount of water available from a provider.
+
+Once available water for irrigation has been calculated, the actual amount of 
+irrigation that is applied to receiver nodes $\left( q_a \right)$ is calculated 
+from the equation:
+
+$$q_a = frac{Q_A * e_i}{A_n}$$
+
+The irrigation efficiency factor $\left( e_i \right)$ is used to adjust for 
+inefficient irrigation methods. Irrigation losses $\left( Q_L \right)$ due to 
+canopy interception or other inefficiencies is calculated by
+
+$$Q_L = Q_A - (Q_A * e_a)
+
+and is removed from the model.
+
+Input to the Agricultural Water Mover (AGMVR) Package is read from the file 
+type “AGMVR” in the Name File by the “ModflowGwfagmvr” python class and 
+processed by the “ModflowAgmvr” class.
+
+### Structure of Blocks
+
