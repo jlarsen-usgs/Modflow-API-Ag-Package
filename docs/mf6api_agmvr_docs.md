@@ -54,3 +54,14 @@ minimizing the ET deficit $\left( ET_d \right)$.
 
 $$min \left( ET_d \right) = ET_o K_c - ET_a$$
 
+Niswonger (2020) presented a volumetric solution to this minimization problem. 
+This equation has been adapted and modified to allow for the simulation of 
+deficit and flush irrigation by including an application efficiency factor 
+$\left( e_a \right)$ as follows:
+
+$$Q_{c,i+1} = \left( Q_{c,i} + \frac{Q_{ET,i+1} - Q_{ET,i}}{\delta Q_{ET,i} / \delta Q_{c,i}} \right) * e_a $$
+
+where i is the outer iteration counter for a given MODFLOW timestep and $Q_c$ 
+is the calculated volumetric water demand with adjustment for application 
+efficiency. The amount of water available to be moved from a provider to 
+receiver nodes $\left( Q_A \right)$ is then calculated as:
