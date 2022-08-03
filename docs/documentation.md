@@ -224,8 +224,8 @@ gwf.uzf.mover = True
 # add a WEL package to the model and enable MVR
 perioddata = {
     i : [
-        ((0, 0, 2), -50),
-        ((1, 0, 2), -50),
+        ((2, 0, 2), -50),
+        ((2, 0, 3), -50),
     ]
     for i in range(gwf.nper)
 }
@@ -294,7 +294,7 @@ Output can be loaded and processed in python using pandas
 ```python
 import pandas as pd
 
-output_file = os.path.join(sim_ws, "gwf_1_ag.out")
+output_file = os.path.join(out_ws, "gwf_1_ag.out")
 ag_df = pd.read_csv(output_file, delim_whitespace=True)
 ```
 

@@ -102,6 +102,8 @@ class ModflowAgmvr(object):
         for ix, name in enumerate(pkg_names.array):
             name = name[-1]
             pkg = self.gwf.get_package(name)
+            if pkg is None:
+                pkg = self.gwf.get_package(f"{name[:3]}_0")
             if isinstance(pkg, flopy.mf6.ModflowGwfwel):
                 well = name
                 self.sim_wells = True
@@ -428,7 +430,7 @@ class ModflowAgmvr(object):
                 app_frac[ix] = np.mean(application_fraction[ix])
                 prev_applied[ix] = np.sum(self.applied_irrigation[crop_nodes])
                 if pkg == "well":
-                    node = nodelist[ix]
+                    node = nodelist[ix] - 1
                     gw_avail[ix] = (head[node] - botm[node]) * area[node]
 
         crop_aet = np.where(np.isnan(crop_gwet), crop_aet, crop_aet + crop_gwet)
