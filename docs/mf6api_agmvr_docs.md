@@ -190,3 +190,114 @@ requirement based on the ET deficit (e.g., flush irrigation). Values less than
 <p align="center">
 <img src="https://raw.githubusercontent.com/jlarsen-usgs/mf6api_agmvr/main/docs/agmvr.png" alt="input file"/>
 </p>
+
+### Building an AGMVR package with Python
+Installation of the mf6api_package dynamically links with the FloPy package to 
+create input reading and writing routines for the AGMVR package. Example code 
+is presented here that shows how to build an AGMVR package and add it to an 
+existing MODFLOW model. 
+
+   * import the required packages and set the path to the existing model
+```python
+import os
+import flopy
+
+
+# point to the flopy example model UZF_3lay
+flopy_ws = os.path.split(flopy.__file__)[0]
+sim_ws = os.path.join(
+    flopy_ws, "..", "examples", "data", "mf6", "test001e_UZF_3lay"
+)
+```
+   * Load the existing model with FloPy and enable the mover option in the UZF 
+package
+```python
+# load the existing model
+sim = flopy.mf6.modflow.MFSimulation.load(sim_ws=sim_ws)
+gwf = sim.get_model("gwf_1")
+
+# enable the mover option in UZF
+gwf.uzf.mover = True
+```
+   * Add a WEL package for agricultural providers and enable the mover option
+```python
+# add a WEL package to the model and enable MVR
+perioddata = {
+    i : [
+        ((0, 0, 2), -50),
+        ((1, 0, 2), -50),
+    ]
+    for i in range(gwf.nper)
+}
+
+wel = flopy.mf6.modflow.ModflowGwfwel(
+    gwf,
+    mover=True,
+    save_flows=True,
+    stress_period_data=perioddata
+)
+```
+   * Build the AGMVR package using FloPy functions
+```python
+# build the AG package
+packages = [("wel_0",), ("uzf_0",)]
+perioddata = {
+    i : [
+        ("wel_0", 0, "uzf_0", 3, 50, 1, 1),
+        ("wel_0", 1, "uzf_0", 3, 50, 1, 1)
+    ]
+    for i in range(gwf.nper)
+}
+
+ag = flopy.mf6.modflow.ModflowGwfagmvr(
+    gwf,
+    maxmvr=len(packages),
+    maxpackages=2,
+    packages=packages,
+    perioddata=perioddata
+)
+```
+   * Write the simulation to a new directory
+```python
+# set new simulation path and write model to file
+out_ws = os.path.join("..", "data", "docs_example")
+sim.set_sim_path(out_ws)
+sim.write_simulation()
+```
+
+### Running MODFLOW with the AGMVR package
+The AGMVR package cannot be run with the traditional MODFLOW-6 executable 
+because the calculation code has been implemented in python for use with the 
+MODFLOW-6 XMI. As a result, a model that uses the AGMVR package must be run in 
+python using the mf6api_agmvr package. Once a simulation has been loaded into 
+FloPy the user can pass the simulation object to the ModflowAgmvr class and 
+run the model.
+```python
+from mf6api_agmvr import ModflowAgmvr
+
+mf6ag = ModflowAgmvr(sim, mvr_name="agmvr")
+mf6ag.run_model()
+```
+
+### Reading output from the AGMVR package
+The AGMVR package writes a single ascii output file upon completion of the 
+model. This file is named {model_name}_ag.out, where model_name is the name
+of the model specified in the MODFLOW6 sim file that has been run. For example,
+if the name of the model is "gwf_1" the output file name will be 
+"gwf_1_ag.out". The output file contains information about the potential et,
+actual et, demand, the volumetric flux (units, $\left( L^{3}/T \right)$) 
+removed from a provider, and the volumetric flux 
+(units, $\left( L^{3}/T \right)$) supplied to receiver nodes. This output is 
+written for every time step.
+
+Output can be loaded and processed in python using pandas
+```python
+import pandas as pd
+
+output_file = os.path.join(sim_ws, "gwf_1_ag.out")
+ag_df = pd.read_csv(output_file, delim_whitespace=True)
+```
+
+### Example problems
+Example problems are distributed with the mf6api_agmvr repository and can be 
+found in the [examples directory](https://github.com/jlarsen-usgs/mf6api_agmvr/tree/main/examples).
