@@ -45,5 +45,12 @@ potential crop evapotranspiration $\left( ET_o K_c \right)$ and actual crop evap
 $\left( ET_a \right)$. The total volume of water demanded and consumed by a given crop under 
 efficient conditions $\left( Q_ET \right)$ is calculated using:
 
-$$Q_{ET} = $$ 
+$$Q_{ET} = \displaystyle\sum_{n=1}^{ncell} ET_o K_c A_n$$ 
+
+where $ET_o$ is the potential evapotranspiration flux, $K_c$ is the crop 
+coefficient, and $A_n$ is the area of the model cell. The amount of water that 
+must be supplied by provider nodes to meet this condition is calculated by 
+minimizing the ET deficit $\left( ET_d \right)$.
+
+$$min \left( ET_d \right) = ET_o K_c - ET_a$$
 
