@@ -187,6 +187,6 @@ requirement based on the ET deficit (e.g., flush irrigation). Values less than
 1 can be used to simulate deficit irrigation.   
 
 ### Example Input File
-<p align=""center">
-<img src=""https://raw.githubusercontent.com/jlarsen-usgs/mf6api_agmvr/main/docs/agmvr.png" alt="input file"/>
+<p align="center">
+<img src="https://raw.githubusercontent.com/jlarsen-usgs/mf6api_agmvr/main/docs/agmvr.png" alt="input file"/>
 </p>
