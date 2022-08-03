@@ -240,11 +240,11 @@ wel = flopy.mf6.modflow.ModflowGwfwel(
    * Build the AGMVR package using FloPy functions
 ```python
 # build the AG package
-packages = [("wel_0",), ("uzf_0",)]
+packages = [("wel_0",), ("uzf-1",)]
 perioddata = {
     i : [
-        ("wel_0", 0, "uzf_0", 3, 50, 1, 1),
-        ("wel_0", 1, "uzf_0", 3, 50, 1, 1)
+        ("wel_0", 0, "uzf-1", 3, 50, 1, 1),
+        ("wel_0", 1, "uzf-1", 3, 50, 1, 1)
     ]
     for i in range(gwf.nper)
 }
