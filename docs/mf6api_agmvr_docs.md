@@ -79,7 +79,7 @@ Once available water for irrigation has been calculated, the actual amount of
 irrigation that is applied to receiver nodes $\left( q_a \right)$ is calculated 
 from the equation:
 
-$$q_a = frac{Q_A * e_i}{A_n}$$
+$$q_a = \frac{Q_A * e_i}{A_n}$$
 
 The irrigation efficiency factor $\left( e_i \right)$ is used to adjust for 
 inefficient irrigation methods. Irrigation losses $\left( Q_L \right)$ due to 
@@ -94,4 +94,49 @@ type “AGMVR” in the Name File by the “ModflowGwfagmvr” python class and
 processed by the “ModflowAgmvr” class.
 
 ### Structure of Blocks
+_FOR EACH SIMULATION_
 
+BEGIN **OPTIONS**  
+[ETDEMAND]  
+END **OPTIONS**
+
+
+BEGIN **DIMENSIONS**  
+MAXMVR <maxmvr<n>>  
+MAXPACKAGES <maxpackages<n>>  
+END **DIMENSIONS**
+
+
+BEGIN **PACKAGES**  
+<pname<n>>  
+<pname<n>>  
+....  
+END **PACKAGES**
+
+
+_FOR ANY STRESS PERIOD_
+
+BEGIN **PERIOD**  
+<pname1<n>> <id1<n>> <pname2<n>> <id2<n>> <irr_eff<n>> <app_eff<n>>  
+<pname1<n>> <id1<n>> <pname2<n>> <id2<n>> <irr_eff<n>> <app_eff<n>>  
+....  
+END **PERIOD**
+
+Note: All of the information supplied within a **PERIOD** block will apply 
+only for the stress period that it is specified for. If no **PERIOD** block is 
+specified for a specific stress period, no agricultural processes will be 
+simulated in that stress period. This behavior differs from the behavior of 
+the standard MVR package.
+
+### Explanation of Variables
+#### Block: OPTIONS
+ETDEMAND — optional keyword to simulate agricultural processes using the 
+evapotranspiration deficit calculation. This keyword is active by default even 
+if not supplied by the user.
+
+#### Block: DIMENSIONS
+maxmvr — integer value specifying the maximum number of water mover entries that 
+will be specified for any stress period
+
+maxpackages — integer value specifying the maximum number of unique packages that 
+are included in this agricultural water mover package
