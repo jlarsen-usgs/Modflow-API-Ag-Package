@@ -143,6 +143,9 @@ plt.xlabel("Time step")
 plt.show()
 ```
 
+## Documentation
+Documentation can be found [here](https://github.com/jlarsen-usgs/mf6api_agmvr/blob/main/docs/documentation.md)
+
 ## Authors
 Joshua D. Larsen
 
