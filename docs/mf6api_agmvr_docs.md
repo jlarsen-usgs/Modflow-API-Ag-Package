@@ -85,7 +85,7 @@ The irrigation efficiency factor $\left( e_i \right)$ is used to adjust for
 inefficient irrigation methods. Irrigation losses $\left( Q_L \right)$ due to 
 canopy interception or other inefficiencies is calculated by
 
-$$Q_L = Q_A - (Q_A * e_a)
+$$Q_L = Q_A - (Q_A * e_a)$$
 
 and is removed from the model.
 
