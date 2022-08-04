@@ -1,0 +1,51 @@
+[
+  {
+    "name": "mf6api_agmvr",
+    "organization": "U.S. Geological Survey",
+    "description": "pyGSFLOW is a python package to Create, Read, Write, Edit, and Visualize GSFLOW models",
+    "version": "1.0.0",
+    "status": "Development",
+
+    "permissions": {
+      "usageType": "openSource",
+      "licenses": [
+        {
+          "name": "Public Domain, CC0-1.0",
+          "URL": "https://code.usgs.gov/water/mf6api_agmvr/-/raw/1.0.2/LICENCE.md"
+        }
+      ]
+    },
+
+    "homepageURL": "https://code.usgs.gov/water/mf6api_agmvr",
+    "downloadURL": "https://code.usgs.gov/water/mf6api_agmvr/-/archive/1.0.0/mf6api_agmvr-1.0.2.zip",
+    "disclaimerURL": "https://code.usgs.gov/water/mf6api_agmvr/-/raw/1.0.0/DISCLAIMER.md",
+    "repositoryURL": "https://code.usgs.gov/water/mf6api_agmvr",
+    "vcs": "git",
+
+    "laborHours": -1,
+
+    "tags": [
+      "MODFLOW",
+      "MODFLOW 6",
+	  "GROUNDWATER",
+	  "hydrologic model",
+	  "agriculture",
+	  "modflow api",
+	  "groundwater model",
+	  "python"
+    ],
+
+    "languages": [
+      "python"
+    ],
+
+    "contact": {
+      "name": "Joshua D. Larsen",
+      "email": "jlarsen@usgs.gov"
+    },
+
+    "date": {
+      "metadataLastUpdated": "2022-08-04"
+    }
+  }
+]
