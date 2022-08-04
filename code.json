@@ -10,8 +10,8 @@
       "usageType": "openSource",
       "licenses": [
         {
-          "name": "Public Domain, CC0-1.0",
-          "URL": "https://code.usgs.gov/water/mf6api_agmvr/-/raw/1.0.2/LICENCE.md"
+          "name": "The Unlicense",
+          "URL": "https://code.usgs.gov/water/mf6api_agmvr/-/raw/1.0.0/LICENCE.md"
         }
       ]
     },
