@@ -7,8 +7,10 @@ api package overrides the MODFLOW 6 water mover (MVR) package and calculates
 irrigation requirement from potential and actual evapotranspiration in the 
 soil zone. Provider packages supported by AGMVR include WEL, SFR, MAW, and LAK.
 The receiver package must be UZF. More information can be found in the 
-documentation and example problems are located in the examples directory of 
-this repository.
+[documentation](https://github.com/jlarsen-usgs/mf6api_agmvr/blob/main/docs/documentation.md) 
+and example problems are located in the 
+[examples directory](https://github.com/jlarsen-usgs/mf6api_agmvr/tree/main/examples) 
+of this repository.
 
 ## Software requirements
 Python >= 3.7  
