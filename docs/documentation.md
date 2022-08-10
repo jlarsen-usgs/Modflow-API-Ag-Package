@@ -5,7 +5,7 @@ extending the functionality of MODFLOW-6 through MODFLOW’s Extended Model
 Interface (XMI). The package is written in pure python, is tightly coupled with 
 MODFLOW-6, and calculates irrigation demand and applied irrigation water at the 
 outer iteration of a model’s time-step. The package also interfaces with FloPy 
-(Bakker and others, 20xx; Bakker and others, 2022) and provides FloPy support 
+(Bakker and others, 2016; Bakker and others, 2022) and provides FloPy support 
 for constructing Agricultural water mover (AGMVR) input files.
 
 This guide covers the installation process, input file construction and 
@@ -38,12 +38,13 @@ receiver package supported is:
 The program will terminate with an error if the AGMVR is used with an 
 unsupported package type.
 
-The AGMVR Package is based on the calculation of irrigation demand and is 
-limited by the available water that can be moved from a provider to receiver 
-nodes. Irrigation demand is calculated by minimizing the difference between 
-potential crop evapotranspiration $\left( ET_o K_c \right)$ and actual crop evapotranspiration 
-$\left( ET_a \right)$. The total volume of water demanded and consumed by a given crop under 
-efficient conditions $\left( Q_ET \right)$ is calculated using:
+The AGMVR Package is based on the calculation of irrigation demand presented by 
+Niswonger (2020) and is limited by the available water that can be moved from a 
+provider to receiver nodes. Irrigation demand is calculated by minimizing the 
+difference between potential crop evapotranspiration $\left( ET_o K_c \right)$ 
+and actual crop evapotranspiration $\left( ET_a \right)$. The total volume of 
+water demanded and consumed by a given crop under efficient conditions 
+$\left( Q_ET \right)$ is calculated using:
 
 $$Q_{ET} = \displaystyle\sum_{n=1}^{ncell} ET_o K_c A_n$$ 
 
@@ -285,9 +286,9 @@ model. This file is named {model_name}_ag.out, where model_name is the name
 of the model specified in the MODFLOW6 sim file that has been run. For example,
 if the name of the model is "gwf_1" the output file name will be 
 "gwf_1_ag.out". The output file contains information about the potential et,
-actual et, demand, the volumetric flux (units, $\left( L^{3}/T \right)$) 
+actual et, demand, the volumetric flux (units, $\left( L^{3}/T \right)$ ) 
 removed from a provider, and the volumetric flux 
-(units, $\left( L^{3}/T \right)$) supplied to receiver nodes. This output is 
+(units, $\left( L^{3}/T \right)$ ) supplied to receiver nodes. This output is 
 written for every time step.
 
 Output can be loaded and processed in python using pandas
@@ -301,3 +302,18 @@ ag_df = pd.read_csv(output_file, delim_whitespace=True)
 ### Example problems
 Example problems are distributed with the mf6api_agmvr repository and can be 
 found in the [examples directory](https://github.com/jlarsen-usgs/mf6api_agmvr/tree/main/examples).
+
+### References
+Bakker, Mark, Post, Vincent, Langevin, C. D., Hughes, J. D., White, J. T., 
+Starn, J. J. and Fienen, M. N., 2016, Scripting MODFLOW Model Development Using 
+Python and FloPy: Groundwater, v. 54, p. 733–739, doi:10.1111/gwat.12413.
+
+Bakker, Mark, Post, Vincent, Hughes, J. D., Langevin, C. D., White, J. T., 
+Leaf, A. T., Paulinski, S. R., Bellino, J. C., Morway, E. D., Toews, M. W., 
+Larsen, J. D., Fienen, M. N., Starn, J. J., and Brakenhoff, Davíd, 2022, 
+FloPy v3.3.5: U.S. Geological Survey Software Release, 07 March 2022, 
+http://dx.doi.org/10.5066/F7BK19FH
+
+Niswonger, R. G., 2020, An Agricultural Water Use Package for MODFLOW and 
+GSFLOW. Environmental Modelling and Software 125. 
+doi: 10.1016/j.envsoft.2019.104617
