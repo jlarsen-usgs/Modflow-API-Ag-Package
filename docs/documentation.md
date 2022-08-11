@@ -62,7 +62,7 @@ $\left( e_a \right)$ as follows:
 
 $$Q_{c,i+1} = \left( Q_{c,i} + \frac{Q_{ET,i+1} - Q_{ET,i}}{\delta Q_{ET,i} / \delta Q_{c,i}} \right) * e_a $$
 
-where i is the outer iteration counter for a given MODFLOW timestep and $Q_c$ 
+where $i$ is the outer iteration counter for a given MODFLOW timestep and $Q_c$ 
 is the calculated volumetric water demand with adjustment for application 
 efficiency. The amount of water available to be moved from a provider to 
 receiver nodes $\left( Q_A \right)$ is then calculated as:
