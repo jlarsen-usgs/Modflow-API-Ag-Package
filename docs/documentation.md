@@ -74,7 +74,7 @@ $$Q_A =
     \end{cases}
 $$
 
-where Q_p is the amount of water available from a provider.
+where $Q_{p}$ is the amount of water available from a provider.
 
 Once available water for irrigation has been calculated, the actual amount of 
 irrigation that is applied to receiver nodes $\left( q_a \right)$ is calculated 
