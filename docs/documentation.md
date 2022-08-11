@@ -70,7 +70,7 @@ receiver nodes $\left( Q_A \right)$ is then calculated as:
 $$Q_A =
     \begin{cases}
       Q_{c,i+1} & \quad Q_{p} > Q_{c,i+1}\\
-      Q{p} & \quad Q{p} \leq  Q_{c,i+1}
+      Q_{p} & \quad Q_{p} \leq  Q_{c,i+1}
     \end{cases}
 $$
 
