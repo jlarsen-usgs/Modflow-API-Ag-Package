@@ -44,7 +44,7 @@ provider to receiver nodes. Irrigation demand is calculated by minimizing the
 difference between potential crop evapotranspiration $\left( ET_o K_c \right)$ 
 and actual crop evapotranspiration $\left( ET_a \right)$. The total volume of 
 water demanded and consumed by a given crop under efficient conditions 
-$\left( Q_ET \right)$ is calculated using:
+$\left( Q_{ET} \right)$ is calculated using:
 
 $$Q_{ET} = \displaystyle\sum_{n=1}^{ncell} ET_o K_c A_n$$ 
 
