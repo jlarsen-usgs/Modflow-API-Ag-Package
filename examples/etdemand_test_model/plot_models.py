@@ -445,3 +445,44 @@ with styles.USGSMap():
     styles.ylabel(ax=ax, label="Model y-coordinate", fontsize=11)
     plt.xticks()
     plt.show()
+
+
+with styles.USGSMap():
+    mpl.rcParams["ytick.labelsize"] = 9
+    mpl.rcParams["xtick.labelsize"] = 9
+    fig, (ax0, ax1) = plt.subplots(ncols=2, figsize=(10, 6))
+    pmv = fp.plot.PlotMapView(model=gwf, ax=ax0)
+    pmv.plot_bc("sfr_0")
+    pmv.plot_bc("wel_0")
+    plot_mvr(ax0, gwf, "sfr_0", 0)
+    plot_mvr(ax0, gwf, "wel_0", 0)
+    pmv.plot_grid()
+    plot_mvr(ax0, gwf, "sfr_0", 0, arrows=True)
+    plot_mvr(ax0, gwf, "wel_0", 0, arrows=True)
+    plot_explanation(ax0)
+    styles.heading(
+        letter="A",
+        ax=ax0,
+        heading="MF6 API Agricultural Water Mover Package"
+    )
+    styles.xlabel(ax=ax0, label="Model x-coordinate", fontsize=11)
+    styles.ylabel(ax=ax0, label="Model y-coordinate", fontsize=11)
+
+    pmv = fp.plot.PlotMapView(model=ml, ax=ax1)
+    pmv.plot_bc("sfr")
+    nwt_plot_diversion(ax1, ml, "sfr", kper=0)
+    nwt_plot_diversion(ax1, ml, "sup", kper=0)
+    pmv.plot_grid()
+    nwt_plot_diversion(ax1, ml, "sfr", kper=0, arrows=True)
+    nwt_plot_diversion(ax1, ml, "sup", kper=0, arrows=True)
+    plot_explanation(ax1)
+    styles.heading(
+        letter="B",
+        ax=ax1,
+        heading="NWT Agricultural Water Use Package"
+    )
+    styles.xlabel(ax=ax1, label="Model x-coordinate", fontsize=11)
+    # styles.ylabel(ax=ax, label="Model y-coordinate", fontsize=11)
+
+
+    plt.show()
