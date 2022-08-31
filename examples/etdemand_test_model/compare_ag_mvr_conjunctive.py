@@ -301,54 +301,108 @@ def compare_model_output(nwt, mf6, model):
     with styles.USGSPlot():
         mpl.rcParams["ytick.labelsize"] = 9
         mpl.rcParams["xtick.labelsize"] = 9
-        fig, ax = plt.subplots(figsize=(8, 8))
-        ax.plot(range(1, len(nwt_div1) + 1), nwt_div1["SW-DIVERSION"], color="k", label=f"nwt diversion", lw=2, zorder=3)
-        ax.plot(range(1, len(nwt_total1) + 1), nwt_total1, color="dimgray", label="nwt total applied irrigation", zorder=2)
-        ax.plot(range(1, len(mf6_div1) + 1), mf6_div1.q_from_provider.values, color="skyblue", label=f"mf6 diversion", ls="--", lw=2.5, zorder=5)
-        ax.plot(range(1, len(total_ag1) + 1), total_ag1, color="darkblue", label="total applied irrigation", ls="--", lw=2.5, zorder=4)
-        styles.heading(ax=ax,
-                       heading="Comparison of MF6 API AG and MF-NWT AG conjuctive use farm 1")
-        styles.xlabel(ax=ax, label="Days", fontsize=10)
-        styles.ylabel(ax=ax, label="Applied irrigation, in " + r"$m^{3}$",
-                      fontsize=10)
-        styles.graph_legend(ax=ax, loc=2, fancybox=True, shadow=True,
-                            frameon=True, fontsize=10)
-        styles.add_text(ax=ax, text=r"$r^{2}$" + f" = {r21 :.2f}", x=0.03,
-                        y=0.78, fontsize=10)
-        styles.add_text(ax=ax, text=f"dif. = {err1 :.2f} " + r"$m^{3}$", x=0.03,
-                        y=0.75, fontsize=10)
+        fig, (ax0, ax1) = plt.subplots(ncols=2, figsize=(10, 6))
+        ax0.plot(
+            range(1, len(total_ag1) + 1),
+            total_ag1,
+            color="darkblue",
+            label="MF6 total irrigation",
+            ls="--",
+            lw=2.5, zorder=2
+        )
 
-        print("MF6: ", np.sum(mf6_div1.q_from_provider) * 0.000810714)
-        print("NWT: ", np.sum(nwt_div1["SW-DIVERSION"]) * 0.000810714)
-        print("MF6: ", np.sum(mf6_div2.q_from_provider) * 0.000810714)
-        print("NWT: ", np.sum(nwt_div2["SW-DIVERSION"]) * 0.000810714)
+        ax0.plot(
+            range(1, len(nwt_total1) + 1),
+            nwt_total1,
+            color="dimgray",
+            label="NWT total irrigation",
+            zorder=1
+        )
+        ax0.plot(
+            range(1, len(mf6_div1) + 1),
+            mf6_div1.q_from_provider.values,
+            color="skyblue",
+            label=f"MF6 surface water irrigation",
+            ls="--",
+            lw=2.5,
+            zorder=4)
 
-        plt.show()
+        ax0.plot(
+            range(1, len(nwt_div1) + 1),
+            nwt_div1["SW-DIVERSION"],
+            color="k",
+            label="NWT surface water irrigation",
+            lw=2,
+            zorder=3
+        )
 
-    with styles.USGSPlot():
-        mpl.rcParams["ytick.labelsize"] = 9
-        mpl.rcParams["xtick.labelsize"] = 9
-        fig, ax = plt.subplots(figsize=(8, 8))
-        ax.plot(range(1, len(nwt_div2) + 1), nwt_div2["SW-DIVERSION"],
-                color="k", label=f"nwt diversion", lw=2, zorder=3)
-        ax.plot(range(1, len(nwt_total2) + 1), nwt_total2, color="dimgray",
-                label="nwt total applied irrigation", zorder=2)
-        ax.plot(range(1, len(mf6_div2) + 1), mf6_div2.q_from_provider.values, color="skyblue",
-                label=f"mf6 diversion", ls="--", lw=2.5, zorder=5)
-        ax.plot(range(1, len(total_ag2) + 1), total_ag2, color="darkblue",
-                label="total applied irrigation", ls="--", lw=2.5, zorder=4)
-        styles.heading(ax=ax,
-                       heading="Comparison of MF6 API AG and MF-NWT AG conjuctive use farm 2")
-        styles.xlabel(ax=ax, label="Days", fontsize=10)
-        styles.ylabel(ax=ax, label="Applied irrigation, in " + r"$m^{3}$",
-                      fontsize=10)
-        styles.graph_legend(ax=ax, loc=2, fancybox=True, shadow=True,
-                            frameon=True, fontsize=10)
-        styles.add_text(ax=ax, text=r"$r^{2}$" + f" = {r22 :.2f}", x=0.03,
-                        y=0.78, fontsize=10)
-        styles.add_text(ax=ax, text=f"dif. = {err2 :.2f} " + r"$m^{3}$",
-                        x=0.03,
-                        y=0.75, fontsize=10)
+        styles.heading(
+            ax=ax0,
+            heading="Agricultural Water Mover Example 1: irrigated area 1",
+            letter="A"
+        )
+        styles.xlabel(ax=ax0, label="Days", fontsize=10)
+        styles.ylabel(
+            ax=ax0,
+            label="Applied irrigation, in " + r"$m^{3}$",
+            fontsize=10
+        )
+        styles.graph_legend(
+            ax=ax0, loc=1, fancybox=True, shadow=True, frameon=True, fontsize=10
+        )
+
+        ax0.set_ylim([0, 40])
+        ax0.set_xlim([0, 365])
+
+        ax1.plot(
+            range(1, len(total_ag2) + 1),
+            total_ag2,
+            color="darkblue",
+            label="MF6 total irrigation",
+            ls="--",
+            lw=2.5,
+            zorder=2
+        )
+
+        ax1.plot(
+            range(1, len(nwt_total2) + 1),
+            nwt_total2,
+            color="dimgray",
+            label="NWT surface water irrigation",
+            zorder=1
+        )
+
+        ax1.plot(
+            range(1, len(mf6_div2) + 1),
+            mf6_div2.q_from_provider.values,
+            color="skyblue",
+            label=f"MF6 surface water irrigation",
+            ls="--",
+            lw=2.5,
+            zorder=4
+        )
+        ax1.plot(
+            range(1, len(nwt_div2) + 1),
+            nwt_div2["SW-DIVERSION"],
+            color="k",
+            label=f"NWT surface water irrigation",
+            lw=2,
+            zorder=3
+        )
+
+        styles.heading(
+            ax=ax1,
+            heading="Agricultural Water Mover Example 1: irrigated area 2",
+            letter="B"
+        )
+        styles.xlabel(ax=ax1, label="Days", fontsize=10)
+        #styles.ylabel(ax=ax, label="Applied irrigation, in " + r"$m^{3}$", fontsize=10)
+        styles.graph_legend(
+            ax=ax1, loc=1, fancybox=True, shadow=True, frameon=True, fontsize=8
+        )
+
+        ax1.set_xlim([0, 365])
+        ax1.set_ylim([0, 40])
 
         plt.show()
 
