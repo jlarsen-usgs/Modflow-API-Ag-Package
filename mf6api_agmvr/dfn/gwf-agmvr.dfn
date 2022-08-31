@@ -8,7 +8,7 @@ type keyword
 reader urword
 optional true
 longname print input to listing file
-description REPLACE print_input {'{#1}': 'MVR'}
+description REPLACE print_input {'{#1}': 'AGMVR'}
 
 block options
 name print_flows
@@ -16,7 +16,7 @@ type keyword
 reader urword
 optional true
 longname print calculated flows to listing file
-description REPLACE print_flows {'{#1}': 'MVR'}
+description REPLACE print_flows {'{#1}': 'AGMVR'}
 
 block options
 name modelnames

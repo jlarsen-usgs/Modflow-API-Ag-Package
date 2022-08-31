@@ -995,3 +995,15 @@ class ModflowAgmvr(object):
 
         self._write_output()
         return success
+
+
+def plugin():
+    return ModflowAgmvr
+
+
+def dfn():
+    dfn_name = "gwf-agmvr.dfn"
+    return (
+        dfn_name,
+        os.path.join(os.path.abspath(os.path.dirname(__file__)), dfn_name)
+    )
