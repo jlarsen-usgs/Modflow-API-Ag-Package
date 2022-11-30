@@ -139,6 +139,8 @@ class ModflowAgmvr(object):
 
         self.uzf_name = uzf
         self.dis_name = self.gwf.dis.name[0].upper()
+        self.npf_name = self.gwf.npf.name[0].upper()
+        self.ag_active = np.zeros((1,))
 
     def create_addresses(self, mf6):
         """
@@ -161,7 +163,9 @@ class ModflowAgmvr(object):
         self.botm_addr = mf6.get_var_address(
             "BOT", self.name, self.dis_name.upper()
         )
-
+        self.k11_addr = mf6.get_var_address(
+            "K11", self.name, self.npf_name.upper()
+        )
         self.area_addr = mf6.get_var_address(
             "UZFAREA", self.name, self.uzf_name.upper()
         )
@@ -266,6 +270,9 @@ class ModflowAgmvr(object):
         ------
         tuple : shape of max_q for dimensionalizing sup, supold, and aetold
         """
+        heads = mf6.get_value(self.head_addr)
+        botm = mf6.get_value(self.botm_addr)
+        pet = mf6.get_value(self.pet_addr)
         if pkg in ("well", "maw"):
             addr = self.__dict__[f"{pkg}_addr"]
             data = mf6.get_value(addr)
@@ -286,7 +293,7 @@ class ModflowAgmvr(object):
         pkg_name = self.__dict__[f"{pkg}_name"]
         if kper in self.mvr.perioddata.data:
             recarray = self.mvr.perioddata.data[kper]
-            irridx = np.where(recarray["pname1"] == pkg_name)[0]
+            irridx = np.where((recarray["pname1"] == pkg_name) & (recarray["pname2"] == self.uzf_name.lower()))[0]
             if len(irridx) > 0:
                 if pkg_name in ("sfr", "lak"):
                     mvr[irridx] = 0
@@ -341,6 +348,38 @@ class ModflowAgmvr(object):
             irrigated_proportion.append(iprop)
             mvr_index.append(idx)
 
+        # adjustment for multiple providers in same pkg irrigating a node
+        if pkg == "well":
+            nodelist = mf6.get_value(self.well_nodelist)
+            hk = mf6.get_value(self.k11_addr)
+
+        wf_adj = np.ones((max_q.shape[0], pet.shape[0]))
+        cnode_provider = {}
+        cnode_weights = {}
+        max_nodes = 1
+        for ix, crop_nodes in enumerate(irrigated_cells):
+            if len(crop_nodes) > 0:
+                for node in crop_nodes:
+                    if pkg == "well":
+                        gw_node = nodelist[ix] - 1
+                        if heads[gw_node] <= -1e+30 or (heads[gw_node] - botm[gw_node]) < 0:
+                            weight = 0
+                        else:
+                            weight = (heads[gw_node] - botm[gw_node]) * hk[gw_node]
+                    else:
+                        weight = max_q[ix]
+                    if node in cnode_provider:
+                        cnode_provider[node].append(ix)
+                        cnode_weights[node].append(weight)
+                    else:
+                        cnode_provider[node] = [ix]
+                        cnode_weights[node] = [weight]
+
+        for node, provider in cnode_provider.items():
+            weight = np.array(cnode_weights[node]) / np.sum(
+                cnode_weights[node])
+            wf_adj[provider, node] = weight
+
         setattr(self, f"{pkg}_active", active)
         setattr(self, f"{pkg}_maxq", max_q)
         setattr(self, f"{pkg}_irrigated_cells", irrigated_cells)
@@ -351,6 +390,7 @@ class ModflowAgmvr(object):
         setattr(self, f"{pkg}sup", np.zeros(max_q.shape))
         setattr(self, f"{pkg}supold", np.zeros(max_q.shape))
         setattr(self, f"{pkg}aetold", np.zeros(max_q.shape))
+        setattr(self, f"{pkg}mp_weights", wf_adj)
 
     def set_stress_period_data(self, mf6, kper):
         """
@@ -375,13 +415,20 @@ class ModflowAgmvr(object):
         if self.sim_lak:
             self._set_package_stress_period_data(mf6, kper, "lak")
             self.lak_evap_old = mf6.get_value(self.lak_evap_addr)
+        if kper in self.mvr.perioddata.data:
+            t = self.mvr.perioddata.data[kper]
+            self.ag_active = np.where(
+                t["pname2"] == self.uzf_name.lower(), True, False
+            )
+        else:
+            pass
 
     def zero_mvr(self, mf6):
         """
         Method to zero out MVR values before initial solve
         """
         mvr = mf6.get_value(self.mvr_value_addr)
-        mvr[:] = 0
+        mvr = np.where(self.ag_active, 0, mvr)
         mf6.set_value(self.mvr_value_addr, mvr)
 
     def _set_etdemand_variables(self, mf6, pkg):
@@ -401,12 +448,13 @@ class ModflowAgmvr(object):
         """
         pet = mf6.get_value(self.pet_addr)
         vks = mf6.get_value(self.vks_addr)
-        area = mf6.get_value(self.area_addr)
+        area = np.tile(mf6.get_value(self.area_addr), self.gwf.modelgrid.nlay)
         aet = mf6.get_value(self.aet_addr)
         gwet = mf6.get_value(self.gwet_addr)
         maxq = getattr(self, f"{pkg}_maxq")
         application_fraction = getattr(self, f"{pkg}_application_fraction")
         irrigated_cells = getattr(self, f"{pkg}_irrigated_cells")
+        mp_adj = getattr(self, f"{pkg}mp_weights")
         nodelist = None
         gw_avail = None
         if pkg == "well":
@@ -424,15 +472,23 @@ class ModflowAgmvr(object):
         for ix, crop_nodes in enumerate(irrigated_cells):
             if len(crop_nodes) > 0:
                 crop_vks[ix] = np.sum(vks[crop_nodes] * area[crop_nodes])
-                crop_pet[ix] = np.sum(pet[crop_nodes] * area[crop_nodes])
-                crop_aet[ix] = np.sum(aet[crop_nodes] * area[crop_nodes])
-                crop_gwet[ix] = np.sum(gwet[crop_nodes])
+                crop_pet[ix] = np.sum(
+                    pet[crop_nodes] * area[crop_nodes] * mp_adj[ix, crop_nodes]
+                )
+                crop_aet[ix] = np.sum(
+                    aet[crop_nodes] * area[crop_nodes] * mp_adj[ix, crop_nodes]
+                )
+                crop_gwet[ix] = np.sum(gwet[crop_nodes] * mp_adj[ix, crop_nodes])
                 app_frac[ix] = np.mean(application_fraction[ix])
                 prev_applied[ix] = np.sum(self.applied_irrigation[crop_nodes])
                 if pkg == "well":
                     node = nodelist[ix] - 1
-                    gw_avail[ix] = (head[node] - botm[node]) * area[node]
+                    if head[node] <= -1e+30 or (head[node] - botm[node]) < 0:
+                        gw_avail[ix] = 0
+                    else:
+                        gw_avail[ix] = (head[node] - botm[node]) * area[node]
 
+       # gw_avail = np.where(gw_avail > 0, gw_avail, 0)
         crop_aet = np.where(np.isnan(crop_gwet), crop_aet, crop_aet + crop_gwet)
         if pkg in ("well", "maw"):
             crop_aet = np.where(crop_vks < 1e-30, crop_pet, crop_aet)
@@ -507,6 +563,7 @@ class ModflowAgmvr(object):
         if gw_avail is not None:
             # adjustment for well demand based on gw availability
             pumping = np.where(np.abs(pumping) > gw_avail, -1 * gw_avail, pumping)
+
         pumping = np.where(np.abs(pumping) <= 1e-10, 0, pumping)
 
         setattr(self, f"{pkg}sup", np.abs(pumping))
@@ -957,9 +1014,9 @@ class ModflowAgmvr(object):
                     self.zero_mvr(mf6)
                     mf6.solve(sol_id)
 
-                self.applied_irrigation = np.zeros(self.uzf_shape)
-
                 while kiter < max_iter:
+                    self.applied_irrigation = np.zeros(self.uzf_shape)
+
                     if self.sim_lak:
                         self.lak_demand_etdemand(mf6, kstp, delt, kiter)
 

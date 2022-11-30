@@ -1,17 +1,15 @@
 import flopy
 from flopy.plot import styles
 import os
-import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 from scipy.stats import linregress
-sws = os.path.abspath(os.path.dirname(__file__))
-sys.path.append(os.path.join(sws, "..", "..", "mf6api_agmvr"))
-from mf6_agmvr import ModflowAgmvr
+from mf6api_agmvr import ModflowAgmvr
 
 from math import log10, floor
+sws = os.path.abspath(os.path.dirname(__file__))
 
 
 def round_to_n(x, n):
