@@ -1,7 +1,7 @@
 import setuptools
 import sys
 import os
-from flopy.mf6.api.create_api_package import create_api_package
+# from flopy.mf6.api.create_api_package import create_api_package
 
 
 if __name__ == "__main__":
