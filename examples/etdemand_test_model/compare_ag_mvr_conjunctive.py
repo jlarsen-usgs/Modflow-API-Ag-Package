@@ -14,6 +14,14 @@ from math import log10, floor
 mpl.use("TKAgg")
 
 
+def cm2inch(*tupl):
+    inch = 2.54
+    if isinstance(tupl[0], tuple):
+        return tuple(i / inch for i in tupl[0])
+    else:
+        return tuple(i / inch for i in tupl)
+
+
 def round_to_n(x, n):
     if x == 0:
         return 0
@@ -298,15 +306,16 @@ def compare_model_output(nwt, mf6, model):
     err2 = np.sum(total_ag2 - nwt_total2)
 
     with styles.USGSPlot():
-        mpl.rcParams["ytick.labelsize"] = 9
-        mpl.rcParams["xtick.labelsize"] = 9
-        fig, (ax0, ax1) = plt.subplots(ncols=2, figsize=(10, 6))
+        mpl.rcParams["ytick.labelsize"] = 6
+        mpl.rcParams["xtick.labelsize"] = 6
+        mpl.rcParams["figure.dpi"] = 170
+        fig, (ax0, ax1) = plt.subplots(ncols=2, figsize=cm2inch(17.15, 10.16))
         ax0.plot(
             range(1, len(total_ag1) + 1),
             total_ag1,
             color="darkblue",
             label="MF6 total irrigation",
-            ls="--",
+            ls=":",
             lw=2.5, zorder=2
         )
 
@@ -322,7 +331,7 @@ def compare_model_output(nwt, mf6, model):
             mf6_div1.q_from_provider.values,
             color="skyblue",
             label=f"MF6 surface water irrigation",
-            ls="--",
+            ls=":",
             lw=2.5,
             zorder=4)
 
@@ -338,16 +347,17 @@ def compare_model_output(nwt, mf6, model):
         styles.heading(
             ax=ax0,
             heading="Agricultural Water Mover Example 1: irrigated area 1",
-            letter="A"
+            letter="A",
+            fontsize=6
         )
-        styles.xlabel(ax=ax0, label="Days", fontsize=10)
+        styles.xlabel(ax=ax0, label="Days", fontsize=6)
         styles.ylabel(
             ax=ax0,
             label="Applied irrigation, in " + r"$m^{3}$",
-            fontsize=10
+            fontsize=7
         )
         styles.graph_legend(
-            ax=ax0, loc=1, fancybox=True, shadow=True, frameon=True, fontsize=10
+            ax=ax0, loc=1, fancybox=True, shadow=True, frameon=True, fontsize=6
         )
 
         ax0.set_ylim([0, 40])
@@ -358,7 +368,7 @@ def compare_model_output(nwt, mf6, model):
             total_ag2,
             color="darkblue",
             label="MF6 total irrigation",
-            ls="--",
+            ls=":",
             lw=2.5,
             zorder=2
         )
@@ -376,7 +386,7 @@ def compare_model_output(nwt, mf6, model):
             mf6_div2.q_from_provider.values,
             color="skyblue",
             label=f"MF6 surface water irrigation",
-            ls="--",
+            ls=":",
             lw=2.5,
             zorder=4
         )
@@ -392,23 +402,24 @@ def compare_model_output(nwt, mf6, model):
         styles.heading(
             ax=ax1,
             heading="Agricultural Water Mover Example 1: irrigated area 2",
-            letter="B"
+            letter="B",
+            fontsize=6
         )
-        styles.xlabel(ax=ax1, label="Days", fontsize=10)
-        #styles.ylabel(ax=ax, label="Applied irrigation, in " + r"$m^{3}$", fontsize=10)
+        styles.xlabel(ax=ax1, label="Days", fontsize=6)
         styles.graph_legend(
-            ax=ax1, loc=1, fancybox=True, shadow=True, frameon=True, fontsize=8
+            ax=ax1, loc=1, fancybox=True, shadow=True, frameon=True, fontsize=6
         )
 
         ax1.set_xlim([0, 365])
         ax1.set_ylim([0, 40])
 
+        plt.tight_layout()
         plt.show()
 
 
 if __name__ == "__main__":
     load_existing = False
-    run_model = True
+    run_model = False
     name = "etdemand_sup"
     dll = os.path.join("..", "..", "bin", "libmf6.dll")
     mf6_ws = os.path.join(sws, "..", "..", "data", "mf6_etdemand_test_problems", name)

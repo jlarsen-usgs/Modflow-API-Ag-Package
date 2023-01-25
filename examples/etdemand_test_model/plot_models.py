@@ -11,6 +11,14 @@ import matplotlib as mpl
 mpl.use("TKAgg")
 
 
+def cm2inch(*tupl):
+    inch = 2.54
+    if isinstance(tupl[0], tuple):
+        return tuple(i / inch for i in tupl[0])
+    else:
+        return tuple(i / inch for i in tupl)
+
+
 def plot_mvr(ax, gwf, provider, kper, arrows=False, head_width=10, **kwargs):
     modelgrid = gwf.modelgrid
     xc = modelgrid.xcellcenters.ravel()
@@ -298,20 +306,20 @@ def plot_explanation(ax, wells=True, sfr=True):
 
     if wells:
         patches.append(
-            ax.scatter([-1], [-1], c='k', marker=r'$\leftarrow$', s=100)
+            ax.scatter([-100], [-100], c='k', marker=r'$\leftarrow$', s=100)
         )
         labels.append("Irrigation from well")
     if sfr:
         patches.append(
-            ax.scatter([-1], [-1], c="darkblue", marker=r'$\leftarrow$', s=100)
+            ax.scatter([-100], [-100], c="darkblue", marker=r'$\leftarrow$', s=100)
         )
         labels.append("Irrigation from SFR")
 
 
     legend = ax.legend(
-        patches, labels, fancybox=True, shadow=True, loc=3, frameon=True, fontsize=11
+        patches, labels, fancybox=True, shadow=True, loc=3, frameon=True, fontsize=7
     )
-    legend = styles.graph_legend_title(legend)
+    legend = styles.graph_legend_title(legend, fontsize=7)
 
 
 mf6_ws = os.path.join("..", "..", "data", "mf6_etdemand_test_problems")
@@ -325,7 +333,7 @@ ml = fp.modflow.Modflow.load(
     version="mfnwt",
     model_ws=nwt_ws
 )
-
+"""
 with styles.USGSMap():
     mpl.rcParams["ytick.labelsize"] = 9
     mpl.rcParams["xtick.labelsize"] = 9
@@ -445,44 +453,47 @@ with styles.USGSMap():
     styles.ylabel(ax=ax, label="Model y-coordinate", fontsize=11)
     plt.xticks()
     plt.show()
-
+"""
 
 with styles.USGSMap():
-    mpl.rcParams["ytick.labelsize"] = 9
-    mpl.rcParams["xtick.labelsize"] = 9
-    fig, (ax0, ax1) = plt.subplots(ncols=2, figsize=(10, 6))
+    mpl.rcParams["ytick.labelsize"] = 6
+    mpl.rcParams["xtick.labelsize"] = 6
+    mpl.rcParams["figure.dpi"] = 170
+    fig, (ax0, ax1) = plt.subplots(ncols=2, figsize=cm2inch(17.15, 10.16))
     pmv = fp.plot.PlotMapView(model=gwf, ax=ax0)
     pmv.plot_bc("sfr_0")
     pmv.plot_bc("wel_0")
     plot_mvr(ax0, gwf, "sfr_0", 0)
     plot_mvr(ax0, gwf, "wel_0", 0)
-    pmv.plot_grid()
+    pmv.plot_grid(lw=0.5)
     plot_mvr(ax0, gwf, "sfr_0", 0, arrows=True)
     plot_mvr(ax0, gwf, "wel_0", 0, arrows=True)
     plot_explanation(ax0)
     styles.heading(
         letter="A",
         ax=ax0,
-        heading="MF6 API Agricultural Water Mover Package"
+        heading="MF6 API Agricultural Water Mover Package",
+        fontsize=7
     )
-    styles.xlabel(ax=ax0, label="Model x-coordinate", fontsize=11)
-    styles.ylabel(ax=ax0, label="Model y-coordinate", fontsize=11)
+    styles.xlabel(ax=ax0, label="Model x-coordinate", fontsize=7)
+    styles.ylabel(ax=ax0, label="Model y-coordinate", fontsize=7)
 
     pmv = fp.plot.PlotMapView(model=ml, ax=ax1)
     pmv.plot_bc("sfr")
     nwt_plot_diversion(ax1, ml, "sfr", kper=0)
     nwt_plot_diversion(ax1, ml, "sup", kper=0)
-    pmv.plot_grid()
+    pmv.plot_grid(lw=0.75)
     nwt_plot_diversion(ax1, ml, "sfr", kper=0, arrows=True)
     nwt_plot_diversion(ax1, ml, "sup", kper=0, arrows=True)
-    plot_explanation(ax1)
+    # plot_explanation(ax1)
     styles.heading(
         letter="B",
         ax=ax1,
-        heading="NWT Agricultural Water Use Package"
+        heading="NWT Agricultural Water Use Package",
+        fontsize=7
     )
-    styles.xlabel(ax=ax1, label="Model x-coordinate", fontsize=11)
+    styles.xlabel(ax=ax1, label="Model x-coordinate", fontsize=7)
     # styles.ylabel(ax=ax, label="Model y-coordinate", fontsize=11)
 
-
+    plt.tight_layout()
     plt.show()
