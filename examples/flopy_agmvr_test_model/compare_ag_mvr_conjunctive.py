@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 from scipy.stats import linregress
 sws = os.path.abspath(os.path.dirname(__file__))
-sys.path.append(os.path.join(sws, "..", "..", "mf6api_agmvr"))
+sys.path.append(os.path.join(sws, "..", "..", "mf6api_ag"))
 from mf6_agmvr import ModflowAgmvr
 mpl.use("TKAgg")
 

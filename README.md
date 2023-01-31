@@ -33,21 +33,21 @@ python -m pip install .
 ```
 
 ## Importing ModflowAgmvr
-From the base of this repository: 
+From the base of this repository:
 
 ```python
-from mf6api_agmvr import ModflowAgmvr
+from mf6api_ag import ModflowApiAg
 ```
 
 ## Quickstart guide
 Quickstart usage for a single layer, single well AG MVR model
+
 ```python
 import flopy
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
-from mf6api_agmvr import ModflowAgmvr
-
+from mf6api_ag import ModflowApiAg
 
 # build a new modflow-6 model 
 sim_ws = os.path.join(".")
@@ -63,7 +63,8 @@ nrow, ncol, delc, delr = 10, 10, 10, 10
 top = 25
 strt = 20
 gwf = flopy.mf6.ModflowGwf(sim, modelname=name, save_flows=True)
-dis = flopy.mf6.ModflowGwfdis(gwf, nrow=nrow, ncol=ncol, delc=delc, delr=delr, top=top)
+dis = flopy.mf6.ModflowGwfdis(gwf, nrow=nrow, ncol=ncol, delc=delc, delr=delr,
+                              top=top)
 ic = flopy.mf6.ModflowGwfic(gwf, strt=strt)
 npf = flopy.mf6.ModflowGwfnpf(gwf, icelltype=1, save_specific_discharge=True)
 sto = flopy.mf6.ModflowGwfsto(gwf, iconvert=1)
@@ -108,7 +109,7 @@ uzf = flopy.mf6.ModflowGwfuzf(
 stress_period_data = {}
 for per in range(nper):
     # cellid, maxq for ag pumping!
-    stress_period_data[per] = [[(0, 4, 5), -100.],]
+    stress_period_data[per] = [[(0, 4, 5), -100.], ]
 
 wel = flopy.mf6.ModflowGwfwel(
     gwf,
@@ -121,9 +122,9 @@ perioddata = {}
 for per in range(nper):
     # rec: pak1, id1, pak2, id2, value (max volume of water applied), irr_eff, app_eff
     rec = ("wel_0", 0, "uzf_0", 55, 100, 1., 1.)
-    perioddata[per] = [rec,]
+    perioddata[per] = [rec, ]
 
-mvr = flopy.mf6.ModflowGwfagmvr(
+mvr = flopy.mf6.ModflowGwfapiag(
     gwf,
     maxmvr=1,
     maxpackages=2,
@@ -133,7 +134,7 @@ mvr = flopy.mf6.ModflowGwfagmvr(
 
 sim.write_simulation()
 
-mfag = ModflowAgmvr(sim, mvr_name="agmvr")
+mfag = ModflowApiAg(sim, mvr_name="agmvr")
 mfag.run_model()
 
 ag_out = os.path.join(sim_ws, f"{name}_ag.out")

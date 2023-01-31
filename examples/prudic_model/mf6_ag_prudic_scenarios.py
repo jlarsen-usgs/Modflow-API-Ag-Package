@@ -4,7 +4,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import flopy
 import sys
-from mf6api_agmvr import ModflowAgmvr
+from mf6api_ag import ModflowApiAg
 
 
 def build_model(name, sim_ws):
@@ -408,5 +408,5 @@ if __name__ == "__main__":
 
         sim, gwf = build_model(name, sim_ws)
 
-        mfag = ModflowAgmvr(sim, ag_type="etdemand", mvr_name="agmvr")
+        mfag = ModflowApiAg(sim, ag_type="etdemand", mvr_name="agmvr")
         mfag.run_model(develop=True)

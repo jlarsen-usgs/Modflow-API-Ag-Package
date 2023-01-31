@@ -1,4 +1,4 @@
-name: ModflowAgmvr continuous integration
+name: ModflowApiAg continuous integration
 
 on:
   push:

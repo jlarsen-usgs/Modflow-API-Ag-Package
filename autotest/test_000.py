@@ -1,11 +1,11 @@
-# test importing ModflowAgmvr
+# test importing ModflowApiAg
 import sys
 import os
 import shutil
 
 
 def test_import_agmvr():
-    from mf6api_agmvr import ModflowAgmvr
+    from mf6api_ag import ModflowApiAg
 
 
 def test_import_flopy_gwfagmvr():

@@ -4,7 +4,7 @@ import sys
 import pandas as pd
 import numpy as np
 import flopy
-from mf6api_agmvr import ModflowAgmvr
+from mf6api_ag import ModflowApiAg
 import common
 
 
@@ -162,12 +162,12 @@ def test_etdemand_well():
     uzf_name = gwf.uzf.filename
     common.mf6_dev_no_final_check(model_ws, uzf_name)
 
-    mfag = ModflowAgmvr(sim, ag_type="etdemand", mvr_name="mvr")
+    mfag = ModflowApiAg(sim, ag_type="etdemand", mvr_name="mvr")
     mfag.run_model(common.dll_loc())
 
     # compare output to mfnwt output for same problem
     mf6_ag_out = os.path.join(model_ws, f"{name}_ag.out")
-    mf6_ag_out = ModflowAgmvr.load_output(mf6_ag_out)
+    mf6_ag_out = ModflowApiAg.load_output(mf6_ag_out)
     mf6_ag_out = mf6_ag_out.groupby(by=["pkg", "pid", "kstp"], as_index=False)[["q_from_provider", "q_to_receiver"]].sum()
 
     nwt_cbc = os.path.join(common.nwt_output_path(), f"{name}.cbc")

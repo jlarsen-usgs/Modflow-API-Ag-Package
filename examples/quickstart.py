@@ -2,7 +2,7 @@ import flopy
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
-from mf6api_agmvr import ModflowAgmvr
+from mf6api_ag import ModflowApiAg
 
 
 sim_ws = os.path.join("..", "data", "quickstart")
@@ -88,7 +88,7 @@ mvr = flopy.mf6.ModflowGwfagmvr(
 
 sim.write_simulation()
 
-mfag = ModflowAgmvr(sim, mvr_name="agmvr")
+mfag = ModflowApiAg(sim, mvr_name="agmvr")
 mfag.run_model()
 
 ag_out = os.path.join(sim_ws, f"{name}_ag.out")

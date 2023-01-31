@@ -1,6 +1,6 @@
 import os
 import flopy
-from mf6api_agmvr import ModflowAgmvr
+from mf6api_ag import ModflowApiAg
 import pandas as pd
 
 
@@ -57,8 +57,8 @@ out_ws = os.path.join("..", "data", "docs_example")
 sim.set_sim_path(out_ws)
 sim.write_simulation()
 
-# create a ModflowAgmvr object and run model
-mf6ag = ModflowAgmvr(sim, mvr_name="agmvr")
+# create a ModflowApiAg object and run model
+mf6ag = ModflowApiAg(sim, mvr_name="agmvr")
 mf6ag.run_model()
 
 output_file = os.path.join(out_ws, "gwf_1_ag.out")

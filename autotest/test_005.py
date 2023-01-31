@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import sys
 import os
-from mf6api_agmvr import ModflowAgmvr
+from mf6api_ag import ModflowApiAg
 import common
 
 
@@ -204,7 +204,7 @@ def test_etdemand_lak():
     uzf_name = gwf.uzf.filename
     common.mf6_dev_no_final_check(model_ws, uzf_name)
 
-    mfag = ModflowAgmvr(sim, ag_type="etdemand", mvr_name="mvr")
+    mfag = ModflowApiAg(sim, ag_type="etdemand", mvr_name="mvr")
     mfag.run_model(common.dll_loc())
 
     # compare output to the mfnwt well pumping problem
@@ -213,7 +213,7 @@ def test_etdemand_lak():
     nwt_pump = nwt_cbc.get_data(text="AG WE")
 
     mf6_ag_out = os.path.join(model_ws, f"{name}_ag.out")
-    mf6_ag_out = ModflowAgmvr.load_output(mf6_ag_out)
+    mf6_ag_out = ModflowApiAg.load_output(mf6_ag_out)
     mf6_ag_out = mf6_ag_out.groupby(by=["pkg", "pid", "kstp"], as_index=False)[["q_from_provider", "q_to_receiver"]].sum()
 
     nwt_total = []

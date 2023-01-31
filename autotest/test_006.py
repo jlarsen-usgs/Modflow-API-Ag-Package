@@ -4,7 +4,7 @@ import flopy
 import numpy as np
 import pandas as pd
 import os
-from mf6api_agmvr import ModflowAgmvr
+from mf6api_ag import ModflowApiAg
 import common
 
 
@@ -399,7 +399,7 @@ def test_prudic_model():
 
     sim.write_simulation()
 
-    mfag = ModflowAgmvr(sim, ag_type="etdemand", mvr_name="mvr")
+    mfag = ModflowApiAg(sim, ag_type="etdemand", mvr_name="mvr")
     mfag.run_model(common.dll_loc())
 
     nwt_ag_file = os.path.join(

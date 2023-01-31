@@ -1,29 +1,30 @@
-# Guide to the mf6api_agmvr package
+# Guide to the mf6api_ag package
 
-The mf6api_agmvr package simulates irrigated agricultural processes by 
+The mf6api_ag package simulates irrigated agricultural processes by 
 extending the functionality of MODFLOW-6 through MODFLOW’s Extended Model 
 Interface (XMI). The package is written in pure python, is tightly coupled with 
 MODFLOW-6, and calculates irrigation demand and applied irrigation water at the 
 outer iteration of a model’s time-step. The package also interfaces with FloPy 
 (Bakker and others, 2016; Bakker and others, 2022) and provides FloPy support 
-for constructing Agricultural water mover (AGMVR) input files.
+for constructing MODFLOW API Agricultural Water Use Package (API-AG) input 
+files.
 
 This guide covers the installation process, input file construction and 
 formatting, and provides links to example problems.
 
 ## Installation
-The mf6api_agmvr package can be installed from the command line or terminal 
+The mf6api_ag package can be installed from the command line or terminal 
 window by running the following command:
 ```commandline
-python -m pip install https://github.com/jlarsen-usgs/mf6api_agmvr/archive/refs/heads/main.zip
+python -m pip install https://github.com/jlarsen-usgs/mf6api_ag/archive/refs/heads/main.zip
 ```
 
-## The Agricultural Mover Package (AGMVR)
-The AGMVR package can be used to calculate irrigation demand and transfer water 
+## The MODFLOW API Agricultural Water Use Package (API-AG)
+The APIAG package can be used to calculate irrigation demand and transfer water 
 from an agricultural provider to agricultural receiver nodes. Providers are 
 extraction wells, streamflow routing reaches, and lakes that have water 
 available for extraction. The list of packages that can provide water to the 
-AGMVR package are
+API-AG package are
    - Well Package (WEL)
    - Multi-Aquifer Well Package (MAW)
    - Streamflow Routing Package (SFR)
@@ -35,10 +36,10 @@ These nodes receive water from a provider or multiple provider(s). The only
 receiver package supported is:
    - Unsaturated Zone Flow Package (UZF)
 
-The program will terminate with an error if the AGMVR is used with an 
+The program will terminate with an error if the API-AG is used with an 
 unsupported package type.
 
-The AGMVR Package is based on the calculation of irrigation demand presented by 
+The API-AG Package is based on the calculation of irrigation demand presented by 
 Niswonger (2020) and is limited by the available water that can be moved from a 
 provider to receiver nodes. Irrigation demand is calculated by minimizing the 
 difference between potential crop evapotranspiration $\left( ET_o K_c \right)$ 
@@ -90,9 +91,9 @@ $$Q_L = Q_A - (Q_A * e_a)$$
 
 and is removed from the model.
 
-Input to the Agricultural Water Mover (AGMVR) Package is read from the file 
-type “AGMVR” in the Name File by the “ModflowGwfagmvr” python class and 
-processed by the “ModflowAgmvr” class.
+Input to the MODFLOW API Agricultural Water Use Package (API-AG) is read from 
+the file type “APIAG” in the Name File by the “ModflowGwfapiag” python class 
+and processed by the “ModflowApiAg” class.
 
 ### Structure of Blocks
 _FOR EACH SIMULATION_
@@ -192,11 +193,11 @@ requirement based on the ET deficit (e.g., flush irrigation). Values less than
 <img src="https://raw.githubusercontent.com/jlarsen-usgs/mf6api_agmvr/main/docs/agmvr.png" alt="input file"/>
 </p>
 
-### Building an AGMVR package with Python
-Installation of the mf6api_package dynamically links with the FloPy package to 
-create input reading and writing routines for the AGMVR package. Example code 
-is presented here that shows how to build an AGMVR package and add it to an 
-existing MODFLOW model. 
+### Building an API-AG Package with Python
+Installation of the mf6api_ag Package dynamically links with FloPy 
+to create input reading and writing routines for the API-AG package. Example 
+code is presented here that shows how to build an API-AG package and add it to 
+an existing MODFLOW model. 
 
    * import the required packages and set the path to the existing model
 ```python
@@ -238,19 +239,20 @@ wel = flopy.mf6.modflow.ModflowGwfwel(
     stress_period_data=perioddata
 )
 ```
-   * Build the AGMVR package using FloPy functions
+   * Build the API-AG package using FloPy functions
+
 ```python
 # build the AG package
 packages = [("wel_0",), ("uzf-1",)]
 perioddata = {
-    i : [
+    i: [
         ("wel_0", 0, "uzf-1", 3, 50, 1, 1),
         ("wel_0", 1, "uzf-1", 3, 50, 1, 1)
     ]
     for i in range(gwf.nper)
 }
 
-ag = flopy.mf6.modflow.ModflowGwfagmvr(
+ag = flopy.mf6.modflow.ModflowGwfapiag(
     gwf,
     maxmvr=len(packages),
     maxpackages=2,
@@ -266,24 +268,25 @@ sim.set_sim_path(out_ws)
 sim.write_simulation()
 ```
 
-### Running MODFLOW with the AGMVR package
-The AGMVR package cannot be run with the traditional MODFLOW-6 executable 
+### Running MODFLOW with the API-AG Package
+The API-AG Package cannot be run with the traditional MODFLOW-6 executable 
 because the calculation code has been implemented in python for use with the 
-MODFLOW-6 XMI. As a result, a model that uses the AGMVR package must be run in 
-python using the mf6api_agmvr package. Once a simulation has been loaded into 
-FloPy the user can pass the simulation object to the ModflowAgmvr class and 
+MODFLOW 6 API. As a result, a model that uses the API-AG Package must be run in 
+python using the mf6api_ag package. Once a simulation has been loaded into 
+FloPy the user can pass the simulation object to the ModflowApiag class and 
 run the model.
-```python
-from mf6api_agmvr import ModflowAgmvr
 
-mf6ag = ModflowAgmvr(sim, mvr_name="agmvr")
+```python
+from mf6api_ag import ModflowApiAg
+
+mf6ag = ModflowApiAg(sim, mvr_name="agmvr")
 mf6ag.run_model()
 ```
 
-### Reading output from the AGMVR package
-The AGMVR package writes a single ascii output file upon completion of the 
+### Reading output from the API-AG Package
+The API-AG Package writes a single ascii output file upon completion of the 
 model. This file is named {model_name}_ag.out, where model_name is the name
-of the model specified in the MODFLOW6 sim file that has been run. For example,
+of the model specified in the MODFLOW 6 sim file that has been run. For example,
 if the name of the model is "gwf_1" the output file name will be 
 "gwf_1_ag.out". The output file contains information about the potential et,
 actual et, demand, the volumetric flux (units, $\left( L^{3}/T \right)$ ) 
@@ -300,8 +303,8 @@ ag_df = pd.read_csv(output_file, delim_whitespace=True)
 ```
 
 ### Example problems
-Example problems are distributed with the mf6api_agmvr repository and can be 
-found in the [examples directory](https://github.com/jlarsen-usgs/mf6api_agmvr/tree/main/examples).
+Example problems are distributed with the mf6api_ag repository and can be 
+found in the [examples directory](https://github.com/jlarsen-usgs/mf6api_ag/tree/main/examples).
 
 ### References
 Bakker, Mark, Post, Vincent, Langevin, C. D., Hughes, J. D., White, J. T., 

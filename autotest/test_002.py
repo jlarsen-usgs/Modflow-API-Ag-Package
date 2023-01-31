@@ -4,7 +4,7 @@ import sys
 import pandas as pd
 import numpy as np
 import flopy
-from mf6api_agmvr import ModflowAgmvr
+from mf6api_ag import ModflowApiAg
 import common
 
 
@@ -191,7 +191,7 @@ def test_etdemand_sfr():
 
     sim.write_simulation()
 
-    mfag = ModflowAgmvr(sim, ag_type="etdemand", mvr_name="mvr")
+    mfag = ModflowApiAg(sim, ag_type="etdemand", mvr_name="mvr")
     mfag.run_model(common.dll_loc())
 
     nwt_div1 = os.path.join(common.nwt_output_path(), f"{name}.diversion11.txt")
@@ -200,7 +200,7 @@ def test_etdemand_sfr():
     nwt_div2 = pd.read_csv(nwt_div2, delim_whitespace=True)
 
     mf6_ag_out = os.path.join(sim_ws, f"{name}_ag.out")
-    mf6_ag_out = ModflowAgmvr.load_output(mf6_ag_out)
+    mf6_ag_out = ModflowApiAg.load_output(mf6_ag_out)
     mf6_ag_out = mf6_ag_out.groupby(by=["pkg", "pid", "kstp"], as_index=False)[["q_from_provider", "q_to_receiver"]].sum()
     mf6_div1 = mf6_ag_out[mf6_ag_out.pid == 2]
     mf6_div2 = mf6_ag_out[mf6_ag_out.pid == 4]
