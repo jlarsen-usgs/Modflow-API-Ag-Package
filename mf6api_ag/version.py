@@ -4,7 +4,7 @@ minor = 0
 micro = 0
 __version__ = f"{major}.{minor}.{micro}"
 
-__pakname__ = "mf6api_agmvr"
+__pakname__ = "mf6api_ag"
 
 author_dict = {
     "Joshua D. Larsen": "jlarsen@usgs.gov"

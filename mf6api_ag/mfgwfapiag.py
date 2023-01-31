@@ -5,9 +5,9 @@ from flopy.mf6 import mfpackage
 from flopy.mf6.data.mfdatautil import ListTemplateGenerator
 
 
-class ModflowGwfagmvr(mfpackage.MFPackage):
+class ModflowGwfapiag(mfpackage.MFPackage):
     """
-    ModflowGwfagmvr defines a agmvr package within a gwf6 model.
+    ModflowGwfapiag defines an apiag package within a gwf6 model.
 
     Parameters
     ----------
@@ -119,7 +119,7 @@ class ModflowGwfagmvr(mfpackage.MFPackage):
                                         'perioddata'))
     package_abbr = "gwfagmvr"
     _package_type = "agmvr"
-    dfn_file_name = "gwf-agmvr.dfn"
+    dfn_file_name = "gwf-apiag.dfn"
 
     dfn = [
            ["header", ],
@@ -215,4 +215,4 @@ class ModflowGwfagmvr(mfpackage.MFPackage):
 
 
 def plugin():
-    return ModflowGwfagmvr
+    return ModflowGwfapiag

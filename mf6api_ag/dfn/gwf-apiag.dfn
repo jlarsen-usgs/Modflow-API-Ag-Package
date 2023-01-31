@@ -1,5 +1,5 @@
-# --------------------- gwf agmvr options ---------------------
-# flopy subpackage agmvr_filerecord agmvr perioddata perioddata
+# --------------------- gwf apiag options ---------------------
+# flopy subpackage apiag_filerecord apiag perioddata perioddata
 # flopy parent_name_type parent_model_or_package MFModel/MFPackage
 
 block options

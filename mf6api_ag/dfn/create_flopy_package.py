@@ -4,7 +4,7 @@ from flopy.mf6.api.create_api_package import create_api_package
 
 def make_modflowagmvr_package():
     """
-    Method to make a FloPy compatible ModflowGwfagmvr package
+    Method to make a FloPy compatible ModflowGwfapiag package
     for handling custom IO within FloPy
 
     Returns

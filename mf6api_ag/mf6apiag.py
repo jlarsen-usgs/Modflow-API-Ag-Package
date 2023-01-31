@@ -4,7 +4,7 @@ import flopy
 import os
 
 
-class ModflowAgmvr(object):
+class ModflowApiAg(object):
     """
     Modflow6 API AG pacakge that uses the MVR to facilitate irrigation
 
@@ -1055,11 +1055,11 @@ class ModflowAgmvr(object):
 
 
 def plugin():
-    return ModflowAgmvr
+    return ModflowApiAg
 
 
 def dfn():
-    dfn_name = "gwf-agmvr.dfn"
+    dfn_name = "gwf-apiag.dfn"
     return (
         dfn_name,
         os.path.join(os.path.abspath(os.path.dirname(__file__)), dfn_name)
