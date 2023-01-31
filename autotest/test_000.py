@@ -8,8 +8,8 @@ def test_import_agmvr():
     from mf6api_ag import ModflowApiAg
 
 
-def test_import_flopy_gwfagmvr():
-    from flopy.mf6.modflow import ModflowGwfagmvr
+def test_import_flopy_gwfapiag():
+    from flopy.mf6.modflow import ModflowGwfapiag
 
 
 def test_setup():
