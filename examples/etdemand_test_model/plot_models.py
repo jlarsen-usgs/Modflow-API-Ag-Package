@@ -472,7 +472,7 @@ with styles.USGSMap():
     styles.heading(
         letter="A",
         ax=ax0,
-        heading="MF6 API Agricultural Water Mover Package",
+        heading="MF6 API Agricultural Water Use Package",
         fontsize=7
     )
     styles.xlabel(ax=ax0, label="Model x-coordinate", fontsize=7)
