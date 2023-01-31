@@ -279,7 +279,7 @@ run the model.
 ```python
 from mf6api_ag import ModflowApiAg
 
-mf6ag = ModflowApiAg(sim, mvr_name="agmvr")
+mf6ag = ModflowApiAg(sim, mvr_name="apiag")
 mf6ag.run_model()
 ```
 
