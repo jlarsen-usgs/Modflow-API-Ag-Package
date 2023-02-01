@@ -385,7 +385,7 @@ def build_model(name, sim_ws):
 
             period_data[per] = spd
 
-    mvr = flopy.mf6.ModflowGwfagmvr(
+    mvr = flopy.mf6.ModflowGwfapiag(
         gwf,
         maxmvr=len(period_data[4]),
         maxpackages=maxpackages,
@@ -408,5 +408,5 @@ if __name__ == "__main__":
 
         sim, gwf = build_model(name, sim_ws)
 
-        mfag = ModflowApiAg(sim, ag_type="etdemand", mvr_name="agmvr")
+        mfag = ModflowApiAg(sim, ag_type="etdemand", mvr_name="apiag")
         mfag.run_model(develop=True)

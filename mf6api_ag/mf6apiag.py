@@ -19,7 +19,7 @@ class ModflowApiAg(object):
         short name for the Modflow6 MVR package. Ex. "mvr_0"
     """
 
-    def __init__(self, sim, ag_type="etdemand", mvr_name="mvr"):
+    def __init__(self, sim, ag_type="etdemand", mvr_name="apiag"):
         self.sim = sim
         name = list(sim.model_names)[0]
         self.name = name.upper()
@@ -28,7 +28,7 @@ class ModflowApiAg(object):
         self.mvr = self.gwf.get_package(self.mvr_name)
         if self.mvr is None:
             raise AssertionError(
-                "MVR or AGMVR package does not exist for this model"
+                "MVR or API-AG package does not exist for this model"
             )
         if not isinstance(self.mvr, flopy.mf6.ModflowGwfmvr):
             # assume this is an Agmvr package!

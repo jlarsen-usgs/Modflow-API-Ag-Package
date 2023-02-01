@@ -11,6 +11,8 @@ from mf6api_ag import ModflowApiAg
 from math import log10, floor
 
 
+sws = os.path.abspath(os.path.dirname(__file__))
+
 def round_to_n(x, n):
     if x == 0:
         return 0

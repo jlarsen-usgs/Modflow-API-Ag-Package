@@ -9,7 +9,7 @@ import matplotlib as mpl
 from scipy.stats import linregress
 sws = os.path.abspath(os.path.dirname(__file__))
 sys.path.append(os.path.join(sws, "..", "..", "mf6api_ag"))
-from mf6_agmvr import ModflowAgmvr
+from mf6api_ag import ModflowApiAg
 mpl.use("TKAgg")
 
 
@@ -226,7 +226,7 @@ def build_mf6(name, headtol=None, fluxtol=None):
 
         period_data[i] = mvr_rec
 
-    agmvr = flopy.mf6.ModflowGwfagmvr(
+    agmvr = flopy.mf6.ModflowGwfapiag(
         gwf,
         maxmvr=8,
         maxpackages=3,
@@ -266,7 +266,7 @@ def compare_model_output(nwt, mf6, model):
     nwt_cbc = os.path.join(nwt, f"{model}.cbc")
 
     mf6_ag_out = os.path.join(mf6, f"{model}_ag.out")
-    mf6_ag_out = ModflowAgmvr.load_output(mf6_ag_out)
+    mf6_ag_out = ModflowApiAg.load_output(mf6_ag_out)
 
     mf6_ag_out = mf6_ag_out.groupby(by=["pkg", "pid", "kstp"], as_index=False)[["q_from_provider", "q_to_receiver"]].sum()
     mf6_div1 = mf6_ag_out[mf6_ag_out.pid == 2]
@@ -373,7 +373,7 @@ if __name__ == "__main__":
         else:
             sim = flopy.mf6.MFSimulation.load(sim_ws=mf6_ws)
 
-        mfag = ModflowAgmvr(sim, ag_type="etdemand", mvr_name="agmvr")
+        mfag = ModflowApiAg(sim, ag_type="etdemand", mvr_name="apiag")
         mfag.run_model(dll)
 
     compare_model_output(nwt_ws, mf6_ws, "etdemand_sup")
