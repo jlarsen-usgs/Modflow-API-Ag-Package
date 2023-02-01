@@ -1,8 +1,8 @@
 [
   {
-    "name": "mf6api_agmvr",
+    "name": "mf6api_ag",
     "organization": "U.S. Geological Survey",
-    "description": "pyGSFLOW is a python package to Create, Read, Write, Edit, and Visualize GSFLOW models",
+    "description": "An Agricultural Water Use Package (API-AG) for the MODFLOW 6 API",
     "version": "1.0.0",
     "status": "Development",
 
@@ -11,15 +11,15 @@
       "licenses": [
         {
           "name": "The Unlicense",
-          "URL": "https://code.usgs.gov/water/mf6api_agmvr/-/raw/1.0.0/LICENCE.md"
+          "URL": "https://code.usgs.gov/cawsc/modflow-api-ag-package/-/raw/1.0.0/LICENCE.md"
         }
       ]
     },
 
-    "homepageURL": "https://code.usgs.gov/water/mf6api_agmvr",
-    "downloadURL": "https://code.usgs.gov/water/mf6api_agmvr/-/archive/1.0.0/mf6api_agmvr-1.0.2.zip",
-    "disclaimerURL": "https://code.usgs.gov/water/mf6api_agmvr/-/raw/1.0.0/DISCLAIMER.md",
-    "repositoryURL": "https://code.usgs.gov/water/mf6api_agmvr",
+    "homepageURL": "https://code.usgs.gov/cawsc/modflow-api-ag-package",
+    "downloadURL": "https://code.usgs.gov/cawsc/modflow-api-ag-package/-/archive/1.0.0/mf6api_ag-1.0.0.zip",
+    "disclaimerURL": "https://code.usgs.gov/cawsc/modflow-api-ag-package/-/raw/1.0.0/DISCLAIMER.md",
+    "repositoryURL": "https://code.usgs.gov/cawsc/modflow-api-ag-package",
     "vcs": "git",
 
     "laborHours": -1,
@@ -45,7 +45,7 @@
     },
 
     "date": {
-      "metadataLastUpdated": "2022-08-04"
+      "metadataLastUpdated": "2023-01-31"
     }
   }
 ]
