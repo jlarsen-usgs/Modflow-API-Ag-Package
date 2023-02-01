@@ -1,6 +1,6 @@
 [![ModflowAgmvr CI](https://github.com/jlarsen-usgs/mf6api_ag/actions/workflows/ci.yml/badge.svg)](https://github.com/jlarsen-usgs/mf6api_ag/actions/workflows/ci.yml)
 
-# mf6api_agmvr
+# Modflow API Ag Package 
 This repository contains the ModflowApiAg class that interfaces with the 
 modflowapi to simulate irrigated agriculture with MODFLOW 6. The ModflowApiAg 
 api package overrides the MODFLOW 6 water mover (MVR) package and calculates
