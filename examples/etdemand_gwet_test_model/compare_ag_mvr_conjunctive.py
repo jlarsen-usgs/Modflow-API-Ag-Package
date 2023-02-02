@@ -292,6 +292,9 @@ def compare_model_output(nwt, mf6, model):
     err1 = np.sum(total_ag1 - nwt_total1)
     err2 = np.sum(total_ag2 - nwt_total2)
 
+    pdif = (err1 + err2) / np.sum(nwt_total1 + nwt_total2)
+    print(pdif)
+
     with styles.USGSPlot():
         mpl.rcParams["ytick.labelsize"] = 9
         mpl.rcParams["xtick.labelsize"] = 9
