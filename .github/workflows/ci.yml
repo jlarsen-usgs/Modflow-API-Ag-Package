@@ -13,8 +13,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest]
-        python-version: [3.9, 3.8]
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        python-version: [3.8, 3.9, "3.10"]
         run-type: [std]
         test-pth: ["./autotest"]
     defaults:
@@ -23,7 +23,7 @@ jobs:
 
     steps:
     - name: Checkout modflow6api_agMVR repo
-      uses: actions/checkout@v2.3.4
+      uses: actions/checkout@v3
 
     - name: Get branch name
       uses: nelonoel/branch-name@v1.0.1
@@ -80,6 +80,11 @@ jobs:
     - name: Run pytest CI testing suite for pyGSFLOW
       shell: bash -l {0}
       run: |
+        cd bin
+        chmod a+x libmf6.s0
+        chmod a+x libmf6.dylib
+        chmod a+x libmf6.dll
+        cd..
         pip install pytest
         pip install pytest-cov
         pip install .
