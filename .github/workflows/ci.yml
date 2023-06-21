@@ -71,7 +71,7 @@ jobs:
         chmod a+x libmf6.so
         chmod a+x libmf6.dylib
         chmod a+x libmf6.dll
-        cd..
+        cd ..
         pip install pytest
         pip install pytest-cov
         pip install .
