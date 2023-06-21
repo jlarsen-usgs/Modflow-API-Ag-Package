@@ -63,19 +63,6 @@ jobs:
         cd data
         pip install https://github.com/modflowpy/flopy/zipball/develop
         cd ..
-    
-    - name: Setup symbolic link to gfortran on Linux
-      if: runner.os == 'Linux'
-      run: |
-        sudo ln -fs /usr/bin/gfortran-10 /usr/bin/gfortran
-        sudo ln -fs /usr/bin/gcc-10 /usr/bin/gcc
-        sudo ln -fs /usr/bin/g++-10 /usr/bin/g++
-
-    - name: Print GNU compiler versions
-      run: |
-        gfortran --version
-        gcc --version
-        g++ --version
       
     - name: Run pytest CI testing suite for Modflow-API-Ag-Package
       shell: bash -l {0}
