@@ -144,11 +144,15 @@ class ModflowApiAg(object):
 
     def create_addresses(self, mf6):
         """
-        Method to create MODFLOW-API addresses
+        Method to create and strore MODFLOW-API pointer addresses
 
         Parameters
         ----------
         mf6 : ModflowApi object
+
+        Returns
+        -------
+            None
 
         """
         solutiongroup = self.sim.name_file.solutiongroup.data
@@ -959,10 +963,10 @@ class ModflowApiAg(object):
                 developer information about model data available through the
                 BMI for a given model
         """
+        import platform
         develop = kwargs.pop("develop", False)
 
         if dll is None:
-            import platform
             if platform.system().lower() == "linux":
                 dll_name = "libmf6.so"
             elif platform.system().lower() == "darwin":
@@ -971,6 +975,18 @@ class ModflowApiAg(object):
                 dll_name = "libmf6.dll"
             sws = os.path.abspath(os.path.dirname(__file__))
             dll = os.path.join(sws, "..", "bin", dll_name)
+
+        else:
+            dll_ext = dll.split(".")[-1]
+            if dll_ext not in ("so", "dylib", "dll"):
+                if platform.system().lower() == "linux":
+                    ext = ".so"
+                elif platform.system().lower() == "darwin":
+                    ext = ".dylib"
+                else:
+                    ext = ".dll"
+
+                dll = f"{dll}{ext}"
 
         mf6 = ModflowApi(
             dll,

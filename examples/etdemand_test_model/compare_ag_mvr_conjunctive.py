@@ -357,7 +357,7 @@ def compare_model_output(nwt, mf6, model):
         styles.xlabel(ax=ax0, label="Days", fontsize=6)
         styles.ylabel(
             ax=ax0,
-            label="Applied irrigation, in " + r"$m^{3}$",
+            label="Applied irrigation, in " + r"$m^{3}/day$",
             fontsize=7
         )
         styles.graph_legend(
@@ -418,7 +418,7 @@ def compare_model_output(nwt, mf6, model):
         ax1.set_ylim([0, 40])
 
         plt.tight_layout()
-        plt.savefig("example_1_results.jpeg")
+        plt.savefig("example_1_results.tiff")
         plt.show()
 
 
@@ -426,7 +426,7 @@ if __name__ == "__main__":
     load_existing = False
     run_model = False
     name = "etdemand_sup"
-    dll = os.path.join("..", "..", "bin", "libmf6.dll")
+    dll = os.path.join("..", "..", "bin", "libmf6")
     mf6_ws = os.path.join(sws, "..", "..", "data", "mf6_etdemand_test_problems", name)
     nwt_ws = os.path.join(sws, "..", "..", "data", "nwt_etdemand_test_problems")
     if run_model:

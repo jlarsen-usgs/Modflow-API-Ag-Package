@@ -118,7 +118,7 @@ END **PACKAGES**
 
 _FOR ANY STRESS PERIOD_
 
-BEGIN **PERIOD**  
+BEGIN **PERIOD** <iper<n>>  
 <pname1<n>> <id1<n>> <pname2<n>> <id2<n>> <irr_eff<n>> <app_eff<n>>  
 <pname1<n>> <id1<n>> <pname2<n>> <id2<n>> <irr_eff<n>> <app_eff<n>>  
 ....  
@@ -179,11 +179,11 @@ variable IUZNO.
 value — is the maximum value of water to move from a provider to a receiver 
 node. This is specified as a volumetric flow rate.
 
-eff_fact — is the irrigation efficiency factor. This factor can range from 0 
+irr_eff — is the irrigation efficiency factor. This factor can range from 0 
 to 1, where 1 represents 100% efficiency in irrigation, which translates to no 
 irrigation losses.
 
-app_fact — is the application efficiency factor. Values greater than 1 can be 
+app_eff — is the application efficiency factor. Values greater than 1 can be 
 used to simulate the application of irrigation water beyond the crop’s 
 requirement based on the ET deficit (e.g., flush irrigation). Values less than 
 1 can be used to simulate deficit irrigation.   

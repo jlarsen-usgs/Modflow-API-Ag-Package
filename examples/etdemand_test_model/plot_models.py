@@ -496,4 +496,5 @@ with styles.USGSMap():
     # styles.ylabel(ax=ax, label="Model y-coordinate", fontsize=11)
 
     plt.tight_layout()
+    plt.savefig("example_1_model.tiff")
     plt.show()

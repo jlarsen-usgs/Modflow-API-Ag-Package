@@ -409,4 +409,4 @@ if __name__ == "__main__":
         sim, gwf = build_model(name, sim_ws)
 
         mfag = ModflowApiAg(sim, ag_type="etdemand", mvr_name="apiag")
-        mfag.run_model(develop=True)
+        mfag.run_model(develop=False)

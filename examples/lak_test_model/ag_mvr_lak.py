@@ -309,7 +309,7 @@ if __name__ == "__main__":
     # set dll path
     load_existing = False
     run_model = True
-    dll = os.path.join("..", "..", "bin", "libmf6.dll")
+    dll = os.path.join("..", "..", "bin", "libmf6")
     mf6_ws = os.path.join(sws, "..", "..", "data", "mf6_lak_etdemand_test_problem")
     nwt_ws = os.path.join(sws, "..", "..", "data", "nwt_etdemand_test_problems")
     model_name = "etdemand_lak"
