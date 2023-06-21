@@ -25,7 +25,7 @@ def mf6_dev_no_final_check(model_ws, fname):
 
 
 def dll_loc():
-    return os.path.join("..", "bin", "libmf6.dll")
+    return os.path.join("..", "bin", "libmf6")
 
 
 def nwt_output_path():
