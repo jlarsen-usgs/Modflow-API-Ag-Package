@@ -297,12 +297,15 @@ class ModflowApiAg(object):
         pkg_name = self.__dict__[f"{pkg}_name"]
         if kper in self.mvr.perioddata.data:
             recarray = self.mvr.perioddata.data[kper]
-            irridx = np.where((recarray["pname1"] == pkg_name) & (recarray["pname2"] == self.uzf_name.lower()))[0]
-            if len(irridx) > 0:
-                if pkg_name in ("sfr", "lak"):
-                    mvr[irridx] = 0
+            if len(recarray) > 0:
+                irridx = np.where((recarray["pname1"] == pkg_name) & (recarray["pname2"] == self.uzf_name.lower()))[0]
+                if len(irridx) > 0:
+                    if pkg_name in ("sfr", "lak"):
+                        mvr[irridx] = 0
 
-                irrids = sorted(np.unique(recarray[irridx]["id1"]))
+                    irrids = sorted(np.unique(recarray[irridx]["id1"]))
+                else:
+                    irrids = []
             else:
                 irrids = []
 
@@ -329,28 +332,29 @@ class ModflowApiAg(object):
             iprop = []
             irreff = []
             appfrac = []
-            idx = np.where(
-                (recarray["id1"] == irrid) & (recarray["pname1"] == pkg_name)
-            )[0]
-            if len(idx) > 0:
-                icells = recarray[idx]["id2"]
-                iprop = recarray[idx]["value"] / np.sum(recarray[idx]["value"])
-                if pkg in ("sfr", "lak"):
-                    for mvr_rec in idx:
-                        max_q[irrid] += recarray[mvr_rec]["value"]
+            if len(recarray) > 0:
+                idx = np.where(
+                    (recarray["id1"] == irrid) & (recarray["pname1"] == pkg_name)
+                )[0]
+                if len(idx) > 0:
+                    icells = recarray[idx]["id2"]
+                    iprop = recarray[idx]["value"] / np.sum(recarray[idx]["value"])
+                    if pkg in ("sfr", "lak"):
+                        for mvr_rec in idx:
+                            max_q[irrid] += recarray[mvr_rec]["value"]
 
-                if "irr_eff" in recarray.dtype.names:
-                    irreff = recarray[idx]["irr_eff"]
-                    appfrac = recarray[idx]["app_frac"]
-                else:
-                    irreff = np.ones((len(icells),))
-                    appfrac = np.ones((len(icells),))
+                    if "irr_eff" in recarray.dtype.names:
+                        irreff = recarray[idx]["irr_eff"]
+                        appfrac = recarray[idx]["app_frac"]
+                    else:
+                        irreff = np.ones((len(icells),))
+                        appfrac = np.ones((len(icells),))
 
-            irrigation_efficiency.append(irreff)
-            application_fraction.append(appfrac)
-            irrigated_cells.append(icells)
-            irrigated_proportion.append(iprop)
-            mvr_index.append(idx)
+                irrigation_efficiency.append(irreff)
+                application_fraction.append(appfrac)
+                irrigated_cells.append(icells)
+                irrigated_proportion.append(iprop)
+                mvr_index.append(idx)
 
         # adjustment for multiple providers in same pkg irrigating a node
         if pkg == "well":
@@ -421,9 +425,10 @@ class ModflowApiAg(object):
             self.lak_evap_old = mf6.get_value(self.lak_evap_addr)
         if kper in self.mvr.perioddata.data:
             t = self.mvr.perioddata.data[kper]
-            self.ag_active = np.where(
-                t["pname2"] == self.uzf_name.lower(), True, False
-            )
+            if len(t) > 0:
+                self.ag_active = np.where(
+                    t["pname2"] == self.uzf_name.lower(), True, False
+                )
         else:
             pass
 
