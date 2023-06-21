@@ -68,7 +68,7 @@ jobs:
       shell: bash -l {0}
       run: |
         cd bin
-        chmod a+x libmf6.s0
+        chmod a+x libmf6.so
         chmod a+x libmf6.dylib
         chmod a+x libmf6.dll
         cd..
