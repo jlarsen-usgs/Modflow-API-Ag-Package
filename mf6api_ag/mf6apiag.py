@@ -89,7 +89,13 @@ class ModflowApiAg(object):
 
     def get_pkgs(self):
         """
-        Method to get AG package names
+        Method to get AG package names from the modflowapi shared library.
+        This method stores the package names and sets flags that determine
+        simulation processes such as well or sfr irrigation.
+
+        Returns
+        -------
+            None
 
         """
         pkg_names = self.mvr.packages
@@ -409,6 +415,10 @@ class ModflowApiAg(object):
         mf6 : ModflowApi object
         kper : int
             zero based stress period number
+
+        Returns
+        -------
+            None
         """
         if self.sim_wells:
             self._set_package_stress_period_data(mf6, kper, "well")
@@ -435,6 +445,14 @@ class ModflowApiAg(object):
     def zero_mvr(self, mf6):
         """
         Method to zero out MVR values before initial solve
+
+        Parameters
+        ----------
+        mf6 : ModflowApi object
+
+        Returns
+        -------
+            None
         """
         mvr = mf6.get_value(self.mvr_value_addr)
         mvr = np.where(self.ag_active, 0, mvr)
@@ -454,6 +472,20 @@ class ModflowApiAg(object):
 
         Returns
         -------
+        tuple :
+            crop_pet : np.array
+                potential evapotranspiration for crop cells
+            crop_aet : np.array
+                actual soil evapotranspiration for crop cells
+            crop_vks : np.array
+                uzf vertical conductivity for crop cells
+            app_frac : np.array
+                application efficiencies for irrigation
+            prev_applied : np.array
+                previous amount of irrigation applied to crop cells
+            gw_avail : np.array
+                volume of groundwater available to wells for irrigation
+
         """
         pet = mf6.get_value(self.pet_addr)
         vks = mf6.get_value(self.vks_addr)
@@ -497,7 +529,6 @@ class ModflowApiAg(object):
                     else:
                         gw_avail[ix] = (head[node] - botm[node]) * area[node]
 
-       # gw_avail = np.where(gw_avail > 0, gw_avail, 0)
         crop_aet = np.where(np.isnan(crop_gwet), crop_aet, crop_aet + crop_gwet)
         if pkg in ("well", "maw"):
             crop_aet = np.where(crop_vks < 1e-30, crop_pet, crop_aet)
@@ -506,7 +537,7 @@ class ModflowApiAg(object):
 
     def _gw_demand_etdemand(self, mf6, kstp, delt, kiter, pkg):
         """
-        Generalized method to determine groundwater use demand
+        Generalized method to determine groundwater irrigation demand
 
         Parameters
         ----------
@@ -517,6 +548,10 @@ class ModflowApiAg(object):
             length of time step
         kiter : int
             iteration number
+
+        Returns
+        -------
+         None
         """
         (
             crop_pet,
@@ -643,6 +678,10 @@ class ModflowApiAg(object):
             length of time step
         kiter : int
             iteration number
+
+        Returns
+        -------
+            None
         """
         self._gw_demand_etdemand(mf6, kstp, delt, kiter, "well")
 
@@ -659,12 +698,16 @@ class ModflowApiAg(object):
             length of time step
         kiter : int
             iteration number
+
+        Returns
+        -------
+            None
         """
         self._gw_demand_etdemand(mf6, kstp, delt, kiter, "maw")
 
     def _sw_demand_etdemand(self, mf6, kstp, delt, kiter, pkg):
         """
-        Method to determine surface-water demand
+        Method to determine surface-water irrigation demand
 
         Parameters
         ----------
@@ -677,6 +720,10 @@ class ModflowApiAg(object):
             iteration number
         pkg : str
             package name ("sfr" or "lak")
+
+        Returns
+        -------
+            None
         """
         (
             crop_pet,
@@ -797,7 +844,7 @@ class ModflowApiAg(object):
 
     def sfr_demand_etdemand(self, mf6, kstp, delt=1, kiter=1):
         """
-        Method to determine surface-water demand from SFR
+        Method to determine surface-water irrigation demand from SFR
 
         Parameters
         ----------
@@ -808,12 +855,17 @@ class ModflowApiAg(object):
             length of time step
         kiter : int
             iteration number
+
+
+        Returns
+        -------
+            None
         """
         self._sw_demand_etdemand(mf6, kstp, delt, kiter, "sfr")
 
     def lak_demand_etdemand(self, mf6, kstp, delt=1, kiter=1):
         """
-        Method to determine surface-water demand from LAK
+        Method to determine surface-water irrigation demand from LAK
 
         Parameters
         ----------
@@ -824,6 +876,11 @@ class ModflowApiAg(object):
             length of time step
         kiter : int
             iteration number
+
+
+        Returns
+        -------
+            None
         """
         self._sw_demand_etdemand(mf6, kstp, delt, kiter, "lak")
 
@@ -849,6 +906,11 @@ class ModflowApiAg(object):
         kiter : float
             iteration number
         accel : float
+
+        Returns
+        -------
+        factor : np.array
+            array of unmet irrigation demand
         """
         et_diff = crop_pet - crop_aet
         factor = et_diff
@@ -875,6 +937,10 @@ class ModflowApiAg(object):
     def _write_output(self):
         """
         Method for writing AG output to file
+
+        Returns
+        -------
+            None
         """
         with open(self.output_filename, "w") as foo:
             header = [
@@ -902,13 +968,19 @@ class ModflowApiAg(object):
 
     def __write_pkg_output(self, fobj, pkg):
         """
-        Generalized method to write all package outputs
+        Generalized method to write all package outputs including:
+        "kstp", "kper", "stp", "pkg", "pid", "pet", "aet", "etdemand",
+        "q_from_provider", "q_to_receiver",
 
         Parameters
         ----------
         fobj : FileObject
         pkg : str
             package string ("well", "sfr", "maw", "lak")
+
+        Returns
+        -------
+            None
         """
         fmt_str = "{:>8} {:>8} {:>8} {:>10} {:8d} {:15f} {:15f} {:15f} {:15f} {:15f}\n"
         for _, output in getattr(self, f"{pkg}_output").items():
@@ -918,12 +990,17 @@ class ModflowApiAg(object):
     @classmethod
     def load_output(cls, filename):
         """
-        Method to load Agmvr output into a pandas dataframe
+        Method to load ModflowApiAg output into a pandas dataframe
 
         Parameters:
         ----------
         filename : str
             Agmvr output file path
+
+        Returns
+        -------
+        df : pandas DataFrame object
+            AG package output
         """
         import pandas as pd
 
@@ -942,6 +1019,9 @@ class ModflowApiAg(object):
         ----------
         mf6 : ModflowApi object
 
+        Returns
+        -------
+            None
         """
         input_vars = mf6.get_input_var_names()
         output_vars = mf6.get_output_var_names()
@@ -967,6 +1047,11 @@ class ModflowApiAg(object):
                 flag to print out BMI input and output variable addresses for
                 developer information about model data available through the
                 BMI for a given model
+
+        Returns
+        -------
+        success : bool
+            boolean flag that indicates a successful run or failure
         """
         import platform
         develop = kwargs.pop("develop", False)
@@ -1083,10 +1168,30 @@ class ModflowApiAg(object):
 
 
 def plugin():
+    """
+    Plugin method for future flopy/modflowapi plugins
+
+    Returns
+    -------
+    ModflowApiAg : ModflowApiAg object
+
+    """
     return ModflowApiAg
 
 
 def dfn():
+    """
+    Installation method for returning definition file name and location.
+    This method is used to add the ModflowGwfapiag class to flopy
+
+    Returns
+    -------
+    tuple :
+        dfn_name : str
+            name of the definition file
+        path : str
+            definition file path
+    """
     dfn_name = "gwf-apiag.dfn"
     return (
         dfn_name,

@@ -215,4 +215,11 @@ class ModflowGwfapiag(mfpackage.MFPackage):
 
 
 def plugin():
+    """
+    Plugin method for future flopy/modflowapi support
+
+    Returns
+    -------
+    ModflowGwfapiag : ModflowGwfapiag object
+    """
     return ModflowGwfapiag
