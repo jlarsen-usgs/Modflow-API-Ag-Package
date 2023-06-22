@@ -1,3 +1,23 @@
+"""
+Modflow 6 API version of the Green Valley example problem described in:
+
+Prudic, D. E., Konikow, L. F., Banta, E. A. 2004. A New Streamflow-Routing
+    (SFR1) Package to simulate stream-aquifer interaction with MODFLOW-2000:
+    U.S. Geological Survey Tech. Methods 6-A13. DOI: 10.3133/ofr20041042
+
+Niswonger, R. G., Prudic, D. E., Regan, R. S. 2006. Documentation of the
+    Unsaturated-Zone Flow (UZF) Package for modeling unsaturated flow between
+    the land surface and the water table with MODFLOW-2005. U.S. Geological
+    Survey Techniques and Methods 6-A19. DOI: 10.3133/tm6A19
+
+Niswonger, R. G. 2020. An agricultural water use package for MODFLOW and
+    GSFLOW. Environmental Modelling and Software 125.
+    doi: 10.1016/j.envsoft.2019.104617
+
+This version of the model applies application efficiency factors to the
+irrigated crops.
+"""
+
 import os
 import numpy as np
 import matplotlib as mpl
