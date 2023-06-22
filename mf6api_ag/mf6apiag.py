@@ -1000,15 +1000,13 @@ class ModflowApiAg(object):
                 else:
                     dll = "." + dll
 
-        print(dll)
         mf6 = ModflowApi(
             dll,
             working_directory=self.sim.simulation_data.mfpath.get_sim_path(),
         )
 
         mf6.initialize()
-        print("intialized")
-        
+
         if develop:
             self._save_variable_addresses(mf6)
 

@@ -1,4 +1,4 @@
-[![ModflowAgmvr CI](https://github.com/jlarsen-usgs/mf6api_ag/actions/workflows/ci.yml/badge.svg)](https://github.com/jlarsen-usgs/mf6api_ag/actions/workflows/ci.yml)
+[![Modflow-API-Ag CI](https://github.com/jlarsen-usgs/mf6api_ag/actions/workflows/ci.yml/badge.svg)](https://github.com/jlarsen-usgs/mf6api_ag/actions/workflows/ci.yml)
 
 # Modflow API Ag Package 
 This repository contains the ModflowApiAg class that interfaces with the 
@@ -13,11 +13,16 @@ and example problems are located in the
 of this repository.
 
 ## Software requirements
-Python >= 3.7  
-flopy >= 3.3.5 (`pip install flopy`)  
+Python >= 3.8  
+flopy >= 3.3.6 (`pip install flopy`)  
 modflowapi (`pip install modflowapi`)  
 numpy  
 pandas
+
+## Supported Platforms
+Windows 10  
+Linux  
+MacOS  
 
 ## Installing mf6api_ag
 Open a command-line or anaconda prompt and run the following
