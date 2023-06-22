@@ -993,6 +993,13 @@ class ModflowApiAg(object):
 
                 dll = f"{dll}{ext}"
 
+        if platform.system().lower() == "linux":
+            if not dll.startswith("./"):
+                if not dll.startswith("/"):
+                    dll = "./" + dll
+                else:
+                    dll = "." + dll
+
         mf6 = ModflowApi(
             dll,
             working_directory=self.sim.simulation_data.mfpath.get_sim_path(),
