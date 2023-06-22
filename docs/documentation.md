@@ -50,9 +50,11 @@ $\left( Q_{ET} \right)$ is calculated using:
 $$Q_{ET} = \displaystyle\sum_{n=1}^{ncell} ET_o K_c A_n$$ 
 
 where $ET_o$ is the potential evapotranspiration flux, $K_c$ is the crop 
-coefficient, and $A_n$ is the area of the model cell. The amount of water that 
-must be supplied by provider nodes to meet this condition is calculated by 
-minimizing the ET deficit $\left( ET_d \right)$.
+coefficient, and $A_n$ is the area of the model cell. Detailed theory and 
+description of $K_c$ can be found in 
+[FAO 56](https://www.fao.org/3/X0490E/x0490e00.htm#Contents).
+The amount of water that must be supplied by provider nodes to meet this 
+condition is calculated by minimizing the ET deficit $\left( ET_d \right)$.
 
 $$min \left( ET_d \right) = ET_o K_c - ET_a$$
 
@@ -65,8 +67,10 @@ $$Q_{c,i+1} = \left( Q_{c,i} + \frac{Q_{ET,i+1} - Q_{ET,i}}{\delta Q_{ET,i} / \d
 
 where $i$ is the outer iteration counter for a given MODFLOW timestep and $Q_c$ 
 is the calculated volumetric water demand with adjustment for application 
-efficiency. The amount of water available to be moved from a provider to 
-receiver nodes $\left( Q_A \right)$ is then calculated as:
+efficiency. The application efficency factor can be any real number value, 
+however, in most cases the factor should be a value close to 1. The amount of 
+water available to be moved from a provider to receiver nodes 
+$\left( Q_A \right)$ is then calculated as:
 
 $$Q_A =
     \begin{cases}
@@ -84,12 +88,14 @@ from the equation:
 $$q_a = \frac{Q_A * e_i}{A_n}$$
 
 The irrigation efficiency factor $\left( e_i \right)$ is used to adjust for 
-inefficient irrigation methods. Irrigation losses $\left( Q_L \right)$ due to 
-canopy interception or other inefficiencies is calculated by
+inefficient irrigation methods (e.g., transmission losses, head losses, etc.). 
+Irrigation losses $\left( Q_L \right)$ due to canopy interception or other 
+inefficiencies is calculated by
 
-$$Q_L = Q_A - (Q_A * e_a)$$
+$$Q_L = (1 - e_i)Q_A$$
 
-and is removed from the model.
+and is removed from the model. Values of $e_i$ must be between 0 and 1 and 
+should represent potential losses from the system. 
 
 Input to the MODFLOW API Agricultural Water Use Package (API-AG) is read from 
 the file type “APIAG” in the Name File by the “ModflowGwfapiag” python class 
@@ -309,14 +315,15 @@ found in the [examples directory](https://github.com/jlarsen-usgs/mf6api_ag/tree
 ### References
 Bakker, Mark, Post, Vincent, Langevin, C. D., Hughes, J. D., White, J. T., 
 Starn, J. J. and Fienen, M. N., 2016, Scripting MODFLOW Model Development Using 
-Python and FloPy: Groundwater, v. 54, p. 733–739, doi:10.1111/gwat.12413.
+Python and FloPy: Groundwater, v. 54, p. 733–739, doi: [10.1111/gwat.12413](
+http://dx.doi.org/10.1111/gwat.12413).
 
 Bakker, Mark, Post, Vincent, Hughes, J. D., Langevin, C. D., White, J. T., 
 Leaf, A. T., Paulinski, S. R., Bellino, J. C., Morway, E. D., Toews, M. W., 
 Larsen, J. D., Fienen, M. N., Starn, J. J., and Brakenhoff, Davíd, 2022, 
-FloPy v3.3.5: U.S. Geological Survey Software Release, 07 March 2022, 
-http://dx.doi.org/10.5066/F7BK19FH
+FloPy v3.3.6: U.S. Geological Survey Software Release, 15 December 2022, 
+[http://dx.doi.org/10.5066/F7BK19FH](http://dx.doi.org/10.5066/F7BK19FH)
 
 Niswonger, R. G., 2020, An Agricultural Water Use Package for MODFLOW and 
 GSFLOW. Environmental Modelling and Software 125. 
-doi: 10.1016/j.envsoft.2019.104617
+doi: [10.1016/j.envsoft.2019.104617](http://dx.doi.org/10.1016/j.envsoft.2019.104617)
