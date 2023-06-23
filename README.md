@@ -157,7 +157,13 @@ Documentation can be found [here](https://github.com/jlarsen-usgs/mf6api_ag/blob
 Joshua D. Larsen
 
 ## Version
-1.0b
+1.0.0
+
+## IPDS number
+IP-149615
+
+## Suggested Citation
+TBD
 
 ## Disclaimer
 This software is preliminary or provisional and is subject to revision. It is 
