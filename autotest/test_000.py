@@ -4,7 +4,7 @@ import os
 import shutil
 
 
-def test_import_agmvr():
+def test_import_apiag():
     from mf6api_ag import ModflowApiAg
 
 
@@ -22,5 +22,5 @@ def test_setup():
 
 if __name__ == "__main__":
     test_setup()
-    test_import_flopy_gwfagmvr()
-    test_import_agmvr()
+    test_import_flopy_gwfapiag()
+    test_import_apiag()
