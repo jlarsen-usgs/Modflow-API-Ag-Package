@@ -184,7 +184,8 @@ irrigation supplied by the LAK package
 irrigation supplied by the MAW package
      - `ag_mvr_maw.py`: script that tests ground water irrigation from the MAW package
    - `prudic_model`: folder that contains scripts that build, run, and compare output
-for the Green Valley model (Prudic et. al., 2004; Niswonger et. al., 2006; Niswonger et. al., 2020)
+for the Green Valley model (Prudic et. al., 2004; Niswonger et. al., 2006; Niswonger et. al., 2020).
+These example problems are presented as Example 2 in Larsen et. al. (20XX; in review).
      - `mf6_ag_prudic.py`: script that builds a MODFLOW6 API AG version of 
 the Green Valley model described in Niswonger (2020) and compares output to 
 the MODFLOW-NWT equivalent of the model.
