@@ -26,15 +26,16 @@ def mf6_dev_no_final_check(model_ws, fname):
 
 
 def dll_loc():
-    cplatform = platform.platform().lower()
-    if 'window' in cplatform:
-        return os.path.join("..", "bin", "libmf6.dll")
-    elif ('mac' in cplatform) and ('arm' in cplatform):
-        return os.path.join("..", "bin", "mac_arm", "libmf6.dylib")
-    elif ('mac' in cplatform) and ('arm' not in cplatform):
-        return os.path.join("..", "bin", "mac_x86_64", "libmf6.dylib")
+    if platform.system().lower() == "darwin":
+        cplatform = platform.platform().lower()
+        if 'arm' in cplatform:
+            loc = os.path.join("..", "bin", "mac_arm", "libmf6")
+        else:
+            loc = os.path.join("..", "bin", "mac_x86_64", "libmf6")
     else:
-        return os.path.join("..", "bin", "libmf6.so")
+        loc = os.path.join("..", "bin", "libmf6")
+
+    return loc
 
 
 def nwt_output_path():

@@ -69,9 +69,12 @@ jobs:
       run: |
         cd bin
         chmod a+x libmf6.so
-        chmod a+x libmf6.dylib
         chmod a+x libmf6.dll
-        cd ..
+        cd mac_arm
+        chmod a+x libmf6.dylib
+        cd ../macx86_64
+        chmod a+x libmf6.dylib
+        cd ../..
         pip install pytest
         pip install pytest-cov
         pip install .
