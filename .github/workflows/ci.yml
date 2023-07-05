@@ -72,7 +72,7 @@ jobs:
         chmod a+x libmf6.dll
         cd mac_arm
         chmod a+x libmf6.dylib
-        cd ../macx86_64
+        cd ../mac_x86_64
         chmod a+x libmf6.dylib
         cd ../..
         pip install pytest
