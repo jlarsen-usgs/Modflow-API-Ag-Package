@@ -1,5 +1,6 @@
 import os
 from math import log10, floor
+import platform
 
 
 def round_to_n(x, n):
@@ -25,7 +26,16 @@ def mf6_dev_no_final_check(model_ws, fname):
 
 
 def dll_loc():
-    return os.path.join("..", "bin", "libmf6")
+    if platform.system().lower() == "darwin":
+        cplatform = platform.platform().lower()
+        if 'arm' in cplatform:
+            loc = os.path.join("..", "bin", "mac_arm", "libmf6")
+        else:
+            loc = os.path.join("..", "bin", "mac_x86_64", "libmf6")
+    else:
+        loc = os.path.join("..", "bin", "libmf6")
+
+    return loc
 
 
 def nwt_output_path():
