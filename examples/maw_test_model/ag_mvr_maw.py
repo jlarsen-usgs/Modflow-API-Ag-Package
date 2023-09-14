@@ -19,6 +19,8 @@ def round_to_n(x, n):
     t = round(x, -int(floor(log10(abs(x))) - (n - 1)))
     return t
 
+sws = os.path.abspath(os.path.dirname(__file__))
+
 
 def build_mf6(name, headtol=None, fluxtol=None):
     sim_ws = os.path.join(sws, "..", "..", "data", "mf6_maw_etdemand_test_problem")
