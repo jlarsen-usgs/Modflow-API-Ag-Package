@@ -171,7 +171,7 @@ class ModflowApiAg(object):
         self.maxiter_addr = mf6.get_var_address("MXITER", f"SLN_{sln_grp}")
         self.head_addr = mf6.get_var_address("X", self.name)
         self.botm_addr = mf6.get_var_address(
-            "BOT", self.name, self.dis_name.upper()
+            "BOT", self.name, "DIS"
         )
         self.k11_addr = mf6.get_var_address(
             "K11", self.name, self.npf_name.upper()
@@ -340,7 +340,9 @@ class ModflowApiAg(object):
             appfrac = []
             if len(recarray) > 0:
                 idx = np.where(
-                    (recarray["id1"] == irrid) & (recarray["pname1"] == pkg_name)
+                    (recarray["id1"] == irrid) &
+                    (recarray["pname1"] == pkg_name) &
+                    (recarray["pname2"] == self.uzf_name.lower())
                 )[0]
                 if len(idx) > 0:
                     icells = recarray[idx]["id2"]
@@ -595,7 +597,7 @@ class ModflowApiAg(object):
         factor *= app_frac
 
         qonly = np.where(sup + factor > crop_vks, crop_vks, sup + factor)
-
+        setattr(self, f"{pkg}sup", np.abs(qonly))
         setattr(self, f"{pkg}supold", sup)
         setattr(self, f"{pkg}aetold", crop_aet)
 
@@ -609,8 +611,8 @@ class ModflowApiAg(object):
             pumping = np.where(np.abs(pumping) > gw_avail, -1 * gw_avail, pumping)
 
         pumping = np.where(np.abs(pumping) <= 1e-10, 0, pumping)
-
-        setattr(self, f"{pkg}sup", np.abs(pumping))
+        # original location of the sup application
+        # setattr(self, f"{pkg}sup", np.abs(pumping))
 
         active_ix = np.where(pkg_active)[0]
 
