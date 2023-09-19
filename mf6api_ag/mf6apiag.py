@@ -777,11 +777,11 @@ class ModflowApiAg(object):
             crop_pet, crop_aet, pkg_aetold, pkg_sup, pkg_supold, kiter
         )
         factor *= app_frac
+        factor = np.where(factor < 0, 0, factor)
 
         qonly = np.where(
             pkg_sup + factor > crop_vks, crop_vks, pkg_sup + factor
         )
-        factor = np.where(factor < 0, 0, factor)
 
         if self.sim_lak and pkg == "sfr":
             only = qonly - prev_applied

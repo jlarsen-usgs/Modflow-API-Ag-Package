@@ -312,7 +312,7 @@ def compare_model_output(nwt, mf6, model):
     with styles.USGSPlot():
         mpl.rcParams["ytick.labelsize"] = 6
         mpl.rcParams["xtick.labelsize"] = 6
-        mpl.rcParams["figure.dpi"] = 300
+        # mpl.rcParams["figure.dpi"] = 300
         fig, (ax0, ax1) = plt.subplots(ncols=2, figsize=cm2inch(17.15, 10.16))
         ax0.plot(
             range(1, len(total_ag1) + 1),

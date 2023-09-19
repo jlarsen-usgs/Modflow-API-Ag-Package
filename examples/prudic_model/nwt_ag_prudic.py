@@ -201,7 +201,7 @@ def build_model(name, model_ws):
     reach_data = reach_data.values.tolist()
     recarray = flopy.modflow.ModflowSfr2.get_empty_reach_data(len(reach_data))
     for ix, rec in enumerate(reach_data):
-        node = ml.modelgrid.get_node((rec[0], rec[1], rec[2]))[0]
+        node = ml.modelgrid.get_node((int(rec[0]), int(rec[1]), int(rec[2])))[0]
         new_rec = (node, rec[0], rec[1], rec[2], rec[3], rec[4], rec[5], 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         recarray[ix] = new_rec
     reach_data = recarray
