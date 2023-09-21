@@ -532,7 +532,7 @@ with styles.USGSMap():
     )
 
     styles.xlabel(ax=ax2, label="Timestep", fontsize=7)
-    styles.ylabel(ax=ax2, label="Applied irrigation, in " + r"$m^{3}/day$",
+    styles.ylabel(ax=ax2, label="Applied irrigation, in " + r"$m^{3}/second$",
                   fontsize=7)
 
     legend = ax2.legend(
@@ -543,6 +543,10 @@ with styles.USGSMap():
 
     ax2.set_xlim([0, 365])
     ax2.set_ylim([0, 2.25])
+    box = ax2.get_position()
+    ax2.set_position([box.x0 + box.width * 0.05, box.y0,
+                     box.width * 0.95, box.height])
+
     styles.heading(
         ax=ax2, letter="B. ",
         heading="MF6 API Agricultural Water Use irrigation", fontsize=6
