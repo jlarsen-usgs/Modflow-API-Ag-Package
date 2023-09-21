@@ -159,8 +159,7 @@ Example problems can be found [here](https://github.com/jlarsen-usgs/Modflow-API
 calculations for the Modflow-API-Ag-Package.
      - `build_nwt_models.py`: builds modflow-nwt equivalent models for output comparison
      - `compare_ag_mvr_conjunctive.py`: builds and runs a conjunctive use (surface-water and groundwater) irrigation problem
-and then compares output with the modflow-nwt AG package. This problem corresponds to example 1 in the 
-accompanying Groundwater paper (Larsen et. al., xxxx; in review)
+and then compares output with the modflow-nwt AG package. 
      - `compare_ag_mvr_sfr.py`: builds and runs a surface-water irrigation problem
 and compares output with the modflow-nwt AG package
      - `compare_ag_mvr_well.py`: builds and runs a ground-water irrigation problem using the WEL package
@@ -168,7 +167,8 @@ and compares output with the modflow-nwt AG package
    - `etdemand_test_model`: folder that includes problems that test uzfet
 calculations for the Modflow-API-Ag-Package
      - `compare_ag_mvr_conjunctive.py`: builds and runs a conjunctive use (surface-water and groundwater) irrigation problem
-and then compares output with the modflow-nwt AG package
+and then compares output with the modflow-nwt AG package. This problem corresponds to example 1 in the 
+accompanying Groundwater paper (Larsen et. al., 2023; in review)
      - `compare_ag_mvr_sfr.py`: builds and runs a surface-water irrigation problem
 and compares output with the modflow-nwt AG package
      - `compare_ag_mvr_well.py`: builds and runs a ground-water irrigation problem using the WEL package
@@ -185,7 +185,7 @@ irrigation supplied by the MAW package
      - `ag_mvr_maw.py`: script that tests ground water irrigation from the MAW package
    - `prudic_model`: folder that contains scripts that build, run, and compare output
 for the Green Valley model (Prudic et. al., 2004; Niswonger et. al., 2006; Niswonger et. al., 2020).
-These example problems are presented as Example 2 in Larsen et. al. (20XX; in review).
+These example problems are presented as Example 2 in Larsen et. al. (2023; in review).
      - `mf6_ag_prudic.py`: script that builds a MODFLOW6 API AG version of 
 the Green Valley model described in Niswonger (2020) and compares output to 
 the MODFLOW-NWT equivalent of the model.
