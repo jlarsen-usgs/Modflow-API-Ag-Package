@@ -44,16 +44,16 @@ def build_model(name, sim_ws):
         sim,
         print_option="ALL",
         complexity="COMPLEX",
-        no_ptcrecord=["ALL"],
+        # no_ptcrecord=["ALL"],
         outer_dvclose=None,
         outer_maximum=None,
-        rcloserecord=[1e-10, "L2NORM_RCLOSE"],
-        scaling_method="L2NORM",
-        linear_acceleration="BICGSTAB",
-        under_relaxation="DBD",
-        under_relaxation_gamma=0.0,
-        under_relaxation_theta=0.97,
-        under_relaxation_kappa=0.0001
+        # rcloserecord=[1e-10, "L2NORM_RCLOSE"],
+        # scaling_method="L2NORM",
+        # linear_acceleration="BICGSTAB",
+        # under_relaxation="DBD",
+        # under_relaxation_gamma=0.0,
+        # under_relaxation_theta=0.97,
+        # under_relaxation_kappa=0.0001
     )
 
     gwf = flopy.mf6.ModflowGwf(
@@ -163,8 +163,8 @@ def build_model(name, sim_ws):
 
     # create uzf package
     nuzfcells = 116
-    ntrailwaves = 15
-    nwavesets = 100
+    ntrailwaves = 200
+    nwavesets = 500
     package_data = []
     cnt = 0
     cid = 0

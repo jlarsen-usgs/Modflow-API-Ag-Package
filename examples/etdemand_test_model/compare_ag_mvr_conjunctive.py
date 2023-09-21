@@ -57,17 +57,17 @@ def build_mf6(name, headtol=None, fluxtol=None):
     ims = flopy.mf6.ModflowIms(
         sim,
         print_option="ALL",
-        complexity="COMPLEX",
-        no_ptcrecord=["ALL"],
-        outer_dvclose=headtol,
-        outer_maximum=fluxtol,
-        rcloserecord=[1e-10, "L2NORM_RCLOSE"],
-        scaling_method="L2NORM",
-        linear_acceleration="BICGSTAB",
-        under_relaxation="DBD",
-        under_relaxation_gamma=0.0,
-        under_relaxation_theta=0.97,
-        under_relaxation_kappa=0.0001
+        complexity="MODERATE",
+        # no_ptcrecord=["ALL"],
+        outer_dvclose=1e-06,
+        outer_maximum=500,
+        # rcloserecord=[1e-10, "L2NORM_RCLOSE"],
+        # scaling_method="L2NORM",
+        # linear_acceleration="BICGSTAB",
+        # under_relaxation="DBD",
+        # under_relaxation_gamma=0.0,
+        # under_relaxation_theta=0.97,
+        # under_relaxation_kappa=0.0001
     )
 
     gwf = flopy.mf6.ModflowGwf(
@@ -424,7 +424,7 @@ def compare_model_output(nwt, mf6, model):
 
 if __name__ == "__main__":
     load_existing = False
-    run_model = False
+    run_model = True
     name = "etdemand_sup"
     dll = os.path.join("..", "..", "bin", "libmf6")
     mf6_ws = os.path.join(sws, "..", "..", "data", "mf6_etdemand_test_problems", name)

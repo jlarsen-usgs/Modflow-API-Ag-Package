@@ -597,7 +597,10 @@ class ModflowApiAg(object):
         factor *= app_frac
 
         qonly = np.where(sup + factor > crop_vks, crop_vks, sup + factor)
-        setattr(self, f"{pkg}sup", np.abs(qonly))
+
+        if "maw" in pkg:
+            setattr(self, f"{pkg}sup", np.abs(qonly))
+
         setattr(self, f"{pkg}supold", sup)
         setattr(self, f"{pkg}aetold", crop_aet)
 
@@ -612,7 +615,8 @@ class ModflowApiAg(object):
 
         pumping = np.where(np.abs(pumping) <= 1e-10, 0, pumping)
         # original location of the sup application
-        # setattr(self, f"{pkg}sup", np.abs(pumping))
+        if "wel" in pkg:
+            setattr(self, f"{pkg}sup", np.abs(pumping))
 
         active_ix = np.where(pkg_active)[0]
 

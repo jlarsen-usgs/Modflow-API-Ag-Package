@@ -208,7 +208,8 @@ Joshua D. Larsen
 IP-149615
 
 ## Suggested Citation
-TBD
+Larsen, J.D., 2023, Agricultural water use package for the MODFLOW API. 
+U.S. Geological Survey Software Release. DOI:[10.5066/P9K6UW9F](https://doi.org/10.5066/P9K6UW9F)
 
 ## Disclaimer
 This software is preliminary or provisional and is subject to revision. It is 
